@@ -58,8 +58,8 @@ The user selected a built-in start/stop timer, not manually reported duration. A
 
 ## Daily Goals — Confirmed
 
-Daily goals are specific activity/time targets, such as Study for 60 minutes or Walk for 30 minutes, each with its own progress and automatic completion at the target. Sum matching activity within the day separately from token rounding: two completed 20-minute study sessions advance a goal by 40 minutes but earn zero tokens. Recurrence and weekly goals remain open. The user did not select aggregate task-count goals.
+Daily goals are specific activity/time targets, such as Study for 60 minutes or Walk for 30 minutes, each with its own progress and automatic completion at the target. Sum matching activity within the day separately from token rounding: two completed 20-minute study sessions advance a goal by 40 minutes but earn zero tokens. Calendar-style recurrence is confirmed: today only, every day, or selected weekdays, with independent per-date progress. Separate aggregate weekly targets remain unconfirmed. The user did not select aggregate task-count goals.
 
 ## Pending Product Decisions
 
-Studbot presence/orientation meaning and the initial five-second sustained-away threshold are confirmed. Automatic resume after two valid seconds preserves previous time. Grace accounting, camera-processing privacy preference, task/session completion rules, daily recurrence and weekly-goal semantics need further clarification as requested by the user. Ask one consequential question at a time. No application implementation has been performed; final data model/contracts/validation guide follow the product answers.
+Studbot presence/orientation meaning and the initial five-second sustained-away threshold are confirmed. Automatic resume after two valid seconds preserves previous time. Grace accounting, camera-processing privacy preference, task/session completion rules, and the need for separate aggregate weekly targets need further clarification as requested by the user. Ask one consequential question at a time. No application implementation has been performed; final data model/contracts/validation guide follow the product answers.

@@ -10,7 +10,7 @@ Build a mobile-friendly React/Next.js web app with Supabase accounts/data and a 
 
 Custom tasks use a built-in start/stop timer with pause/resume and an optional minimum-duration target. Rewards use measured active time; manually entered duration cannot grant tokens.
 
-Daily goals link a specific activity/task to a duration target and show individual progress (for example Study: 35/60 minutes). Daily progress may accumulate across matching sessions independently of per-session token rounding. Recurrence and weekly-goal behavior are still being clarified.
+Daily goals link a specific activity/task to a duration target and show individual progress (for example Study: 35/60 minutes). Daily progress may accumulate across matching sessions independently of per-session token rounding. Goal schedules support today only, every day, and selected weekdays, with separate per-date occurrences in the profile timezone. Whether separate aggregate weekly targets are needed remains open.
 
 ## Technical Context
 

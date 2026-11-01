@@ -26,6 +26,8 @@
 
 - Q: What do daily goals mean? → A: Specific activities with individual duration targets, such as study for one hour, walk for thirty minutes, or crochet for forty-five minutes. Show each goal and its own tracked progress (for example Study: 35/60 minutes), and mark it complete when its target is reached. The earlier aggregate task-count/time-goal choices were not selected.
 
+- Q: How should daily goals repeat? → A: Use calendar-style scheduling with today only, every day, or selected weekdays (for example Monday/Wednesday/Friday). Each scheduled date has its own progress and completion.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Complete custom tasks and earn tokens (Priority: P1)
@@ -105,12 +107,15 @@ A user sets specific daily activity goals with duration targets, sees each goal'
 
 **Acceptance Scenarios**:
 
-1. **Given** Dashboard, **When** the user sets daily goals such as Study for 60 minutes and Walk for 30 minutes, **Then** each has its own activity label, duration target, and progress display.
+1. **Given** Dashboard, **When** the user sets daily goals such as Study for 60 minutes and Walk for 30 minutes, **Then** each has its own activity label, duration target, progress display, and schedule selector for today only, every day, or selected weekdays.
 2. **Given** a daily Study goal of 60 minutes and 35 qualifying study minutes today, **When** Dashboard is viewed, **Then** that goal shows 35/60 minutes and remains incomplete. At 60 minutes it is marked complete; walking does not advance the Study goal.
 3. **Given** two completed 20-minute study sessions on the same day, **When** daily goal progress and tokens are calculated, **Then** the Study goal receives 40 minutes of progress while those sessions earn zero tokens under the independent per-session reward rule.
 4. **Given** today's activity, **When** Dashboard opens, **Then** current tokens, tokens earned today, and today's completed tasks are shown.
 5. **Given** saved completions, **When** History opens, **Then** task names, descriptions/reflections, dates/times, and rewards appear newest first, grouped by day.
 6. **Given** History, **When** this-week, this-month, or all-time is selected, **Then** entries and summary totals match that period.
+7. **Given** a today-only goal, **When** tomorrow is viewed, **Then** it does not appear as a newly scheduled goal; today's saved progress remains available.
+8. **Given** a goal scheduled every day, **When** a new local date begins, **Then** its new daily occurrence starts with separate progress and the previous occurrence is preserved.
+9. **Given** a goal scheduled Monday/Wednesday/Friday, **When** a date is viewed, **Then** the goal is due only on those weekdays; an empty selected-weekday set is rejected.
 
 ### User Story 6 - Maintain a personal profile (Priority: P2)
 
@@ -132,7 +137,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Empty, unlocked, or pending-unlock compartments cannot receive allocations. If availability changes before acceptance, reject without charging.
 - Unused minutes are discarded per completed session: separate 20-minute and 10-minute sessions earn zero tokens, while one eligible 30-minute session earns one.
 - Camera/location denial leaves other task types usable. Canceled or ineligible sessions earn no tokens.
-- Profile timezone governs dates; weeks begin Monday by default.
+- Profile timezone governs dates and selected-weekday recurrence; weeks begin Monday by default. A daily goal occurrence uses a local calendar date rather than a fixed 24-hour interval, including daylight-saving transitions. Repeated page loads must not duplicate scheduled goals or rewards.
 - Win chance is positive for every valid allocation and bounded above by 60%; an unfunded drawer still has zero selection chance. Higher token counts may look equal after display rounding, but the roll uses the unrounded curve.
 - Camera classification estimates observable focus; it cannot establish learning or understanding.
 
@@ -148,7 +153,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - **FR-006**: Studbot must classify observable study-compatible behavior using presence plus orientation toward the calibrated screen or book/notebook area. Reading and writing while looking down are valid. Provide a short calibration for both positions, tolerate brief glances, and use an initial five-second sustained-away threshold before auto-pause. Camera failure, poor lighting, or blocked view must produce an unable-to-verify state rather than a distraction judgment; unverifiable intervals do not earn qualifying time. Show the state and counted time. Phone detection is outside the first version. Validate representative reading, writing, screen-facing, absent, and sustained-away cases before implementation; the classifier must not claim cognitive attention or knowledge of screen content. After an automatic pause, resume automatically only after two consecutive seconds in a valid calibrated study position, preserving all previously counted qualifying time. Invalid or unknown observations reset the two-second reacquisition interval. Exact grace-window accounting remains a planning detail to document before implementing the session lifecycle.
 - **FR-007**: Run/walk tracking must show route/map, distance, active time, start, pause/resume, stop, and a saved summary.
 - **FR-008**: Rewards must depend on qualifying active time across custom tasks, Studbot, and runs/walks, using one whole token per 30 minutes as the starting rate. Credit accepted activity once and preserve earning/spending history. Calculate each completed session separately: tokens = floor(qualifying seconds / 1800). Discard the remainder; do not carry it into other sessions. Custom-task rewards must use its built-in timer's measured active time; no minimum target is required for earning, and manually reported duration cannot earn tokens. Proposed default: separate repeated sessions can earn through new non-overlapping qualifying time; this is an assumption, not a confirmed answer.
-- **FR-009**: Daily goals must name a specific activity or custom task and a positive duration target. Show each goal's individual tracked qualifying-time progress, such as Study: 35/60 minutes, and mark it complete when the target is reached. Only matching activity contributes. Goal progress can accumulate across sessions within the day; this does not change per-session token rounding. Dashboard must also show today's completed tasks, balance, and tokens earned today. Weekly goals remain requested, with their exact behavior to be clarified; do not retain the earlier unconfirmed completion-count-goal assumption.
+- **FR-009**: Daily goals must name a specific activity or custom task and a positive duration target. Show each goal's individual tracked qualifying-time progress, such as Study: 35/60 minutes, and mark it complete when the target is reached. Only matching activity contributes. Goal progress can accumulate across sessions within the day; this does not change per-session token rounding. Goal creation must support calendar-style schedule choices: today only, every day, or one or more selected weekdays. Use the profile timezone to decide scheduled dates, and keep progress/completion separate per date without carrying it into the next occurrence. Scheduling itself does not award tokens. Dashboard must also show today's completed tasks, balance, and tokens earned today. Separate aggregate weekly targets remain unconfirmed; do not retain the earlier unconfirmed completion-count-goal assumption.
 - **FR-010**: Preserve completion-time task name, type, description/reflection, applicable duration, date/time, and reward; retain route/distance for runs/walks.
 - **FR-011**: History must show completed tasks newest first by day with this-week, this-month, and all-time filters and matching totals.
 - **FR-012**: Represent exactly four simulated compartments with assigned items and confirmed or unknown availability, corresponding to the later physical slots.
@@ -167,7 +172,8 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - **Task Definition**: Type, name, description, minimum duration, optional question, and reward rule.
 - **Activity Session**: Task instance, time, qualification, and optional route/distance.
 - **Completion**: Historical task snapshot, reflection, completion date/time, activity totals, and reward.
-- **Goal**: User, specific activity/task, daily date/period, duration target, matching qualifying-time progress, and completed status. Daily recurrence and the original weekly-goal behavior remain to be clarified.
+- **Goal Schedule**: User, specific activity/task, duration target, timezone, and recurrence choice: today only (one local date), every day, or selected weekdays (a nonempty weekday set).
+- **Goal Occurrence**: One goal schedule on one local date, with matching qualifying-time progress and completion status independent of other dates. Repeated visits must not create duplicate occurrences. The need for a separate aggregate weekly target is still unconfirmed.
 - **Token Entry**: Earn/spend quantity, linked completion/roll, and resulting balance.
 - **Locker/Compartment**: Device availability, one of four slot identities, assigned item, and simulated state and future physical identity.
 - **Roll**: User, allocations, cost, stage-one win probability and win/no-win outcome, stage-two drawer weights and selected drawer when won, applied probability policy, fixed combined outcome, and delivery state.
@@ -194,7 +200,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Start with one personal four-compartment simulated locker per user; shared lockers/admin roles are outside initial scope.
 - Confirmed platform/stack: mobile-friendly React/Next.js web app, Supabase for account/data services, and FastAPI for ML models. Browser run/walk and camera observation are foreground-only; reliable screen-locked/background tracking is outside the web capability.
 - Camera-processing placement and handling must be documented for the FastAPI model service; raw study video must not be retained by default.
-- Daily goals are confirmed as specific activities with individual time targets; they are not aggregate task-count targets. Recurrence and weekly-goal semantics are still open. Distance-based goals are not selected.
+- Daily goals are specific activities with individual time targets and calendar-style today-only, daily, or selected-weekday scheduling. A full calendar page, notifications, end dates, and arbitrary interval/monthly recurrence are not implied by this choice. Separate aggregate weekly targets remain unconfirmed. Distance-based goals are not selected.
 - Users label their items; automated item recognition is outside scope.
 - The user requested MediaPipe plus an ML classifier for Studbot. Preserve this implementation preference for technical planning.
 - Screenshot branding “MINT”, names, streaks, sample totals, extra navigation destinations, and “1 token = 1 slot roll” are examples rather than confirmed requirements.

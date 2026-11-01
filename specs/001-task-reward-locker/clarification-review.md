@@ -34,3 +34,5 @@ Automatic Studbot resume accepted: two consecutive valid seconds after an automa
 Custom-task time decision accepted: built-in start/stop timer with pause/resume, optional minimum target, and no reward-bearing manual duration entry. Updated spec scenarios/requirements, plan, research, and checklist notes. Checklist re-evaluated: 11/15 unchanged; remaining session/ML/goal details still precede final plan readiness.
 
 Daily goals clarified: specific activity/time targets with individual progress, such as Study 35/60 minutes, completed upon reaching the target. Supersedes aggregate task-count-goal assumptions. Goal time can accumulate across matching sessions independently of token rounding. Recurrence and weekly behavior remain open. Checklist re-evaluated: 11/15 unchanged; no marker changes or regressions.
+
+Daily recurrence confirmed: calendar-style today only, every day, or selected weekdays. Store independent per-local-date occurrences/progress; do not imply a full calendar page or notification system. Separate aggregate weekly targets remain unconfirmed. Checklist re-evaluated: 11/15 unchanged, no marker changes or regressions.
