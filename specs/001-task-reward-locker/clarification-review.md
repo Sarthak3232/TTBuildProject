@@ -32,3 +32,5 @@ Latest update: Studbot presence/orientation recommendation accepted, including r
 Automatic Studbot resume accepted: two consecutive valid seconds after an automatic pause, with earlier qualifying time preserved and reacquisition restarted by invalid/unknown observations. Checklist re-evaluated: 11/15 unchanged, no newly passing items or regressions; remaining lifecycle/task/ML-contract details still prevent final plan readiness.
 
 Custom-task time decision accepted: built-in start/stop timer with pause/resume, optional minimum target, and no reward-bearing manual duration entry. Updated spec scenarios/requirements, plan, research, and checklist notes. Checklist re-evaluated: 11/15 unchanged; remaining session/ML/goal details still precede final plan readiness.
+
+Daily goals clarified: specific activity/time targets with individual progress, such as Study 35/60 minutes, completed upon reaching the target. Supersedes aggregate task-count-goal assumptions. Goal time can accumulate across matching sessions independently of token rounding. Recurrence and weekly behavior remain open. Checklist re-evaluated: 11/15 unchanged; no marker changes or regressions.

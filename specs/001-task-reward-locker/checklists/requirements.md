@@ -36,6 +36,6 @@
 - Confirmed: per-session time rewards without carryover; two-stage single-drawer rolls; simulator-first scope; React/Next.js + Supabase + FastAPI; Studbot calibrated presence/orientation; automatic resume after two valid seconds.
 - Exact interpolation and proportional drawer weighting are documented defaults rather than formulas supplied by the user.
 - Custom-task time is now confirmed: built-in start/stop timer with optional minimum target; no manually reported duration for rewards.
-- Other pending details include Studbot grace-window accounting, image-processing privacy handling, model evaluation/calibration, goal semantics, and interrupted-session recovery.
+- Other pending details include Studbot grace-window accounting, image-processing privacy handling, model evaluation/calibration, daily recurrence/weekly-goal semantics, and interrupted-session recovery.
 - Constitution v1.0.0 is established. Planning is in progress; the current plan is not implementation-ready.
 - See `clarification-review.md` for historical review changes and `spec.md` for the latest decisions and assumptions.

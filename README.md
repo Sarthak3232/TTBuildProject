@@ -8,6 +8,7 @@ A task and goal app where users earn tokens through study, runs/walks, and custo
 - Custom tasks use a built-in start/stop timer; setting a minimum-duration target is optional. Manual duration entry does not award tokens.
 - Two-stage rolls: total tokens determine win/no-win; after a win, drawer allocations determine which single item unlocks. One token uses a baseline chance and additional tokens improve it. Overall win chance starts at 20% for one token and approaches 60% (about 58% at ten tokens).
 - Four simulated locker compartments first; real hardware integration later.
+- Daily goals target specific activities and durations, such as Study for 60 minutes, with individual progress displays.
 - Dashboard, tasks, history, redeem, and profiles, with mint/deep-green visual references.
 
 ## Selected stack
