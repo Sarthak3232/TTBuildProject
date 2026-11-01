@@ -45,7 +45,7 @@ The delivery scope includes the following:
 
 | Deliverable | Included scope |
 | --- | --- |
-| **Five-page application** | Dashboard, Tasks, History, Redeem, and Profile with consistent mint/deep-green styling and clear loading, empty, and error states. |
+| **Five-page application** | Dashboard, Tasks, History, Redeem, and Profile with responsive layouts, consistent navigation, accessible controls and clear loading, empty, and error states. |
 | **Studbot activity verification** | Camera setup/calibration, study-compatible presence/orientation classification, automatic pause/resume, and transient frame processing. |
 | **Run/walk tracker** | Map and route display, distance measurement, manual timer controls, and saved activity summaries. |
 | **Custom-task system** | Task creation, measured timers, mandatory minimum targets of at least 30 minutes, and optional completion reflections. |
@@ -163,4 +163,3 @@ Detailed planning documents are maintained on the [`task-reward-spec`](https://g
 | [Interface contracts](https://github.com/Sarthak3232/TTBuildProject/tree/task-reward-spec/specs/001-task-reward-locker/contracts) | Application, ML-service, and locker interfaces. |
 | [Implementation checklist](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/tasks.md) | 72 ordered tasks covering the planned implementation. |
 | [Validation guide](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/quickstart.md) | Planned setup commands and the checks required before completion. |
-| [Design references](https://github.com/Sarthak3232/TTBuildProject/tree/task-reward-spec/specs/001-task-reward-locker/references) | Dashboard and History visual references. |
