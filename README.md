@@ -38,9 +38,6 @@ Each roll has two stages: **do you win something?** If you do, **which drawer op
 | **Run / Walk** | Shows a map, route, distance, and timer with manual start, pause/resume, and stop controls. Standing still does not automatically pause the timer. Missing GPS coverage does not invent distance. |
 | **Custom tasks** | Create activities such as crochet, reading, or practice. Use a built-in timer, optionally set a minimum duration, and optionally ask a completion question such as **“What did you make?”** Rewards use measured time, not manually entered duration. |
 
-### Daily-goal scheduling
-
-Set a named activity and duration, then choose **today only**, **every day**, or **selected weekdays** such as Monday, Wednesday, and Friday. Each scheduled date has its own progress and completion state. Separate weekly targets are outside the current scope.
 
 ## Project deliverables
 
