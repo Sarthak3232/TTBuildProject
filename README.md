@@ -25,7 +25,7 @@ Each roll has two stages: **do you win something?** If you do, **which drawer op
 | Page | Purpose | Features |
 | --- | --- | --- |
 | **Dashboard** | See what you want to accomplish today. | Activity-specific daily goals; individual time progress such as **Study: 35/60 minutes**; completed tasks; token balance; tokens earned today; a shortcut to redeem rewards. |
-| **Tasks** | Start activities and earn tokens. | Studbot, run/walk tracking, and custom tasks; built-in session controls; optional custom minimum-duration targets; one optional reflection question per custom task. |
+| **Tasks** | Start activities and earn tokens. | Studbot, run/walk tracking, and custom tasks; built-in session controls; required custom minimum-duration targets of at least 30 minutes; one optional reflection question per custom task. |
 | **History** | Review your completed activities. | Task name, description/reflection, date and time, duration, and tokens earned; newest-first daily groups; this-week, this-month, and all-time filters; saved run/walk summaries. |
 | **Redeem** | Spend tokens for a chance to open a drawer. | Four named items and drawer states; per-drawer token allocation; total cost and probability preview; two-stage rolls; win/loss results; unlock status and retry after a delivery failure. |
 | **Profile** | Keep your activity and rewards personal. | Account access; editable display name and timezone; private goals, task history, token balance, and associated locker. |
@@ -36,7 +36,7 @@ Each roll has two stages: **do you win something?** If you do, **which drawer op
 | --- | --- |
 | **Studbot** | Uses calibrated presence and orientation toward your screen or study materials. Reading and writing while looking down count. Sustained absence or looking away pauses the session after about five seconds; two valid seconds resume it automatically while preserving counted time. Sampled camera frames are analyzed live and discarded without saving footage. |
 | **Run / Walk** | Shows a map, route, distance, and timer with manual start, pause/resume, and stop controls. Standing still does not automatically pause the timer. Missing GPS coverage does not invent distance. |
-| **Custom tasks** | Create activities such as crochet, reading, or practice. Use a built-in timer, optionally set a minimum duration, and optionally ask a completion question such as **“What did you make?”** Rewards use measured time, not manually entered duration. |
+| **Custom tasks** | Create activities such as crochet, reading, or practice. Use a built-in timer, require a minimum duration of at least 30 minutes (exactly 30 is valid), and optionally ask a completion question such as **“What did you make?”** Rewards use measured time, not manually entered duration. |
 
 
 ## Project deliverables
@@ -48,7 +48,7 @@ The delivery scope includes the following:
 | **Five-page application** | Dashboard, Tasks, History, Redeem, and Profile with consistent mint/deep-green styling and clear loading, empty, and error states. |
 | **Studbot activity verification** | Camera setup/calibration, study-compatible presence/orientation classification, automatic pause/resume, and transient frame processing. |
 | **Run/walk tracker** | Map and route display, distance measurement, manual timer controls, and saved activity summaries. |
-| **Custom-task system** | Task creation, measured timers, optional minimum targets, and optional completion reflections. |
+| **Custom-task system** | Task creation, measured timers, mandatory minimum targets of at least 30 minutes, and optional completion reflections. |
 | **Daily goals and schedules** | Per-activity time targets, today/daily/weekday recurrence, and independent progress for each date. |
 | **Accounts and activity records** | Profiles, private completion history, token balances, and earning/spending records. |
 | **Token and roll engine** | Time-based rewards, per-drawer allocations, probability previews, two-stage random outcomes, and protection against duplicate rewards or charges. |
@@ -70,6 +70,8 @@ Create goals such as **Study for 60 minutes**, **Walk for 30 minutes**, or **Cro
 ### 3. Complete an activity
 
 Start Studbot, a run/walk, or a custom-task timer. Pause and resume as needed, then finish the activity and answer its reflection question if one is configured. The completion appears in History and eligible time earns tokens.
+
+**Every custom task requires a minimum duration of 30 minutes or more.** You cannot mark it complete or earn its tokens before reaching its selected minimum. Exactly 30 minutes is allowed; a task set to 45 minutes must reach 45 minutes.
 
 **One token is earned for every full 30 minutes within a completed session.** Leftover minutes are discarded per session.
 
