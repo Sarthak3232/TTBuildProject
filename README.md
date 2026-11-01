@@ -14,7 +14,7 @@ A task and goal app where users earn tokens through study, runs/walks, and custo
 
 ## Selected stack
 
-React/Next.js web app, Supabase accounts/database, and FastAPI for ML models. Studbot checks calibrated presence and orientation toward screen/book, allowing reading/writing; phone detection is deferred. The first specification and technical design are ready for task breakdown. Camera/GPS tracking is foreground-only in the browser. Studbot sends sampled frames to FastAPI for live analysis and discards them without saving footage.
+React/Next.js web app, Supabase accounts/database, and FastAPI for ML models. Studbot checks calibrated presence and orientation toward screen/book, allowing reading/writing; phone detection is deferred. The first specification, technical design, and implementation task backlog are recorded. Camera/GPS tracking is foreground-only in the browser. Studbot sends sampled frames to FastAPI for live analysis and discards them without saving footage.
 
 ## Spec Kit workflow
 
@@ -22,4 +22,4 @@ Project-local Codex skills live in `.agents/skills/`; templates and scripts live
 
 The active feature is [`specs/001-task-reward-locker/spec.md`](specs/001-task-reward-locker/spec.md). Its review checklist and supplied screenshots are alongside it. Feature state in `.specify/feature.json` is local and intentionally ignored by Git.
 
-Project constitution v1.0.1 and the first technical plan are complete. See the feature's plan, data model, API/ML/locker contracts, and quickstart validation guide. Next is Spec Kit task breakdown, followed by implementation. The commands in the quickstart describe the future app interface and are not runnable yet. No app has been implemented yet.
+Project constitution v1.0.1 and the first technical plan are complete. See the feature's plan, data model, API/ML/locker contracts, and quickstart validation guide. The [implementation backlog](specs/001-task-reward-locker/tasks.md) contains 72 dependency-ordered tasks. Next is implementation, beginning with the shared foundation and custom-task timer MVP. The commands in the quickstart describe the future app interface and are not runnable yet. No app has been implemented yet.
