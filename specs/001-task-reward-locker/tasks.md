@@ -13,7 +13,7 @@ The user authorized a basic shared frontend before full feature implementation: 
 | T001 | Complete: npm workspace, pinned Next.js/React/TypeScript app, lockfile, root layout. | — |
 | T005 | Partial: frontend dev/lint/typecheck/build/start/check scripts and CI. | Full validation runner, feature tests, isolated DB lifecycle, ML and delivery-worker scripts after their prerequisites. |
 | T006 | Partial: neutral shared layout/typography variables, responsive CSS, focus visibility, and skip link. | Reusable labeled form and progress controls. |
-| T017 | Partial: five-destination sidebar, active section including nested task routes, and honest placeholders. | Authenticated/protected navigation and functional auth controls after T010. |
+| T017 | Partial: five-destination sidebar, mobile three-bar menu with open/close controls, active section including nested task routes, and honest placeholders. | Authenticated/protected navigation and functional auth controls after T010. |
 
 T023, T033, T044, T051, T059, T060, and T064 remain unchecked: their actual features are not implemented by creating page files. This scope does not change task IDs, counts, feature requirements, or the dependency order for subsequent implementation.
 

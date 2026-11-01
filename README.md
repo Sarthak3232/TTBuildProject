@@ -31,6 +31,8 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000). The root redirects to `/dashboard`. This starter needs no environment variables or backend services.
 
+On phones, the three-bar menu button opens and closes navigation. Selecting a page closes the menu; Escape closes it and returns focus to the button. Desktop navigation stays in the left sidebar.
+
 Run `npm run check` for lint, TypeScript checking, and a production build. `npm run start` serves the production build. See [Contributing](CONTRIBUTING.md) for the page file map and how to start a teammate branch.
 
 ## Page-by-page features

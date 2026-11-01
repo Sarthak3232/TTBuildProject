@@ -42,3 +42,9 @@ Environment: macOS, Node 22.20.0, npm 10.9.3, Next.js 16.4.3, React 19.3.1, Type
 The full dependency audit reports 16 moderate development-tool findings propagated from the single minimatch advisory [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249). These are in ESLint's dependency tree; no production dependencies are affected. ESLint 9 is pinned to match the current React/JSX accessibility plugins' peer ranges. Do not use `npm audit fix --force`, which proposes incompatible package downgrades; adopt compatible upstream fixes when available.
 
 The full-system acceptance checks in [quickstart.md](quickstart.md) have not been run and are not claimed. Phase 1 and the foundation gate remain incomplete. There are no before/after implementation hooks configured.
+
+## Mobile navigation follow-up
+
+The user requested a three-bar mobile menu. At widths up to 600px, navigation starts collapsed beneath a full-width header. The labeled button opens/closes the five links, selecting a destination closes the menu, and Escape closes it and restores button focus. The button exposes `aria-expanded` and `aria-controls`; closed links are hidden from keyboard and accessibility navigation. Desktop keeps the visible left sidebar.
+
+Validation: lint, typecheck, and build passed. Browser checks confirmed open/close by pointer, Space to open, Escape to close with restored focus, auto-close after selecting History, and the visible sidebar/hidden toggle at desktop width. T017 remains partial because authentication is still pending.

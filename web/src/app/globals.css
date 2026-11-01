@@ -19,7 +19,7 @@ body {
 }
 
 a { color: inherit; text-underline-offset: 0.2em; }
-a:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
 
 .app-shell { display: flex; min-height: 100dvh; }
 .sidebar {
@@ -29,6 +29,9 @@ a:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
   border-right: 1px solid var(--border);
 }
 .brand { margin: 0 12px 24px; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.05em; }
+.menu-toggle { display: none; }
+.menu-icon { display: grid; gap: 5px; width: 22px; }
+.menu-icon span { display: block; height: 2px; background: currentColor; }
 .navigation-list { list-style: none; margin: 0; padding: 0; }
 .navigation-list li + li { margin-top: 6px; }
 .navigation-list a {
@@ -50,9 +53,24 @@ p { max-width: 65ch; }
 .skip-link:focus { top: 12px; }
 
 @media (max-width: 600px) {
-  .sidebar { flex-basis: 124px; padding: 20px 8px; }
-  .brand { margin-inline: 8px; font-size: 1rem; }
-  .navigation-list a { padding-inline: 8px; font-size: 0.875rem; }
+  .app-shell { flex-direction: column; }
+  .sidebar { flex: none; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .sidebar-header { display: flex; align-items: center; justify-content: space-between; }
+  .brand { margin: 0; font-size: 1rem; }
+  .menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+  #app-navigation { margin-top: 12px; }
+  #app-navigation[data-open="false"] { display: none; }
   main { padding: 24px 16px; }
   h1 { font-size: 1.5rem; }
 }
