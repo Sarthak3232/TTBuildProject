@@ -54,7 +54,7 @@ Sources: [MediaPipe FaceLandmarker Python](https://developers.google.com/edge/me
 
 ## Custom Task Time — Confirmed
 
-The user selected a built-in start/stop timer, not manually reported duration. A minimum-duration target remains optional; measure active time even with no target, exclude paused intervals, and calculate whole tokens per completed session. This is a self-accountability timer, not camera verification of custom activities.
+The user selected a built-in start/stop timer, not manually reported duration. Every custom task has a required minimum-duration target of at least 30 minutes; exactly 30 minutes is valid. Measure active time, exclude paused intervals, and allow completion/whole-token rewards only after the required selected minimum is reached. Reject missing/null/below-30-minute minimum values at the UI, API, and database boundaries. This is a self-accountability timer, not camera verification of custom activities.
 
 ## Daily Goals — Confirmed
 

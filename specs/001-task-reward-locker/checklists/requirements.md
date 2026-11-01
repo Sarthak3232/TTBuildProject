@@ -33,7 +33,9 @@
 ## Notes
 
 - Current requirements-quality review: 15/15 pass after user decisions and explicit planning defaults. Checked boxes do not mean implementation or acceptance tests have passed.
-- User choices include time-based tokens without carryover, two-stage rolls, simulator first, React/Next.js + Supabase + FastAPI, Studbot orientation/auto-resume/transient frames, timed custom tasks, manual run/walk controls, and scheduled daily goals without weekly targets.
+- User choices include time-based tokens without carryover, two-stage rolls, simulator first, React/Next.js + Supabase + FastAPI, Studbot orientation/auto-resume/transient frames, timed custom tasks with a mandatory minimum of at least 30 minutes (inclusive), manual run/walk controls, and scheduled daily goals without weekly targets.
 - The exact win interpolation, proportional drawer weighting, calibration tolerances, grace accounting, recovery, and GPS distance filters are documented defaults in the spec/research/contracts.
-- Constitution v1.0.1 applies. Phase-one planning artifacts are complete; next is task breakdown. No application source, migrations, models, or runtime tests have been implemented.
+- Constitution v1.1.0 applies. Phase-one planning artifacts are complete; next is task breakdown. No application source, migrations, models, or runtime tests have been implemented.
 - Model quality, sensor behavior and transaction invariants must satisfy quickstart acceptance criteria before shipping; these are implementation validations, not unresolved product questions.
+
+- Minimum-duration correction reviewed across UI/API/database requirements and backlog boundaries: required custom minimum >= 1,800,000 ms; missing/null/smaller values invalid; exact 30-minute target valid; incomplete custom sessions cannot produce completions or rewards.

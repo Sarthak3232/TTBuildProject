@@ -41,6 +41,10 @@ Keep the implementation simple; add infrastructure only for a documented require
 
 ## Product Boundaries
 
+Every custom task MUST have a required minimum duration of at least 30 minutes (inclusive).
+Missing, null, disabled, or shorter minimums MUST be rejected. Custom tasks MUST NOT complete
+or award tokens before their selected minimum has been reached. Exactly 30 minutes is valid.
+
 Tokens are earned from qualifying activity and have no purchase, transfer, or cash-out flow.
 Award one token for each full 30 minutes in a completed session; discard that session's
 remainder. Rolls have two stages: win/no-win from total allocation, then one drawer selected
@@ -71,4 +75,4 @@ existing governance obligations; minor versions add substantive principles; patc
 wording without changing obligations. Plans and reviews MUST identify constitution violations
 and justify exceptions explicitly. User instructions take precedence over this document.
 
-**Version**: 1.0.1 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
+**Version**: 1.1.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01

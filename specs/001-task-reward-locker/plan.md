@@ -6,7 +6,7 @@
 
 ## Summary
 
-Build a mobile-friendly React/Next.js application with Supabase Auth/Postgres and a private FastAPI MediaPipe service. Users earn whole tokens from timed custom activities, manually controlled runs/walks, and calibrated study-compatible camera observations. They allocate tokens among four simulated drawers and roll with a total-stake win decision followed by weighted drawer selection. Dashboard goals are activity/time targets scheduled today only, daily, or on selected weekdays. Each local date has separate progress; no aggregate weekly targets.
+Build a mobile-friendly React/Next.js application with Supabase Auth/Postgres and a private FastAPI MediaPipe service. Every custom task requires a selected minimum of at least 30 minutes (inclusive), with completion blocked until it is reached. Users earn whole tokens from timed custom activities, manually controlled runs/walks, and calibrated study-compatible camera observations. They allocate tokens among four simulated drawers and roll with a total-stake win decision followed by weighted drawer selection. Dashboard goals are activity/time targets scheduled today only, daily, or on selected weekdays. Each local date has separate progress; no aggregate weekly targets.
 
 The source-of-truth data is transactional: one completion credit, one roll debit/outcome, and an idempotent durable locker delivery. Study frames are analyzed transiently and discarded. Looking down to read/write is valid; the model does not prove cognitive attention or inspect screen content. See [research.md](research.md) for decisions, official sources, and explicit defaults.
 
@@ -40,7 +40,7 @@ The source-of-truth data is transactional: one completion credit, one roll debit
 | Simulator first | Pass | Pass | Four-drawer adapter and durable event/receipt contract; physical transport deferred |
 | Accessible verification | Pass | Pass | Keyboard/labeled forms and status states; domain, RLS, concurrency, browser/device checks |
 
-Constitution v1.0.1 applies. No exceptions. Gates are design checks; implementation must still supply evidence.
+Constitution v1.1.0 applies. No exceptions. Gates are design checks; implementation must still supply evidence.
 
 ## Project Structure
 
@@ -91,6 +91,7 @@ supabase/
 
 ## Lifecycle and Model Decisions
 
+- Every custom task has a required minimum >= 1,800,000 ms; enforce required/non-null/inclusive bounds in UI, API, database constraints and captured session snapshots. Exactly 30 minutes is accepted and 29:59 cannot complete a 30-minute task.
 - Custom/run/walk timers are server-clock intervals with manual pause/resume; stationary time counts for runs. Keep GPS distance/coverage separate, segment on pause/gaps, and never invent missing fixes. Restoring a page recovers the same timer state; offline changes remain visibly unsaved until acknowledged.
 - Studbot uses ML landmarks plus calibrated orientation rules, not a nonexistent pretrained attention classifier. Five-second screen/book calibration, two-second reacquisition, five-second pending-away grace and unknown-state exclusion are specified in the ML and data contracts.
 - Keep one unfinished session per user to prevent simultaneous earning. Completion credits floor(milliseconds / 1,800,000); canceled sessions earn nothing. Distinct completed sessions may earn again from new time.

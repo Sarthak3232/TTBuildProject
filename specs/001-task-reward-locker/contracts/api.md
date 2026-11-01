@@ -11,8 +11,8 @@ Mutations that create or transition resources require an `Idempotency-Key` UUID 
 | Method and path | Input | Output/behavior |
 | --- | --- | --- |
 | GET/PATCH `/profile` | displayName/timezone for patch | Own profile; timezone change affects new schedules only |
-| GET/POST `/tasks` | name, optional minimumMs > 1,800,000, optional reflectionQuestion | Own predefined/custom tasks; POST creates custom type only |
-| PATCH `/tasks/{id}` | editable fields, revision | Update own task; existing completions remain snapshots |
+| GET/POST `/tasks` | name, required minimumMs >= 1,800,000, optional reflectionQuestion | Own predefined/custom tasks; POST creates custom type only |
+| PATCH `/tasks/{id}` | editable fields, revision | Update own task; reject null/below-30-minute custom minimum; omitted PATCH fields retain existing required values; existing completions remain snapshots |
 | POST `/sessions` | taskId | Start one unfinished session; returns server clock/state/revision; may need calibration first |
 | GET `/sessions/current` | none | Persisted current session plus serverTime; restore running timer or paused study state honestly |
 | POST `/sessions/{id}/controls` | action pause/resume/cancel, revision | Apply timestamped state transition; a new request is needed for each deliberate action |
@@ -35,6 +35,8 @@ Mutations that create or transition resources require an `Idempotency-Key` UUID 
 | GET `/rolls/{id}` | none | Fixed outcome and separate delivery/entitlement status; refresh returns this result |
 | POST `/rolls/{id}/retry-delivery` | none | Requeue existing unresolved event only; no new outcome or cost |
 | POST `/simulator/settings` | online, failureMode | Own simulated locker only; visible simulation controls; no direct balance/outcome mutation |
+
+Custom-task creation requires an integer `minimumMs >= 1_800_000`; reject missing, null, disabled, and smaller values with 422. Exactly `1_800_000` is valid. Partial edits may retain the existing minimum but cannot remove it. Completion below the selected required minimum returns 422 and creates no completion, ledger entry, or reward.
 
 ## Roll probabilities
 

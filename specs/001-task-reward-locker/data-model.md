@@ -8,7 +8,7 @@ Design artifact, not an implemented database schema. All instants are UTC; calen
 | --- | --- | --- |
 | Profile | user_id, display_name, timezone, created_at | One per auth user; valid IANA timezone; ownership root |
 | Wallet | user_id, balance, version | One per user; balance >= 0; updates only by restricted transactional functions |
-| TaskDefinition | id, user_id, kind, name, description, minimum_ms?, reflection_question?, archived_at? | kind study/run/walk/custom; predefined kinds seeded per account; one question maximum; custom minimum absent or > 1,800,000 ms |
+| TaskDefinition | id, user_id, kind, name, description, minimum_ms (required for custom), reflection_question?, archived_at? | kind study/run/walk/custom; predefined kinds seeded per account; one question maximum; custom minimum required and >= 1,800,000 ms (30 minutes) |
 | ActivitySession | id, user_id, task_id, task_snapshot, state, pause_reason?, started_at, active_since?, accumulated_ms, eligible_ms, revision, policy_version, calibration_id? | One unfinished earning session per user, including paused sessions; owner/task must match; state transitions versioned |
 | SessionInterval | id, session_id, kind, start_at, end_at, eligibility, sequence | Unique sequence/session; no overlap within session; bounded server time; kind timer/study; canceled sessions excluded from summaries |
 | FocusCalibration | id, user_id, screen_orientation, book_orientation, thresholds, model_version, expires_at | Stores aggregate calibration parameters, not frames or full landmarks; expires after 24 hours or camera-position/model change |
@@ -39,7 +39,7 @@ Use database foreign keys and checks for ownership-consistent references, nonneg
 - Studbot requires fresh authenticated inference observations. Hidden page, unavailable camera, unknown classification, or inference older than three seconds stops study credit immediately. Auto-paused study reacquires after two consecutive valid seconds. Manual pause needs manual Resume and stops capture.
 - Planning default for the five-second away grace: hold candidate-away time pending. If compatible behavior returns before five seconds, treat the short glance as allowed; if away reaches five seconds, discard the whole away interval and auto-pause. Completing during unresolved away time excludes it. Reacquisition time itself is not retroactively credited.
 - Time is preserved across automatic pauses and refresh; unobserved study gaps are not credited. One unfinished session excludes simultaneous earning from another tab/type.
-- Completion atomically locks session/wallet, validates minimum and reflection, closes intervals, creates the snapshot and ledger entry, credits whole tokens, and releases the active-session slot. A user below a configured minimum can resume or cancel, not complete. Cancellation creates no completion/reward and removes provisional goal progress.
+- Completion atomically locks session/wallet, validates minimum and reflection, closes intervals, creates the snapshot and ledger entry, credits whole tokens, and releases the active-session slot. A custom-task user below the required selected minimum can resume or cancel, not complete. The database must reject a custom definition or captured custom-session minimum that is missing, null, or below 1,800,000 ms; predefined activities may use a nullable minimum. Cancellation creates no completion/reward and removes provisional goal progress.
 
 ## Daily goal behavior
 
