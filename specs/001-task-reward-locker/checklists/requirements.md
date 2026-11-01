@@ -16,26 +16,24 @@
 ## Requirement Completeness
 
 - [x] No clarification markers remain.
-- [ ] Requirements are testable and unambiguous.
+- [x] Requirements are testable and unambiguous.
 - [x] Success criteria are measurable and technology-agnostic.
-- [ ] Acceptance scenarios have final eligibility, probability, and hardware rules.
+- [x] Acceptance scenarios have final eligibility, probability, and hardware rules.
 - [x] Edge cases identified.
 - [x] Scope bounded with provisional assumptions recorded.
 - [x] Dependencies and assumptions identified.
 
 ## Feature Readiness
 
-- [ ] All requirements have final acceptance criteria.
+- [x] All requirements have final acceptance criteria.
 - [x] User scenarios cover primary flows.
-- [ ] Product decisions allow all measurable outcomes to be evaluated.
+- [x] Product decisions allow all measurable outcomes to be evaluated.
 - [x] Implementation mechanisms deferred to planning.
 
 ## Notes
 
-- Current review: 11/15 criteria pass. No clarification markers remain, but the draft explicitly lists unresolved session/task and implementation details; absence of a marker does not establish readiness.
-- Confirmed: per-session time rewards without carryover; two-stage single-drawer rolls; simulator-first scope; React/Next.js + Supabase + FastAPI; Studbot calibrated presence/orientation; automatic resume after two valid seconds.
-- Exact interpolation and proportional drawer weighting are documented defaults rather than formulas supplied by the user.
-- Custom-task time is now confirmed: built-in start/stop timer with optional minimum target; no manually reported duration for rewards.
-- Other pending details include Studbot grace-window accounting, model evaluation/calibration and interrupted-session recovery; transient server-side camera analysis without saved footage is confirmed.
-- Constitution v1.0.0 is established. Planning is in progress; the current plan is not implementation-ready.
-- See `clarification-review.md` for historical review changes and `spec.md` for the latest decisions and assumptions.
+- Current requirements-quality review: 15/15 pass after user decisions and explicit planning defaults. Checked boxes do not mean implementation or acceptance tests have passed.
+- User choices include time-based tokens without carryover, two-stage rolls, simulator first, React/Next.js + Supabase + FastAPI, Studbot orientation/auto-resume/transient frames, timed custom tasks, manual run/walk controls, and scheduled daily goals without weekly targets.
+- The exact win interpolation, proportional drawer weighting, calibration tolerances, grace accounting, recovery, and GPS distance filters are documented defaults in the spec/research/contracts.
+- Constitution v1.0.1 applies. Phase-one planning artifacts are complete; next is task breakdown. No application source, migrations, models, or runtime tests have been implemented.
+- Model quality, sensor behavior and transaction invariants must satisfy quickstart acceptance criteria before shipping; these are implementation validations, not unresolved product questions.
