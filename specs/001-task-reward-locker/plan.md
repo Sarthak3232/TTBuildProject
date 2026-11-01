@@ -6,6 +6,8 @@
 
 ## Current milestone
 
+The immediate assignment is [issue #5](https://github.com/Sarthak3232/TTBuildProject/issues/5): **Supabase schema setup only**. Create configuration, migrations, core tables, constraints/RLS, signup provisioning, generated schema types and SQL checks. Supabase clients, login pages, route protection, API services and runtime earning/progress logic are later application-integration work. The broader milestone below describes the subsequent product scope, not functionality delivered by the schema issue.
+
 The user confirmed auth/profiles, tasks, activity/history, daily goals and **token earning** as the current delivery scope. Persist current balances in `tokenBalance`. Redeem/spending, locker/compartment provisioning, probability logic and delivery infrastructure wait until hardware readiness. The Redeem route stays a placeholder; none of its tables/services are prerequisites for signup or earning. Auth setup first creates profiles, zero balances and predefined task definitions; the activity tasks add measured earning afterward.
 
 ## Summary

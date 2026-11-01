@@ -6,6 +6,8 @@
 
 ## Current Scope — Auth, Activity and Token Earning
 
+**Immediate assignment — [issue #5](https://github.com/Sarthak3232/TTBuildProject/issues/5):** Database setup only. Target T003 and the schema/provisioning deliverables of T008; include SQL-only portions of T007, T013, T054 and the required DB tooling from T004/T005. No Next.js clients, auth pages, protected routes, application APIs or runtime earning/progress logic are included. Broader-task checkboxes remain unchecked until their entire acceptance scope and prerequisites pass; database setup does not finish T009–T011, T014–T016 or the foundation integration gate. Study/GPS-specific schema remains with T037/T048.
+
 User confirmation on 2026-11-01: keep earning/saving tokens in `tokenBalance`; defer redemption and hardware-facing database work until the hardware is ready. Auth setup provisions a profile, zero balance and predefined tasks, without lockers/compartments or roll-table dependencies. Activity/session/goal/history and study/GPS tables follow their feature tasks. Keep atomic earning entries and completion deduplication so retries cannot award twice.
 
 **Deferred:** US2 **T025–T035**, locker/compartment provisioning (moved from T008 to T026), roll-linked ledger columns/foreign keys, spending, probability logic and delivery-worker configuration. Their IDs and unchecked status remain in the full-product backlog. Redeem keeps its placeholder route; visual design previews do not activate spending.
