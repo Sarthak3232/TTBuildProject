@@ -7,7 +7,7 @@
 - React/Next.js mobile-friendly web frontend.
 - Supabase for authentication and PostgreSQL data.
 - FastAPI for ML models, including the selected MediaPipe-based Studbot pipeline.
-- Four simulated compartments before real hardware.
+- User-directed delivery change: keep auth/activity and token earning now; defer spending, redemption and locker/delivery schema until hardware readiness. The earlier simulator-first order is superseded; retained roll/simulator details describe the future milestone.
 - Per-session whole tokens, no remainder carryover; server-controlled two-stage rolls.
 
 ## Verified Browser Boundary

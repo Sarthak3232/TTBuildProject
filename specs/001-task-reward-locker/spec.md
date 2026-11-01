@@ -8,11 +8,15 @@
 
 ## Clarifications
 
+### Current delivery scope — 2026-11-01
+
+The user deferred redemption, spending, locker/drawer databases, roll probabilities and unlock delivery until the hardware is ready. Accounts, profiles, task/activity records, history, daily goals and earning tokens remain in the current plan. The current balance table is named `tokenBalance`, with one whole token per full 30 qualifying minutes in a completed session. This supersedes the earlier simulator-first delivery order; the redemption scenarios and requirements below are retained as deferred design, not prerequisites for auth or activity earning. The Redeem route remains a placeholder until that later milestone.
+
 ### Session 2026-11-01
 
 - Q: How should tasks earn tokens? → A: Time-based tokens, using one token per 30 minutes as the starting rate. Per-session rounding was resolved in the follow-up below; unmeasured tasks do not earn time-based tokens.
 - Q: How many items can one roll unlock, and how is the result chosen? → A: At most one drawer per roll. First determine whether anything is won; if so, select one of the four drawers using the token allocations. One token uses the baseline win chance; adding tokens increases the overall win chance and the chance of receiving the drawer receiving those tokens. The percentage anchors are resolved in the final clarification below.
-- Q: What is the initial hardware scope? → A: Simulate all four compartments initially and connect physical hardware later.
+- Q: What is the initial hardware scope? → A: Originally simulate all four compartments first. Superseded by the current delivery scope: redemption and locker database work wait until hardware readiness; earning tokens remains in scope.
 - Q: Should leftover minutes carry over between completed tasks? → A: No. Calculate whole tokens separately for each completed session and discard its leftover minutes.
 - Q: What should the overall win probability be? → A: One token gives 20%; ten or more tokens should be around 60%; more tokens should improve the probability, and it should never be zero. The selected interpolation below approaches 60% with diminishing increases, giving approximately 58% at ten tokens.
 
@@ -60,7 +64,7 @@ A user creates a named task with a required minimum-duration target of at least 
 
 A user allocates tokens among items in four simulated compartments, reviews the total cost and chances, then rolls to unlock at most one compartment. These represent the later physical locker.
 
-**Why this priority**: The locker reward loop is the product's central differentiator; a simulator makes it usable before physical integration.
+**Delivery status**: Deferred until hardware readiness. The recorded P1 label reflects the original full-product priority, not the current execution order. Auth, tracking and token earning do not wait for this story.
 **Independent Test**: With a controlled balance and simulated locker, make an allocation and force known winning/losing outcomes; verify spending, recorded results, and exactly zero or one matching simulated unlock.
 
 **Acceptance Scenarios**:
@@ -175,7 +179,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - **FR-015**: Charge the entire accepted allocation once for wins or losses and preserve a fixed recoverable outcome that cannot be manipulated or rerolled.
 - **FR-016**: Send each roll result, including no-win, to the associated locker simulator; only a winning result authorizes its matching compartment unlock. Keep the outcome separate from acknowledgement. The simulator must support successful delivery, offline state, and acknowledgement failure so retries can be verified before physical integration.
 - **FR-017**: Preserve winning entitlements through delivery failures and permit retry without rerolling, another charge, or duplicate unlocks.
-- **FR-018**: Initial delivery must work without physical hardware using four simulated compartments. Support locker association, item labels/loading, lock state, collection, and reload/reset to a locked state. Physical controller choice, communication transport, and real actuator integration are deferred; preserve the same roll-result and acknowledgement behavior for later integration.
+- **FR-018**: Redemption and locker provisioning are deferred until hardware readiness and must not block signup, activity completion or token earning. In that later milestone, support a personal four-compartment locker, item labels/loading, lock state, collection and reload/reset. Preserve fixed roll results and retry-safe acknowledgements across device adapters; a simulator may support recovery tests. Hardware transport and controller details require the later hardware interface.
 - **FR-019**: Provide responsive layouts, readable progress summaries and completion logs, clear control labels, keyboard navigation, visible focus, sufficient contrast, and reduced-motion support.
 - **FR-020**: Request camera/location for the relevant activities and explain denied/unavailable access. During an active Studbot session, send occasional sampled camera frames through an authenticated backend to FastAPI for live analysis, then discard frame buffers after the request. Explain this processing before starting the camera. Do not save study images/video to files, database/object storage, application logs, analytics, or backups. Persist only the aggregate observation/session results needed for counted time and history. Stop capture/transmission when the session ends or is manually paused. An automatic observation pause may continue sampling to detect the valid study position required for automatic resume, while no paused time is credited. Saved run/walk routes remain private to the account.
 
@@ -210,7 +214,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 ## Assumptions
 
 - Users lock their own discretionary items. Tokens are earned only; purchase, transfer, and cash-out are outside this scope.
-- Start with one personal four-compartment simulated locker per user; shared lockers/admin roles are outside initial scope.
+- When redemption is enabled after hardware readiness, provision one personal four-compartment locker per user; shared lockers/admin roles remain outside scope. Signup in the current milestone provisions no locker or compartments.
 - Confirmed platform/stack: mobile-friendly React/Next.js web app, Supabase for account/data services, and FastAPI for ML models. Live camera/GPS observations require foreground browser availability; reliable screen-locked/background route tracking is outside the web capability. This does not require movement-based auto-pause or prevent custom/run/walk timer recovery from server timestamps.
 - Camera-processing choice is confirmed: sampled frames reach FastAPI for transient analysis and are discarded, with no saved footage. The authenticated input contract and bounded in-memory handling must implement this decision.
 - Daily goals are specific activities with individual time targets and calendar-style today-only, daily, or selected-weekday scheduling. A full calendar page, notifications, end dates, and arbitrary interval/monthly recurrence are not implied by this choice. Separate aggregate weekly targets are explicitly excluded. Distance-based goals are not selected.
@@ -218,7 +222,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - The user requested MediaPipe plus an ML classifier for Studbot. Preserve this implementation preference for technical planning.
 - Study/run rewards use FR-008's per-session time rule; there is no additional configured minimum for those predefined activities by default. Every custom task requires a selected minimum of at least 30 minutes, including exactly 30 minutes, and must meet that minimum before completion. This requirement is a confirmed user rule, not an optional/default setting.
 - Default lifecycle behavior is defined in [data-model.md](data-model.md) and the [ML contract](contracts/ml.md): preserve server-clock manual timers across refresh, exclude unobserved study time, reacquire study after two valid seconds, and keep goal progress provisional until completion. Physical emergency/manual-access design is deferred with real hardware; simulated collection/reload is in the locker contract.
-- Initial dependencies are a four-compartment locker simulator, camera access, and location/map access. Physical locks/controller and their transport are later integration dependencies.
+- Current activity features depend on their required camera/location/map access, not a locker simulator. Physical locks/controller readiness gates the later redemption milestone.
 - Simulated locker behavior is for validating the app; physical unlock acceptance is outside initial delivery.
 - Stage one interprets “10+ tokens like 60%” as a smooth approach to a 60% upper limit, rather than a hard plateau at ten tokens, preserving increasing odds. This interpolation is adjustable after product testing.
 - Stage-two proportional weighting is an explicit default interpretation, not a user-specified formula. Example: three tokens on drawer A and one on B gives A 75% and B 25% conditional on winning; the overall chance is based on four tokens.

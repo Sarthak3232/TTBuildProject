@@ -2,6 +2,10 @@
 
 Planned JSON interface under `/api/v1`, implemented by Next.js. Auth routes use Supabase Auth. Except auth/public health endpoints, require a valid cookie session verified server-side. Derive user ID from auth; never accept a request-body owner ID. Return 404 for another user's resource. Use same-origin/CSRF protection for cookie mutations, schema validation, and per-user rate limits.
 
+## Current milestone
+
+Auth/profile, task/activity, earning, goals/history and their study/GPS integrations are current scope; balances persist in `tokenBalance`. Locker, simulator-settings, roll-quote, roll-result and retry-delivery endpoints below are deferred until hardware readiness. Do not create their tables or require their availability for signup/completion. Balance/history endpoints initially report earning entries only; spending is added with redemption.
+
 ## Common envelopes
 
 Success: `{data: ...}`. Error: `{error: {code, message, retryable, fieldErrors?}}`.
