@@ -1,6 +1,6 @@
 # Feature Specification: Task Reward Locker
 
-**Feature Branch**: `codex/task-reward-spec`; feature discovery uses `.specify/feature.json`.
+**Feature Branch**: `task-reward-spec`; feature discovery uses `.specify/feature.json`.
 **Repository**: https://github.com/Sarthak3232/TTBuildProject
 **Created**: 2026-11-01
 **Status**: Additional clarification in progress — reward/roll rules and web stack selected; Studbot presence/orientation rule confirmed; further task/session details being clarified
@@ -106,11 +106,11 @@ A user sets specific daily activity goals with duration targets, sees each goal'
 **Acceptance Scenarios**:
 
 1. **Given** Dashboard, **When** the user sets daily goals such as Study for 60 minutes and Walk for 30 minutes, **Then** each has its own activity label, duration target, and progress display.
-5. **Given** a daily Study goal of 60 minutes and 35 qualifying study minutes today, **When** Dashboard is viewed, **Then** that goal shows 35/60 minutes and remains incomplete. At 60 minutes it is marked complete; walking does not advance the Study goal.
-6. **Given** two completed 20-minute study sessions on the same day, **When** daily goal progress and tokens are calculated, **Then** the Study goal receives 40 minutes of progress while those sessions earn zero tokens under the independent per-session reward rule.
-2. **Given** today's activity, **When** Dashboard opens, **Then** current tokens, tokens earned today, and today's completed tasks are shown.
-3. **Given** saved completions, **When** History opens, **Then** task names, descriptions/reflections, dates/times, and rewards appear newest first, grouped by day.
-4. **Given** History, **When** this-week, this-month, or all-time is selected, **Then** entries and summary totals match that period.
+2. **Given** a daily Study goal of 60 minutes and 35 qualifying study minutes today, **When** Dashboard is viewed, **Then** that goal shows 35/60 minutes and remains incomplete. At 60 minutes it is marked complete; walking does not advance the Study goal.
+3. **Given** two completed 20-minute study sessions on the same day, **When** daily goal progress and tokens are calculated, **Then** the Study goal receives 40 minutes of progress while those sessions earn zero tokens under the independent per-session reward rule.
+4. **Given** today's activity, **When** Dashboard opens, **Then** current tokens, tokens earned today, and today's completed tasks are shown.
+5. **Given** saved completions, **When** History opens, **Then** task names, descriptions/reflections, dates/times, and rewards appear newest first, grouped by day.
+6. **Given** History, **When** this-week, this-month, or all-time is selected, **Then** entries and summary totals match that period.
 
 ### User Story 6 - Maintain a personal profile (Priority: P2)
 

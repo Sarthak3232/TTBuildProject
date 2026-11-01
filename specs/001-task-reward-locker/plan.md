@@ -1,6 +1,6 @@
 # Implementation Plan: Task Reward Locker
 
-**Branch**: `codex/task-reward-spec` | **Date**: 2026-11-01 | **Spec**: [spec.md](spec.md)
+**Branch**: `task-reward-spec` | **Date**: 2026-11-01 | **Spec**: [spec.md](spec.md)
 
 **Status**: In progress — the user selected the stack and requested further specification questions. This is not an implementation-ready plan.
 
