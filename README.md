@@ -18,7 +18,20 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Project status:** Specifications, technical planning, and a 72-task implementation backlog are complete. The application, firmware, and physical locker are planned deliverables. Initial development uses four simulated drawers before connecting real hardware.
+> **Project status:** The basic Next.js application shell has five main pages, a shared sidebar, and Studbot/run-tracker routes. The tables below describe planned features; activity tracking, accounts, rewards, backend services, firmware, and the locker are still pending. Initial locker development will use four simulated drawers before connecting real hardware.
+
+## Run the starter app
+
+Use Node.js 22.20+ and npm 10.9.3+. If you use nvm, run `nvm use` first.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open [localhost:3000](http://localhost:3000). The root redirects to `/dashboard`. This starter needs no environment variables or backend services.
+
+Run `npm run check` for lint, TypeScript checking, and a production build. `npm run start` serves the production build. See [Contributing](CONTRIBUTING.md) for the page file map and how to start a teammate branch.
 
 ## Page-by-page features
 
@@ -99,7 +112,7 @@ Check the Dashboard for today's goals and earnings, or filter History to review 
 
 ## Tech stack
 
-The planned stack covers the web app, activity tracking, ML service, and locker firmware. Training and continuous-streaming additions are identified below; the application and models are not implemented yet.
+The stack below covers the web app, activity tracking, ML service, and locker firmware. React, Next.js, TypeScript, and the basic CSS layout are installed in the starter; backend, tracking, ML, and hardware integrations remain planned. Training and continuous-streaming additions are identified below.
 
 ### Application, services, and hardware
 
@@ -152,14 +165,14 @@ flowchart LR
 
 ## Project documentation
 
-Detailed planning documents are maintained on the [`task-reward-spec`](https://github.com/Sarthak3232/TTBuildProject/tree/task-reward-spec) branch.
+Detailed planning documents are included in this branch. The implementation checklist records completed work separately from the remaining feature backlog.
 
 | Document | What you will find |
 | --- | --- |
-| [Project constitution](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/.specify/memory/constitution.md) | Guiding principles, product boundaries, and verification rules. |
-| [Feature specification](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/spec.md) | All features, user decisions, scenarios, and acceptance criteria. |
-| [Technical plan](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/plan.md) | Architecture and delivery sequence. |
-| [Data model](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/data-model.md) | Records, relationships, and lifecycle rules. |
-| [Interface contracts](https://github.com/Sarthak3232/TTBuildProject/tree/task-reward-spec/specs/001-task-reward-locker/contracts) | Application, ML-service, and locker interfaces. |
-| [Implementation checklist](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/tasks.md) | 72 ordered tasks covering the planned implementation. |
-| [Validation guide](https://github.com/Sarthak3232/TTBuildProject/blob/task-reward-spec/specs/001-task-reward-locker/quickstart.md) | Planned setup commands and the checks required before completion. |
+| [Project constitution](.specify/memory/constitution.md) | Guiding principles, product boundaries, and verification rules. |
+| [Feature specification](specs/001-task-reward-locker/spec.md) | All features, user decisions, scenarios, and acceptance criteria. |
+| [Technical plan](specs/001-task-reward-locker/plan.md) | Architecture and delivery sequence. |
+| [Data model](specs/001-task-reward-locker/data-model.md) | Records, relationships, and lifecycle rules. |
+| [Interface contracts](specs/001-task-reward-locker/contracts) | Application, ML-service, and locker interfaces. |
+| [Implementation checklist](specs/001-task-reward-locker/tasks.md) | 72 ordered tasks with completion and partial-scope notes. |
+| [Validation guide](specs/001-task-reward-locker/quickstart.md) | Runnable starter setup and future full-system acceptance checks. |
