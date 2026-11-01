@@ -8,7 +8,7 @@ A task and goal app where users earn tokens through study, runs/walks, and custo
 - Custom tasks use a built-in start/stop timer; setting a minimum-duration target is optional. Manual duration entry does not award tokens.
 - Two-stage rolls: total tokens determine win/no-win; after a win, drawer allocations determine which single item unlocks. One token uses a baseline chance and additional tokens improve it. Overall win chance starts at 20% for one token and approaches 60% (about 58% at ten tokens).
 - Four simulated locker compartments first; real hardware integration later.
-- Daily goals target specific activities and durations, such as Study for 60 minutes, with individual progress displays. Schedule them for today only, every day, or selected weekdays; each date has its own progress.
+- Daily goals target specific activities and durations, such as Study for 60 minutes, with individual progress displays. Schedule them for today only, every day, or selected weekdays; each date has its own progress. Separate weekly targets are outside scope.
 - Dashboard, tasks, history, redeem, and profiles, with mint/deep-green visual references.
 
 ## Selected stack
@@ -21,4 +21,4 @@ Project-local Codex skills live in `.agents/skills/`; templates and scripts live
 
 The active feature is [`specs/001-task-reward-locker/spec.md`](specs/001-task-reward-locker/spec.md). Its review checklist and supplied screenshots are alongside it. Feature state in `.specify/feature.json` is local and intentionally ignored by Git.
 
-The initial clarification pass is recorded, project constitution v1.0.0 is established, and planning is being revised around the selected stack. Continue product clarification before finalizing the plan, task breakdown, and implementation. No app has been implemented yet.
+The initial clarification pass is recorded, project constitution v1.0.1 is established, and planning is being revised around the selected stack. Continue product clarification before finalizing the plan, task breakdown, and implementation. No app has been implemented yet.

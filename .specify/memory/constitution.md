@@ -47,7 +47,7 @@ remainder. Rolls have two stages: win/no-win from total allocation, then one dra
 from funded drawers. The current win curve starts at 20% and approaches 60%; its precise
 formula and proportional drawer-weighting assumption live in the feature spec.
 
-A user's locker contains exactly four compartments. Daily/weekly goals, task history, and
+A user's locker contains exactly four compartments. Scheduled daily goals, task history, and
 profile data MUST derive from the same persisted activity records. Platform limits, tracking
 coverage, and interrupted-session behavior MUST be documented before the relevant feature ships.
 
@@ -71,4 +71,4 @@ existing governance obligations; minor versions add substantive principles; patc
 wording without changing obligations. Plans and reviews MUST identify constitution violations
 and justify exceptions explicitly. User instructions take precedence over this document.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
+**Version**: 1.0.1 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
