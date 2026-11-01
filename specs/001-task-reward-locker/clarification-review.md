@@ -30,3 +30,5 @@ The user selected React/Next.js, Supabase, and FastAPI for ML and explicitly req
 Latest update: Studbot presence/orientation recommendation accepted, including reading/writing, calibration, brief-glance tolerance, initial five-second sustained-away pause, and no initial phone detection. The related marker is resolved; checklist returns to 11/15 (no regressions). Further session behavior questions are still authorized and pending, so this does not establish final plan readiness.
 
 Automatic Studbot resume accepted: two consecutive valid seconds after an automatic pause, with earlier qualifying time preserved and reacquisition restarted by invalid/unknown observations. Checklist re-evaluated: 11/15 unchanged, no newly passing items or regressions; remaining lifecycle/task/ML-contract details still prevent final plan readiness.
+
+Custom-task time decision accepted: built-in start/stop timer with pause/resume, optional minimum target, and no reward-bearing manual duration entry. Updated spec scenarios/requirements, plan, research, and checklist notes. Checklist re-evaluated: 11/15 unchanged; remaining session/ML/goal details still precede final plan readiness.

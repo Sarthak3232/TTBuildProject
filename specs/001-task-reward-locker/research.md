@@ -52,6 +52,10 @@ Face landmarks can support orientation rules but not cognitive attention. Phone 
 
 Sources: [MediaPipe FaceLandmarker Python](https://developers.google.com/edge/mediapipe/solutions/vision/face_landmarker/python), [object detector Python](https://developers.google.com/edge/mediapipe/solutions/vision/object_detector/python), [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/), [FastAPI concurrency](https://fastapi.tiangolo.com/async/), [Starlette request streaming](https://starlette.dev/requests/), [FastAPI uploads](https://fastapi.tiangolo.com/tutorial/request-files/).
 
+## Custom Task Time — Confirmed
+
+The user selected a built-in start/stop timer, not manually reported duration. A minimum-duration target remains optional; measure active time even with no target, exclude paused intervals, and calculate whole tokens per completed session. This is a self-accountability timer, not camera verification of custom activities.
+
 ## Pending Product Decisions
 
 Studbot presence/orientation meaning and the initial five-second sustained-away threshold are confirmed. Automatic resume after two valid seconds preserves previous time. Grace accounting, camera-processing privacy preference, task/session completion rules, and goal semantics need further clarification as requested by the user. Ask one consequential question at a time. No application implementation has been performed; final data model/contracts/validation guide follow the product answers.

@@ -22,21 +22,24 @@
 
 - Q: How should Studbot resume after an automatic pause? → A: Resume automatically after two consecutive seconds in a valid calibrated study position, preserving previously counted study time.
 
+- Q: How should custom tasks record time for earning tokens? → A: Use a built-in start/stop timer while doing the task. A configured minimum duration remains optional; the timer measures qualifying time even when no minimum is set. Do not award tokens from manually entered duration.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Complete custom tasks and earn tokens (Priority: P1)
 
-A user creates a named task with an optional minimum timer and one optional reflection question, completes it, and earns tokens.
+A user creates a named task with an optional minimum-duration target and one optional reflection question, uses its built-in start/stop timer, completes the task, and earns tokens from measured active time.
 
 **Why this priority**: Establishes the effort-to-reward loop without camera or location dependencies.
 **Independent Test**: Create and complete a crochet task, then verify its history record and one reward credit under the selected policy.
 
 **Acceptance Scenarios**:
 
-1. **Given** Tasks, **When** the user selects Add task, **Then** they can enter a name, optional minimum duration, and one optional completion question such as “What did you make?”.
+1. **Given** Tasks, **When** the user selects Add task, **Then** they can enter a name, optional minimum-duration target, and one optional completion question such as “What did you make?”.
 2. **Given** a timed task, **When** counted time is below its configured minimum, **Then** completion and rewards remain unavailable.
 3. **Given** satisfied timing and a nonblank answer to the configured question, **When** completion is confirmed, **Then** one completion and its token credit are saved, including after repeated submissions.
-4. **Given** an untimed task without a question or measured qualifying time, **When** the user confirms completion, **Then** it is recorded with zero earned tokens.
+4. **Given** a task without a minimum-duration target, **When** the user starts and stops its built-in timer, **Then** measured active time determines its reward; a 15-minute completed session earns zero tokens.
+7. **Given** a custom task, **When** the user views its controls, **Then** they can start, pause/resume, and stop its timer, but cannot enter or edit duration to award tokens. Paused intervals do not count.
 5. **Given** a completed eligible 45-minute session, **When** rewards are calculated, **Then** it earns one token and the extra 15 minutes are discarded. A separate completed 15-minute activity earns zero tokens.
 6. **Given** a completed eligible 60-minute session, **When** rewards are calculated, **Then** it earns two tokens. Any configured custom-task minimum must also be met.
 
@@ -136,11 +139,11 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - **FR-001**: Provide Dashboard, Tasks, History, Redeem, and Profile with consistent navigation and a visible current destination.
 - **FR-002**: Provide user accounts, editable display names, private progress, and authorization for locker control.
 - **FR-003**: Include Studbot and run/walk as the two predefined task types; allow additional custom tasks.
-- **FR-004**: Custom tasks must support a name, optional minimum timer, and at most one optional completion question. A configured question requires a nonblank answer to complete.
-- **FR-005**: Count active custom-task time and qualifying Studbot focus time. Provisional interpretation: a configured custom minimum must be strictly greater than 30 minutes; untimed custom tasks remain allowed.
+- **FR-004**: Custom tasks must support a name, optional minimum-duration target, and at most one optional completion question. A configured question requires a nonblank answer to complete.
+- **FR-005**: Every custom task must offer a built-in start/stop timer with pause/resume; measure active time even when no minimum target is set, exclude paused intervals, and do not permit manual duration entry to award tokens. Count qualifying Studbot time using its selected classification rules. Provisional interpretation of the original duration constraint: a configured custom minimum must be strictly greater than 30 minutes; setting a minimum remains optional.
 - **FR-006**: Studbot must classify observable study-compatible behavior using presence plus orientation toward the calibrated screen or book/notebook area. Reading and writing while looking down are valid. Provide a short calibration for both positions, tolerate brief glances, and use an initial five-second sustained-away threshold before auto-pause. Camera failure, poor lighting, or blocked view must produce an unable-to-verify state rather than a distraction judgment; unverifiable intervals do not earn qualifying time. Show the state and counted time. Phone detection is outside the first version. Validate representative reading, writing, screen-facing, absent, and sustained-away cases before implementation; the classifier must not claim cognitive attention or knowledge of screen content. After an automatic pause, resume automatically only after two consecutive seconds in a valid calibrated study position, preserving all previously counted qualifying time. Invalid or unknown observations reset the two-second reacquisition interval. Exact grace-window accounting remains a planning detail to document before implementing the session lifecycle.
 - **FR-007**: Run/walk tracking must show route/map, distance, active time, start, pause/resume, stop, and a saved summary.
-- **FR-008**: Rewards must depend on qualifying active time across custom tasks, Studbot, and runs/walks, using one whole token per 30 minutes as the starting rate. Credit accepted activity once and preserve earning/spending history. Calculate each completed session separately: tokens = floor(qualifying seconds / 1800). Discard the remainder; do not carry it into other sessions. Untimed custom tasks remain recordable, but must not award time-based tokens without qualifying measured time. Proposed default: separate repeated sessions can earn through new non-overlapping qualifying time; this is an assumption, not a confirmed answer.
+- **FR-008**: Rewards must depend on qualifying active time across custom tasks, Studbot, and runs/walks, using one whole token per 30 minutes as the starting rate. Credit accepted activity once and preserve earning/spending history. Calculate each completed session separately: tokens = floor(qualifying seconds / 1800). Discard the remainder; do not carry it into other sessions. Custom-task rewards must use its built-in timer's measured active time; no minimum target is required for earning, and manually reported duration cannot earn tokens. Proposed default: separate repeated sessions can earn through new non-overlapping qualifying time; this is an assumption, not a confirmed answer.
 - **FR-009**: Support daily/weekly completion-count goals and show progress, today's completed tasks, balance, and tokens earned today on Dashboard.
 - **FR-010**: Preserve completion-time task name, type, description/reflection, applicable duration, date/time, and reward; retain route/distance for runs/walks.
 - **FR-011**: History must show completed tasks newest first by day with this-week, this-month, and all-time filters and matching totals.
@@ -191,7 +194,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Users label their items; automated item recognition is outside scope.
 - The user requested MediaPipe plus an ML classifier for Studbot. Preserve this implementation preference for technical planning.
 - Screenshot branding “MINT”, names, streaks, sample totals, extra navigation destinations, and “1 token = 1 slot roll” are examples rather than confirmed requirements.
-- Study/run rewards use FR-008's per-session time rule; there is no additional configured minimum by default. Strictly greater than 30 minutes for timed custom tasks is provisional.
+- Study/run rewards use FR-008's per-session time rule; there is no additional configured minimum by default. Strictly greater than 30 minutes for a configured custom minimum is provisional; all custom tasks measure time, with or without a minimum target.
 - Background/hidden-page behavior, interrupted-session recovery, Studbot grace-window accounting, calibration tolerances, locker provisioning, collection confirmation, and manual/emergency access need resolution before affected implementation tasks begin. The observable presence/orientation rule itself is confirmed.
 - Initial dependencies are a four-compartment locker simulator, camera access, and location/map access. Physical locks/controller and their transport are later integration dependencies.
 - Simulated locker behavior is for validating the app; physical unlock acceptance is outside initial delivery.
@@ -200,4 +203,3 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Concurrent activities must not double-count the same elapsed time toward rewards; the chosen accounting policy must define how competing sessions are handled before implementation.
 - Project principles are established in `.specify/memory/constitution.md` v1.0.0. Planning is being revised around the user-selected stack; complete the requested further product clarification before finalizing it.
 
-Pending product question: should custom tasks measure qualifying time with a built-in start/stop timer, or let the user enter duration afterward? No answer has been selected. Existing measured-time requirements remain provisional until this is resolved.

@@ -8,6 +8,8 @@
 
 Build a mobile-friendly React/Next.js web app with Supabase accounts/data and a FastAPI model service. Preserve the selected time-based rewards, two-stage rolls, and four simulated compartments. Studbot uses calibrated presence plus orientation, allowing reading/writing while looking down; sustained absence/looking away initially pauses after five seconds. Phone detection is deferred. After an automatic pause, resume after two consecutive seconds of valid study position while preserving counted time. Grace accounting remains to be documented. Do not equate mere face presence with attention without a recorded product choice and model validation.
 
+Custom tasks use a built-in start/stop timer with pause/resume and an optional minimum-duration target. Rewards use measured active time; manually entered duration cannot grant tokens.
+
 ## Technical Context
 
 **Language/Version**: TypeScript/Node for the web app; Python for FastAPI/ML. Use the installed Node 22.20+ runtime; Python/model package compatibility and exact pins must be established for the selected model pipeline.
