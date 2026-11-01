@@ -12,6 +12,8 @@ Custom tasks use a built-in start/stop timer with pause/resume and an optional m
 
 Daily goals link a specific activity/task to a duration target and show individual progress (for example Study: 35/60 minutes). Daily progress may accumulate across matching sessions independently of per-session token rounding. Goal schedules support today only, every day, and selected weekdays, with separate per-date occurrences in the profile timezone. Separate aggregate weekly targets are explicitly excluded by the user; recurrence schedules daily goals only.
 
+Studbot camera frames are sampled and sent through the authenticated backend to FastAPI, processed transiently, and discarded without saving footage. Store aggregate observation/session results only. Finalize bounded input and inference contracts around this confirmed choice.
+
 ## Technical Context
 
 **Language/Version**: TypeScript/Node for the web app; Python for FastAPI/ML. Use the installed Node 22.20+ runtime; Python/model package compatibility and exact pins must be established for the selected model pipeline.
@@ -50,7 +52,7 @@ shared/              # contracts/fixtures when shared across services
 
 - Studbot presence/orientation behavior is selected. Automatic resume after two valid seconds is confirmed; resolve grace-window accounting and consequential task rules through the requested further questions.
 - Supabase SSR/RLS and restricted transaction RPC decisions are researched; carry them into the final data model and API contract after remaining product answers.
-- Choose the ML input contract and privacy handling consistent with the selected focus behavior.
+- The user selected transient server-side image analysis with no saved footage; finalize the authenticated ML input contract and verify bounded in-memory handling and log redaction.
 - Produce the data model, API/locker/ML contracts, and a realistic validation guide, then recheck constitution gates.
 
 The earlier provisional Better Auth/Prisma and browser-only inference choices are superseded by the user's explicit stack. Do not implement from that earlier draft.

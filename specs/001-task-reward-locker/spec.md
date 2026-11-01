@@ -30,6 +30,8 @@
 
 - Q: Should there be separate aggregate weekly targets? → A: No. Use scheduled daily activity goals only, with today-only, every-day, or selected-weekday recurrence.
 
+- Q: Where should Studbot camera images be processed? → A: Send occasional sampled frames to FastAPI for live analysis, then discard them without saving footage. This selects server-side image inference rather than device-only image processing.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Complete custom tasks and earn tokens (Priority: P1)
@@ -85,6 +87,8 @@ A user starts a study timer that counts qualifying focus time using camera-obser
 5. **Given** the qualifying duration is met, **When** the user completes the session, **Then** one completion and applicable token credit are recorded.
 6. **Given** an automatically paused session with saved qualifying time, **When** a valid calibrated study position is detected continuously for two seconds, **Then** it resumes automatically with the saved time intact.
 7. **Given** reacquisition lasting less than two seconds, **When** an invalid or unknown observation appears, **Then** the session stays auto-paused and the reacquisition interval restarts.
+8. **Given** the user starts Studbot, **When** camera sampling begins, **Then** the app explains that sampled frames are analyzed by the backend and discarded; after processing, only aggregate classification/session results persist.
+9. **Given** an ended or manually paused session, **When** the camera pipeline is inspected, **Then** no frames are being captured or transmitted. An automatic observation pause may sample fresh frames to support the selected automatic resume behavior.
 
 ### User Story 4 - Track a run or walk (Priority: P2)
 
@@ -166,7 +170,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - **FR-017**: Preserve winning entitlements through delivery failures and permit retry without rerolling, another charge, or duplicate unlocks.
 - **FR-018**: Initial delivery must work without physical hardware using four simulated compartments. Support locker association, item labels/loading, lock state, collection, and reload/reset to a locked state. Physical controller choice, communication transport, and real actuator integration are deferred; preserve the same roll-result and acknowledgement behavior for later integration.
 - **FR-019**: Follow the provided visual direction: deep green navigation, mint accents, off-white background, rounded cards, progress summaries, and readable completion logs. Screenshot sample content does not override the requested allocation mechanic.
-- **FR-020**: Request camera/location for the relevant activities and explain denied/unavailable access. Do not retain raw study video by default; saved routes remain private to the account.
+- **FR-020**: Request camera/location for the relevant activities and explain denied/unavailable access. During an active Studbot session, send occasional sampled camera frames through an authenticated backend to FastAPI for live analysis, then discard frame buffers after the request. Explain this processing before starting the camera. Do not save study images/video to files, database/object storage, application logs, analytics, or backups. Persist only the aggregate observation/session results needed for counted time and history. Stop capture/transmission when the session ends or is manually paused. An automatic observation pause may continue sampling to detect the valid study position required for automatic resume, while no paused time is credited. Saved run/walk routes remain private to the account.
 
 ### Key Entities
 
@@ -201,7 +205,7 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Users lock their own discretionary items. Tokens are earned only; purchase, transfer, and cash-out are outside this scope.
 - Start with one personal four-compartment simulated locker per user; shared lockers/admin roles are outside initial scope.
 - Confirmed platform/stack: mobile-friendly React/Next.js web app, Supabase for account/data services, and FastAPI for ML models. Browser run/walk and camera observation are foreground-only; reliable screen-locked/background tracking is outside the web capability.
-- Camera-processing placement and handling must be documented for the FastAPI model service; raw study video must not be retained by default.
+- Camera-processing choice is confirmed: sampled frames reach FastAPI for transient analysis and are discarded, with no saved footage. The authenticated input contract and bounded in-memory handling must implement this decision.
 - Daily goals are specific activities with individual time targets and calendar-style today-only, daily, or selected-weekday scheduling. A full calendar page, notifications, end dates, and arbitrary interval/monthly recurrence are not implied by this choice. Separate aggregate weekly targets are explicitly excluded. Distance-based goals are not selected.
 - Users label their items; automated item recognition is outside scope.
 - The user requested MediaPipe plus an ML classifier for Studbot. Preserve this implementation preference for technical planning.

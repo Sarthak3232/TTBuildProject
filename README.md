@@ -13,7 +13,7 @@ A task and goal app where users earn tokens through study, runs/walks, and custo
 
 ## Selected stack
 
-React/Next.js web app, Supabase accounts/database, and FastAPI for ML models. Studbot checks calibrated presence and orientation toward screen/book, allowing reading/writing; phone detection is deferred. Further task/session clarification is in progress. Camera/GPS tracking is foreground-only in the browser.
+React/Next.js web app, Supabase accounts/database, and FastAPI for ML models. Studbot checks calibrated presence and orientation toward screen/book, allowing reading/writing; phone detection is deferred. Further task/session clarification is in progress. Camera/GPS tracking is foreground-only in the browser. Studbot sends sampled frames to FastAPI for live analysis and discards them without saving footage.
 
 ## Spec Kit workflow
 
