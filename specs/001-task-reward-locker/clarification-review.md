@@ -10,7 +10,7 @@ Spec quality checklist: 10/15 → 11/15 passing. Newly passing: no clarification
 | --- | --- | --- |
 | Functional scope and behavior | Resolved | Per-session rewards, two-stage rolls, simulator-first delivery |
 | Domain and data | Resolved | Session rounding, roll outcome stages, positive allocation rules |
-| Interaction and UX | Clear | Primary journeys, status/error handling, supplied visual references |
+| Interaction and UX | Clear | Primary journeys, status/error handling, accessible interactions |
 | Non-functional quality | Deferred | Concrete focus classification criteria, calibration, and privacy implementation need planning |
 | Integration and dependencies | Resolved | Simulator now; physical transport/controller later |
 | Edge cases and failures | Clear | Duplicate requests, concurrent spending, interrupted unlocks, invalid allocations |
@@ -46,3 +46,5 @@ Run/walk manual controls confirmed: no movement-based auto-pause; stationary tim
 Planning closure: user-selected manual run/walk controls recorded, then concrete defaults selected for study grace/calibration, server-timestamped manual timer recovery, one active session, daily occurrence lifecycle, model validation, GPS distance filtering, transactions and simulator retry. Phase-one plan, research, data model, API/ML/locker contracts and quickstart are complete. Requirements-quality checklist 11/15 → 15/15, no regressions. The four newly satisfied items are testability, final acceptance rules, per-requirement acceptance criteria and measurable-outcome evaluability. This supersedes historical pending-plan statuses above. No application code/tests have been implemented or run.
 
 Correction: the user confirmed that every custom task always requires a minimum duration of 30 minutes or more, inclusive. Earlier optional/strictly-greater interpretations have been replaced in all current project documents, examples, model/API constraints and task descriptions. Missing/null/below-30-minute minimums must be rejected; custom completion at 29:59 is blocked and at a 30-minute target is allowed at 30:00. Short zero-token completion examples apply only to predefined study/run activities.
+
+UI quality criteria now cover responsive layout, readable content, labeled controls, keyboard/focus/contrast and reduced-motion behavior. Requirement FR-019 and its implementation/validation tasks use these functional criteria. Constitution v2.0.0 records the revised obligation. Requirements-quality checklist re-reviewed: 15/15, no task-count or dependency changes.

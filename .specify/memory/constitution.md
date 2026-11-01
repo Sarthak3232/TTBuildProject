@@ -6,8 +6,8 @@
 
 Changes MUST trace to the feature specification, an explicit assumption, or a recorded user
 answer. Token accounting, win probabilities, drawer weighting, and simulator behavior MUST be
-stated in testable terms before implementation. User-approved rules take precedence over
-visual sample content. Product defaults MUST be distinguished from user decisions.
+stated in testable terms before implementation. Explicit user requirements take precedence
+over default design choices. Product defaults MUST be distinguished from user decisions.
 
 ### II. Consistent Rewards and Outcomes
 
@@ -34,8 +34,8 @@ contract; hardware transport/controller work MUST be deferred until explicitly i
 ### V. Accessible Flows and Evidence-Based Verification
 
 Primary flows MUST support keyboard access, readable contrast, labeled inputs, and clear
-pending/error states. Use the supplied mint/deep-green visual direction without copying
-sample data as requirements. Verification MUST cover reward rounding, probability bounds,
+pending/error states. Interfaces MUST adapt to phone and desktop layouts and keep required content
+and controls usable. Verification MUST cover reward rounding, probability bounds,
 weighted drawer selection, authorization, duplicate/concurrent requests, and unlock recovery.
 Keep the implementation simple; add infrastructure only for a documented requirement.
 
@@ -75,4 +75,4 @@ existing governance obligations; minor versions add substantive principles; patc
 wording without changing obligations. Plans and reviews MUST identify constitution violations
 and justify exceptions explicitly. User instructions take precedence over this document.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
+**Version**: 2.0.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01

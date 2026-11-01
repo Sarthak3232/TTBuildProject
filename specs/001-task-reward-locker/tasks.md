@@ -1,6 +1,6 @@
 # Tasks: Task Reward Locker
 
-**Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v1.1.0.
+**Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v2.0.0.
 **Branch**: `task-reward-spec` | **Created**: 2026-11-01
 **Status**: Implementation backlog only. Every checkbox is initially unchecked; no application work or runtime test pass is claimed.
 
@@ -31,7 +31,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T005 Provide the exact setup/check scripts promised by quickstart in `package.json` and `scripts/validate.mjs`; include lint/typecheck/build, ML tests, isolated test DB lifecycle, and delivery-worker entry configuration without resetting hosted data. After T004. Covers FR-001.
 
-- [ ] T006 [P] Define mint/deep-green/off-white CSS tokens, readable typography, reusable labeled controls and reduced-motion behavior in `web/src/app/globals.css`, `web/src/components/forms/Field.tsx`, and `web/src/components/progress/Progress.tsx` using the saved visual references. After T001. Covers FR-019.
+- [ ] T006 [P] Define shared layout/typography CSS variables, readable text, reusable labeled controls and reduced-motion behavior in `web/src/app/globals.css`, `web/src/components/forms/Field.tsx`, and `web/src/components/progress/Progress.tsx` for responsive and accessible interaction. After T001. Covers FR-019.
 
 
 **Checkpoint**: Complete the phase's independent test and retain evidence before declaring this increment complete.
@@ -193,9 +193,9 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T058 [US5] Build named activity/duration and today-only/every-day/weekday schedule editor in `web/src/features/goals/GoalEditor.tsx` and individual progress cards in `web/src/features/goals/GoalProgress.tsx`; no full calendar page, notifications or separate weekly targets. After T056. Covers FR-009, FR-019, SC-007.
 
-- [ ] T059 [US5] Build dashboard greeting/progress, per-goal minutes, completed tasks, token balance/earned-today and redeem shortcut in `web/src/app/(app)/dashboard/page.tsx`; match the saved dashboard reference without hardcoded sample data. After T058. Covers FR-001, FR-009, FR-019, SC-007.
+- [ ] T059 [US5] Build dashboard greeting/progress, per-goal minutes, completed tasks, token balance/earned-today and redeem shortcut in `web/src/app/(app)/dashboard/page.tsx`; show live account data with readable progress and labeled controls. After T058. Covers FR-001, FR-009, FR-019, SC-007.
 
-- [ ] T060 [P] [US5] Build History period filters, summary, date-grouped completion rows/reflections/rewards and earlier-activity paging in `web/src/app/(app)/history/page.tsx` and `web/src/features/history/CompletionLog.tsx`; follow the supplied history reference. After T057. Covers FR-001, FR-010, FR-011, FR-019, SC-007.
+- [ ] T060 [P] [US5] Build History period filters, summary, date-grouped completion rows/reflections/rewards and earlier-activity paging in `web/src/app/(app)/history/page.tsx` and `web/src/features/history/CompletionLog.tsx`; use readable completion rows and clear filter states. After T057. Covers FR-001, FR-010, FR-011, FR-019, SC-007.
 
 - [ ] T061 [US5] Run schedule/dashboard/history reconciliation flows in `web/tests/e2e/goals-history.spec.ts`; record matching-task, date-boundary, earned-today, timezone and canceled-session evidence in `specs/001-task-reward-locker/implementation-evidence.md`. After T059, T060. Covers FR-009, FR-010, FR-011, SC-007.
 
@@ -229,7 +229,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T067 [P] Inspect camera success/error/timeout/cancel paths and logging/storage configuration in `ml/tests/test_privacy_paths.py` and `web/tests/integration/privacy.test.ts`; verify raw frames/landmarks/credentials never persist, route data stays private, and manual pause/end stops capture. After T024, T035, T046, T052, T061, T065. Covers FR-020.
 
-- [ ] T068 [P] Validate phone/desktop reference fidelity, labels/contrast/keyboard/focus, reduced motion, permission/empty/loading/error states and accessible roll/pause announcements in `web/tests/e2e/accessibility.spec.ts` and `specs/001-task-reward-locker/ui-validation.md`. After T024, T035, T046, T052, T061, T065. Covers FR-001, FR-019, FR-020.
+- [ ] T068 [P] Validate responsive phone/desktop layouts, labels/contrast/keyboard/focus, reduced motion, permission/empty/loading/error states and accessible roll/pause announcements in `web/tests/e2e/accessibility.spec.ts` and `specs/001-task-reward-locker/ui-validation.md`. After T024, T035, T046, T052, T061, T065. Covers FR-001, FR-019, FR-020.
 
 - [ ] T069 [P] Add a 10,000-completion isolated benchmark fixture and p95/inference/delivery measurement scripts in `web/tests/performance/local-benchmark.ts` and `ml/tests/evaluation/benchmark.py`; verify <1-second local list/roll p95, <=5-second normal delivery, and responsive bounded one-FPS inference. After T024, T035, T046, T052, T061, T065. Covers FR-009, FR-011, FR-016.
 

@@ -10,7 +10,7 @@ A task and goal app where users earn tokens through study, runs/walks, and custo
 - Runs/walks show a map, distance, and timer with manual pause/resume and stop; no movement-based auto-pause.
 - Four simulated locker compartments first; real hardware integration later.
 - Daily goals target specific activities and durations, such as Study for 60 minutes, with individual progress displays. Schedule them for today only, every day, or selected weekdays; each date has its own progress. Separate weekly targets are outside scope.
-- Dashboard, tasks, history, redeem, and profiles, with mint/deep-green visual references.
+- Dashboard, tasks, history, redeem, and profiles with responsive layouts and accessible controls.
 
 ## Selected stack
 
@@ -20,6 +20,6 @@ React/Next.js web app, Supabase accounts/database, and FastAPI for ML models. St
 
 Project-local Codex skills live in `.agents/skills/`; templates and scripts live in `.specify/`.
 
-The active feature is [`specs/001-task-reward-locker/spec.md`](specs/001-task-reward-locker/spec.md). Its review checklist and supplied screenshots are alongside it. Feature state in `.specify/feature.json` is local and intentionally ignored by Git.
+The active feature is [`specs/001-task-reward-locker/spec.md`](specs/001-task-reward-locker/spec.md). Its review checklist and technical plan are alongside it. Feature state in `.specify/feature.json` is local and intentionally ignored by Git.
 
-Project constitution v1.1.0 and the first technical plan are complete. See the feature's plan, data model, API/ML/locker contracts, and quickstart validation guide. The [implementation backlog](specs/001-task-reward-locker/tasks.md) contains 72 dependency-ordered tasks. Next is implementation, beginning with the shared foundation and custom-task timer MVP. The commands in the quickstart describe the future app interface and are not runnable yet. No app has been implemented yet.
+Project constitution v2.0.0 and the first technical plan are complete. See the feature's plan, data model, API/ML/locker contracts, and quickstart validation guide. The [implementation backlog](specs/001-task-reward-locker/tasks.md) contains 72 dependency-ordered tasks. Next is implementation, beginning with the shared foundation and custom-task timer MVP. The commands in the quickstart describe the future app interface and are not runnable yet. No app has been implemented yet.
