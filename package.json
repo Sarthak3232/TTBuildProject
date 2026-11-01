@@ -1,0 +1,20 @@
+{
+  "name": "slotty",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["web"],
+  "engines": {
+    "node": ">=22.20.0",
+    "npm": ">=10.9.3"
+  },
+  "packageManager": "npm@10.9.3",
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --workspace @slotty/web",
+    "start": "npm run start --workspace @slotty/web",
+    "lint": "npm run lint --workspace @slotty/web",
+    "typecheck": "npm run typecheck --workspace @slotty/web",
+    "build": "npm run build --workspace @slotty/web",
+    "check": "npm run lint && npm run typecheck && npm run build"
+  }
+}
