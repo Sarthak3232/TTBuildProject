@@ -100,7 +100,56 @@ Check the Dashboard for today's goals and earnings, or filter History to review 
 
 ## Tech stack
 
-**C++ / Arduino**
+The planned stack covers the web app, activity tracking, ML service, and locker firmware. Training and continuous-streaming additions are identified below; the application and models are not implemented yet.
+
+### Application, services, and hardware
+
+| Layer | Technologies | Role in SLOTTY |
+| --- | --- | --- |
+| **Frontend** | React.js, Next.js App Router, TypeScript, CSS modules / CSS variables | Responsive pages, navigation, timers, daily goals, history, and redeem controls. |
+| **Application backend** | Node.js, Next.js API routes, schema validation | Authenticated activity endpoints, session controls, token accounting, and roll requests. |
+| **Authentication and database** | Supabase Auth, PostgreSQL, Row Level Security, `@supabase/ssr` | User accounts, private profiles and routes, goal schedules, completion history, wallets, and roll records. |
+| **Transactions and locker delivery** | PostgreSQL RPC functions, Node.js `crypto`, persistent outbox worker | Atomic credits/spending, secure roll decisions, fixed outcomes, and retryable drawer commands. |
+| **Camera capture** | [MediaDevices `getUserMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), MediaStream, HTML Canvas | Request camera permission, preview the feed, and create small sampled JPEG frames. |
+| **Camera-to-model transport** | Authenticated HTTPS requests through Next.js to FastAPI | Send sampled frames for transient inference; return classification results without saving footage. |
+| **ML API and runtime** | Python 3.11, FastAPI, Uvicorn, Pydantic | Private inference endpoints, request validation, model loading, and bounded processing. |
+| **Vision models** | [MediaPipe Face Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/face_landmarker/python) and [Pose Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker) | Extract face/body landmarks for presence and calibrated head-orientation classification. |
+| **Image and feature processing** | NumPy, Pillow; OpenCV where needed for pose geometry | Decode and resize bounded frames, calculate orientation features, and handle numeric model inputs. |
+| **Location and maps** | Browser Geolocation API, MapLibre GL JS, OpenFreeMap | Run/walk location, route segments, map display, and distance measurement. |
+| **Locker firmware** | C++, Arduino | Control the four physical locks and handle unlock acknowledgements when hardware is integrated. |
+| **Local development** | Node.js, npm, Python, uv, Supabase CLI, Docker, Git / GitHub | Reproducible dependencies, local services, migrations, source control, and model versioning. |
+| **Testing and validation** | Vitest, Playwright, pytest, FastAPI TestClient, SQL / RLS tests | Check the UI, timers, model contracts, privacy, account isolation, token transactions, and hardware-simulator recovery. |
+
+### ML pipeline and training
+
+The first prototype uses pretrained MediaPipe models plus calibrated orientation rules. A learned classifier can be trained later on labeled landmark features; no custom classifier has been trained yet.
+
+| Stage | Tools / approach | Output |
+| --- | --- | --- |
+| **Feature preparation** | Python, NumPy, pandas | Clean labeled examples of screen-facing study, book reading/writing, away, and unverifiable views; normalize features against calibration. |
+| **Classifier training — extension** | [scikit-learn](https://scikit-learn.org/stable/modules/ensemble.html#forest), with a Random Forest as a starting candidate | A learned classifier over landmark/orientation features, evaluated against the calibrated-rule baseline. |
+| **Evaluation** | [GroupKFold](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html), precision / recall / F1, confusion matrices; Matplotlib for reports | Separate training and validation groups by person/session and measure errors on reading, writing, away, and unknown cases. |
+| **Model packaging — extension** | joblib, versioned model metadata and checksums | A reproducible classifier artifact loaded by FastAPI alongside its feature and calibration versions. |
+
+Offline training uses a separately prepared, consented or appropriately licensed dataset. Live Studbot frames are analyzed and discarded; recording user study footage is not part of this pipeline. Landmark and posture predictions describe observable behavior, not proof of learning or cognitive attention.
+
+### WebRTC and streaming
+
+The initial camera path uses browser capture plus sampled HTTPS uploads, so it does not require a continuous WebRTC connection. If continuous low-latency video becomes necessary, the streaming extension would use the browser's [WebRTC API](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) and Python [aiortc](https://aiortc.readthedocs.io/en/latest/), with signaling and STUN/TURN connectivity configured for deployment.
+
+### System overview
+
+```mermaid
+flowchart LR
+    UI["React.js / Next.js UI"] -->|"App requests and sampled frames"| API["Next.js API / Node.js"]
+    API -->|"Accounts and private records"| DB["Supabase Auth / PostgreSQL"]
+    API -->|"Transient frame inference"| ML["FastAPI / MediaPipe"]
+    ML -->|"Classification results"| API
+    DB -->|"Durable roll outbox"| WORKER["Delivery worker"]
+    WORKER --> SIM["Four-drawer simulator"]
+    WORKER -.->|"Later hardware integration"| HW["C++ / Arduino"]
+    TRAIN["Offline training: scikit-learn"] -.->|"Optional classifier artifact"| ML
+```
 
 ## Project documentation
 
