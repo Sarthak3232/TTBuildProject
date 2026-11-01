@@ -39,9 +39,9 @@ A user creates a named task with an optional minimum-duration target and one opt
 2. **Given** a timed task, **When** counted time is below its configured minimum, **Then** completion and rewards remain unavailable.
 3. **Given** satisfied timing and a nonblank answer to the configured question, **When** completion is confirmed, **Then** one completion and its token credit are saved, including after repeated submissions.
 4. **Given** a task without a minimum-duration target, **When** the user starts and stops its built-in timer, **Then** measured active time determines its reward; a 15-minute completed session earns zero tokens.
-7. **Given** a custom task, **When** the user views its controls, **Then** they can start, pause/resume, and stop its timer, but cannot enter or edit duration to award tokens. Paused intervals do not count.
 5. **Given** a completed eligible 45-minute session, **When** rewards are calculated, **Then** it earns one token and the extra 15 minutes are discarded. A separate completed 15-minute activity earns zero tokens.
 6. **Given** a completed eligible 60-minute session, **When** rewards are calculated, **Then** it earns two tokens. Any configured custom-task minimum must also be met.
+7. **Given** a custom task, **When** the user views its controls, **Then** they can start, pause/resume, and stop its timer, but cannot enter or edit duration to award tokens. Paused intervals do not count.
 
 ### User Story 2 - Roll to unlock a compartment (Priority: P1)
 
@@ -202,4 +202,3 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Stage-two proportional weighting is an explicit default interpretation, not a user-specified formula. Example: three tokens on drawer A and one on B gives A 75% and B 25% conditional on winning; the overall chance is based on four tokens.
 - Concurrent activities must not double-count the same elapsed time toward rewards; the chosen accounting policy must define how competing sessions are handled before implementation.
 - Project principles are established in `.specify/memory/constitution.md` v1.0.0. Planning is being revised around the user-selected stack; complete the requested further product clarification before finalizing it.
-
