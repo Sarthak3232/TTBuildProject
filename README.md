@@ -1,8 +1,8 @@
 <div align="center">
 
-# TTBuildProject
+# SLOTTY
 
-### Build habits. Earn tokens. Unlock your rewards.
+### Build habits. Earn tokens. Spin for rewards.
 
 A task-powered reward system connected to a four-compartment locker.
 
