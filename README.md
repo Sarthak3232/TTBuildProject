@@ -18,7 +18,7 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Project status:** The basic Next.js application shell has five main pages, a shared sidebar, and Studbot/run-tracker routes. The tables below describe planned features; activity tracking, accounts, rewards, backend services, firmware, and the locker are still pending. Current delivery focuses on auth, activities, goals/history and earning tokens in `tokenBalance`. Redemption, spending, locker/drawer tables and unlock delivery are deferred until the hardware is ready.
+> **Project status:** The basic Next.js application shell has five main pages, a shared sidebar, and Studbot/run-tracker routes. The Supabase database foundation now has profiles, `tokenBalance`, tasks, activity/history and daily-goal tables with access rules and signup provisioning. The pages below describe planned features; account screens, activity tracking, token crediting, backend services, firmware, and the locker are still pending. Redemption, spending, locker/drawer tables and unlock delivery are deferred until the hardware is ready.
 
 ## Run the starter app
 
@@ -34,6 +34,8 @@ Open [localhost:3000](http://localhost:3000). The root redirects to `/dashboard`
 On phones, the three-bar menu button opens and closes navigation. Selecting a page closes the menu; Escape closes it and returns focus to the button. Desktop navigation stays in the left sidebar.
 
 Run `npm run check` for lint, TypeScript checking, and a production build. `npm run start` serves the production build. See [Contributing](CONTRIBUTING.md) for the page file map and how to start a teammate branch.
+
+The database is hosted in [Supabase](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor). See the [database setup guide](supabase/README.md) for the table list, migrations, access rules and verification instructions. The starter pages do not connect to it yet.
 
 ## Page-by-page features
 

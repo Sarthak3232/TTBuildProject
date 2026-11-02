@@ -2,7 +2,9 @@
 
 **Current starter:** The Next.js page shell runs with Node 22.20+ and npm 10.9.3+. From the repository root, run `npm ci` and `npm run dev`, then open `http://localhost:3000`. No environment variables, Python, Docker, or Supabase are needed for these placeholder pages. `npm run lint`, `npm run typecheck`, and `npm run build` are available; `npm run check` runs all three. See [implementation evidence](implementation-evidence.md) for the scoped validation results.
 
-**Full-system design target:** The remaining sections describe the interface that later tasks must provide. Supabase, ML, delivery, and feature-test commands are not available yet. Do not interpret the acceptance guide below as passed validation.
+**Database foundation:** The core schema is applied to the hosted [TTBuildProject Supabase project](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor). See the [database guide](../../supabase/README.md) for tables, access rules, SQL checks and optional local commands. The web app is not connected yet.
+
+**Full-system design target:** The remaining sections describe the interface that later tasks must provide. The optional Supabase start/migrate helpers now exist; ML, delivery and full feature-test commands remain future work. Do not interpret the acceptance guide below as passed validation.
 
 ## Current delivery scope
 
