@@ -1,0 +1,18 @@
+.page{max-width:800px;margin:0 auto;padding:28px;border:1px solid #303030;border-radius:27px;background:linear-gradient(125deg,#151515,#222);}.back{background:none;border:0;color:var(--muted);padding:0 0 18px;font:inherit;font-size:12px;cursor:pointer;}.page h1{font-family:Impact,'Arial Narrow',sans-serif;color:#e2bd35;font-size:36px;margin:0 0 24px;}.page form{display:grid;gap:24px;}.name{display:grid;gap:6px;font-size:12px;color:var(--muted);}.name input,.minimum input{font:inherit;color:white;background:#151515;border:1px solid #444;border-radius:10px;padding:12px;width:100%;}.reflection{display:flex;flex-direction:column;min-height:290px;padding:28px 22px;border:1px solid #b41339;border-radius:13px;background:linear-gradient(125deg,#252525,#111);}.reflection > span{font-size:32px;font-weight:700;line-height:1.15;}.reflection textarea{flex:1;min-height:100px;width:100%;resize:vertical;color:white;background:transparent;border:0;padding:12px 0;font:inherit;font-size:13px;}.reflection textarea::placeholder{color:#ef345a;}.timer{position:relative;text-align:center;border:1px solid #bd163c;border-radius:13px;padding:24px 10px 30px;background:linear-gradient(125deg,#252525,#111);}.timer h2{font-size:32px;margin:0 0 23px;}.timer output{display:block;font-size:clamp(36px,6vw,66px);font-weight:700;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums;}.plus{position:absolute;left:16px;top:85px;color:#ff365c;}.minimum{display:grid;gap:6px;font-size:12px;color:var(--muted);}.minimum small{font-size:11px;}.start{display:flex;justify-content:center;align-items:center;gap:12px;padding:38px 12px;background:linear-gradient(110deg,#b30832,#71031e);border:1px solid #f02554;border-radius:14px;color:white;font:inherit;font-size:32px;font-weight:700;cursor:pointer;box-shadow:0 8px 25px #c008302a;}.start span{font-size:15px;color:#fb6382;}.note{font-size:11px;color:var(--muted);}.note:empty{display:none;}@media(max-width:600px){.page{padding:24px 17px;}.page h1{font-size:29px;}.reflection{min-height:255px;padding:28px 19px;}.reflection > span{font-size:28px;}.timer h2{font-size:29px;}.timer output{font-size:clamp(32px,10vw,56px);}.start{font-size:29px;}}
+.start:disabled { opacity: .6; cursor: default; }
+/* Make a valid task's primary action visibly ready. */
+.start:enabled {
+ background: linear-gradient(110deg, #e01648, #aa0630);
+ border-color: #ff4a76;
+ box-shadow: 0 0 18px #f51b4b70, 0 8px 30px #c0083055;
+}
+.start:enabled:hover {
+ background: linear-gradient(110deg, #f02255, #c20a39);
+ box-shadow: 0 0 24px #ff2b5c90, 0 8px 32px #c0083066;
+}
+.start:disabled {
+ background: #381b23;
+ border-color: #66303f;
+ box-shadow: none;
+ color: #a88e96;
+}
