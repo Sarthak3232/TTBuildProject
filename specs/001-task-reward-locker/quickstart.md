@@ -2,7 +2,13 @@
 
 **Current starter:** The Next.js page shell runs with Node 22.20+ and npm 10.9.3+. From the repository root, run `npm ci` and `npm run dev`, then open `http://localhost:3000`. No environment variables, Python, Docker, or Supabase are needed for these placeholder pages. `npm run lint`, `npm run typecheck`, and `npm run build` are available; `npm run check` runs all three. See [implementation evidence](implementation-evidence.md) for the scoped validation results.
 
-**Full-system design target:** The remaining sections describe the interface that later tasks must provide. Supabase, ML, delivery, and feature-test commands are not available yet. Do not interpret the acceptance guide below as passed validation.
+**Database foundation:** The core schema is applied to the hosted [TTBuildProject Supabase project](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor). See the [database guide](../../supabase/README.md) for tables, access rules, SQL checks and optional local commands. The web app is not connected yet.
+
+**Full-system design target:** The remaining sections describe the interface that later tasks must provide. The optional Supabase start/migrate helpers now exist; ML, delivery and full feature-test commands remain future work. Do not interpret the acceptance guide below as passed validation.
+
+## Current delivery scope
+
+Implement auth/profiles, tasks/activity, daily goals/history and token earning first. Current balances use `tokenBalance`. Signup creates a profile, zero balance and predefined tasks; lockers/drawers are not provisioned. Redemption, spending, roll/locker migrations and the delivery worker are deferred until hardware readiness. Activity completion still requires atomic credits and duplicate-request protection. The remaining full-system commands and acceptance checks include future redemption work and must not be required to run the current milestone.
 
 ## Prerequisites and local setup
 
@@ -30,7 +36,7 @@ npm run dev:delivery
 
 The implementation must provide the scripts above. `supabase:start` wraps the pinned local CLI, and `db:migrate` applies project migrations to that local stack. Model fetching must verify pinned checksums and licenses. The web environment contains local Supabase URL/publishable key, server-only privileged key, ML service URL/internal credential, and map style URL. ML gets only its internal credential/model path, not privileged Supabase credentials. Never commit generated secrets. Record actual compatible package/model versions in lockfiles/manifests.
 
-Sign up with local Supabase email/password. Provision four empty simulator drawers and a zero-balance wallet transactionally per account. The local Auth mail inbox can satisfy the selected confirmation flow; public mail deployment is outside this local guide. Test seeds may supply isolated accounts/balances; the public app must not expose grant-tokens or force-win endpoints.
+Sign up with local Supabase email/password. Provision a profile, zero-balance `tokenBalance` record and predefined tasks transactionally per account. Locker/drawer provisioning belongs to the deferred redemption milestone. The local Auth mail inbox can satisfy the selected confirmation flow; public mail deployment is outside this local guide. Test seeds may supply isolated accounts/balances; the public app must not expose grant-tokens or force-win endpoints.
 
 ## Automated validation scripts
 

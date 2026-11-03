@@ -2,7 +2,9 @@
   "name": "slotty",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["web"],
+  "workspaces": [
+    "web"
+  ],
   "engines": {
     "node": ">=22.20.0",
     "npm": ">=10.9.3"
@@ -15,6 +17,14 @@
     "lint": "npm run lint --workspace @slotty/web",
     "typecheck": "npm run typecheck --workspace @slotty/web",
     "build": "npm run build --workspace @slotty/web",
-    "check": "npm run lint && npm run typecheck && npm run build"
+    "check": "npm run lint && npm run typecheck && npm run build",
+    "supabase:start": "node scripts/supabase.mjs start",
+    "supabase:stop": "node scripts/supabase.mjs stop",
+    "db:migrate": "node scripts/supabase.mjs migrate",
+    "db:check": "node scripts/supabase.mjs check",
+    "db:types": "node scripts/supabase.mjs types"
+  },
+  "devDependencies": {
+    "supabase": "2.122.0"
   }
 }

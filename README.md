@@ -18,7 +18,7 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Project status:** The basic Next.js application shell has five main pages, a shared sidebar, and Studbot/run-tracker routes. The tables below describe planned features; activity tracking, accounts, rewards, backend services, firmware, and the locker are still pending. Initial locker development will use four simulated drawers before connecting real hardware.
+> **Project status:** The basic Next.js application shell has five main pages, a shared sidebar, and Studbot/run-tracker routes. The Supabase database foundation now has profiles, `tokenBalance`, tasks, activity/history and daily-goal tables with access rules and signup provisioning. The pages below describe planned features; account screens, activity tracking, token crediting, backend services, firmware, and the locker are still pending. Redemption, spending, locker/drawer tables and unlock delivery are deferred until the hardware is ready.
 
 ## Run the starter app
 
@@ -34,6 +34,8 @@ Open [localhost:3000](http://localhost:3000). The root redirects to `/dashboard`
 On phones, the three-bar menu button opens and closes navigation. Selecting a page closes the menu; Escape closes it and returns focus to the button. Desktop navigation stays in the left sidebar.
 
 Run `npm run check` for lint, TypeScript checking, and a production build. `npm run start` serves the production build. See [Contributing](CONTRIBUTING.md) for the page file map and how to start a teammate branch.
+
+The database is hosted in [Supabase](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor). See the [database setup guide](supabase/README.md) for the table list, migrations, access rules and verification instructions. The starter pages do not connect to it yet.
 
 ## Page-by-page features
 
@@ -68,7 +70,7 @@ The delivery scope includes the following:
 | **Accounts and activity records** | Profiles, private completion history, token balances, and earning/spending records. |
 | **Token and roll engine** | Time-based rewards, per-drawer allocations, probability previews, two-stage random outcomes, and protection against duplicate rewards or charges. |
 | **Four-drawer simulator** | Item assignment, locked/open states, collection and reload, offline behavior, and unlock-acknowledgement failure testing. |
-| **Physical locker and firmware** | Four lockable compartments, item-to-drawer mapping, roll-result communication, and control of the matching lock after a win; follows the simulator milestone. |
+| **Physical locker and firmware** | Four lockable compartments, item-to-drawer mapping, roll-result communication, and control of the matching lock after a win; gates the later redemption/database integration milestone. |
 | **Integration and validation** | End-to-end activity-to-unlock flow, reliable retry behavior, account isolation, privacy checks, usability checks, and documented validation results. |
 | **Project documentation** | Constitution, feature specification, technical plan, data model, interface contracts, validation guide, and implementation checklist. |
 
@@ -76,7 +78,7 @@ The delivery scope includes the following:
 
 ### 1. Prepare your rewards
 
-Assign an item to each of the four drawers and lock it. The Redeem page shows which items are available. The first prototype demonstrates this with simulated compartments.
+Assign an item to each of the four drawers and lock it. The Redeem page shows which items are available. This workflow is deferred until hardware readiness; the current milestone focuses on earning tokens.
 
 ### 2. Plan your day
 
@@ -122,7 +124,7 @@ The stack below covers the web app, activity tracking, ML service, and locker fi
 | --- | --- | --- |
 | **Frontend** | React.js, Next.js App Router, TypeScript, CSS modules / CSS variables | Responsive pages, navigation, timers, daily goals, history, and redeem controls. |
 | **Application backend** | Node.js, Next.js API routes, schema validation | Authenticated activity endpoints, session controls, token accounting, and roll requests. |
-| **Authentication and database** | Supabase Auth, PostgreSQL, Row Level Security, `@supabase/ssr` | User accounts, private profiles and routes, goal schedules, completion history, wallets, and roll records. |
+| **Authentication and database** | Supabase Auth, PostgreSQL, Row Level Security, `@supabase/ssr` | User accounts, private profiles and routes, goal schedules, completion history, `tokenBalance`, and later roll records. |
 | **Transactions and locker delivery** | PostgreSQL RPC functions, Node.js `crypto`, persistent outbox worker | Atomic credits/spending, secure roll decisions, fixed outcomes, and retryable drawer commands. |
 | **Camera capture** | [MediaDevices `getUserMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), MediaStream, HTML Canvas | Request camera permission, preview the feed, and create small sampled JPEG frames. |
 | **Camera-to-model transport** | Authenticated HTTPS requests through Next.js to FastAPI | Send sampled frames for transient inference; return classification results without saving footage. |
