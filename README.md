@@ -151,19 +151,6 @@ Offline training uses a separately prepared, consented or appropriately licensed
 
 The initial camera path uses browser capture plus sampled HTTPS uploads, so it does not require a continuous WebRTC connection. If continuous low-latency video becomes necessary, the streaming extension would use the browser's [WebRTC API](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) and Python [aiortc](https://aiortc.readthedocs.io/en/latest/), with signaling and STUN/TURN connectivity configured for deployment.
 
-### System overview
-
-```mermaid
-flowchart LR
-    UI["React.js / Next.js UI"] -->|"App requests and sampled frames"| API["Next.js API / Node.js"]
-    API -->|"Accounts and private records"| DB["Supabase Auth / PostgreSQL"]
-    API -->|"Transient frame inference"| ML["FastAPI / MediaPipe"]
-    ML -->|"Classification results"| API
-    DB -->|"Durable roll outbox"| WORKER["Delivery worker"]
-    WORKER --> SIM["Four-drawer simulator"]
-    WORKER -.->|"Later hardware integration"| HW["C++ / Arduino"]
-    TRAIN["Offline training: scikit-learn"] -.->|"Optional classifier artifact"| ML
-```
 
 ## Project documentation
 
