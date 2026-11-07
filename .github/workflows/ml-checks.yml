@@ -41,14 +41,20 @@ jobs:
       - name: Install native runtime libraries
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y libegl1 libgl1 libglib2.0-0 libportaudio2
+          sudo apt-get install --no-install-recommends -y libegl1 libgl1 libgles2 libglib2.0-0 libportaudio2
 
       - name: Install locked dependencies
         run: uv sync --locked --dev
 
-      - name: Verify native MediaPipe library loads
+      - name: Verify native MediaPipe image creation
         run: |
-          uv run --locked --no-sync python -c 'from mediapipe.tasks.python.core.mediapipe_c_bindings import load_raw_library; load_raw_library()'
+          uv run --locked --no-sync python - <<'PY'
+          import mediapipe as mp
+          import numpy as np
+
+          image = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.zeros((64, 64, 3), dtype=np.uint8))
+          assert image.width == 64 and image.height == 64
+          PY
 
       - name: Run unit and API contract tests
         run: uv run --locked --no-sync pytest --junitxml=test-results/unit.xml
