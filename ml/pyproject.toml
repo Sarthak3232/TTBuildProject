@@ -21,3 +21,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-m 'not model_smoke'"
+markers = [
+    "model_smoke: real MediaPipe inference; requires explicitly fetched model assets",
+]
