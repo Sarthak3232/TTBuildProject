@@ -46,6 +46,10 @@ jobs:
       - name: Install locked dependencies
         run: uv sync --locked --dev
 
+      - name: Verify native MediaPipe library loads
+        run: |
+          uv run --locked --no-sync python -c 'from mediapipe.tasks.python.core.mediapipe_c_bindings import load_raw_library; load_raw_library()'
+
       - name: Run unit and API contract tests
         run: uv run --locked --no-sync pytest --junitxml=test-results/unit.xml
 
