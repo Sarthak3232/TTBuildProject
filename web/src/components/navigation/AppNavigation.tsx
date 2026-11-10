@@ -45,7 +45,7 @@ export function AppNavigation() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <Link href="/sign-up" className="brand" aria-label="Sign up for Slotty" onClick={closeMenu}><SlotMachineIcon /></Link>
+        <Link href="/dashboard" className="brand" aria-label="Slotty dashboard" onClick={closeMenu}><SlotMachineIcon /></Link>
         <button
           ref={menuButton}
           className="menu-toggle"
