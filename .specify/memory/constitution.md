@@ -24,12 +24,18 @@ Raw study video MUST NOT be stored by default. Routes, activity, balances, and l
 MUST be account-scoped. Focus detection MUST be presented as an observable estimate rather
 than proof of learning. Missing observations MUST NOT be credited as tracked activity.
 
-### IV. Simulator First, Replaceable Hardware
+### IV. Phased Redemption and Replaceable Hardware
 
-The initial app MUST operate four simulated drawers without physical hardware. Roll outcome,
-unlock intent, and locker acknowledgement MUST remain distinct states. The simulator MUST
-exercise offline and failed-acknowledgement paths. Physical integration MUST reuse the domain
-contract; hardware transport/controller work MUST be deferred until explicitly in scope.
+The current milestone MUST support identity, activities, history, goals and token earning
+independently of redemption infrastructure. Current balances MUST use the user-selected table
+name `tokenBalance`. Roll/spending, locker/compartment provisioning and unlock-delivery
+infrastructure MUST be deferred until hardware readiness. These tables and services MUST NOT
+be prerequisites for signup or activity credits. This keeps current development focused on
+earning and tracking while the physical reward system is unfinished.
+
+When redemption is implemented, roll outcome, unlock intent and locker acknowledgement MUST
+remain distinct states. Device adapters MUST preserve fixed outcomes and retry-safe unlocks.
+A simulator MAY support later adapter/recovery tests; it is not a prerequisite for this milestone.
 
 ### V. Accessible Flows and Evidence-Based Verification
 
@@ -51,7 +57,8 @@ remainder. Rolls have two stages: win/no-win from total allocation, then one dra
 from funded drawers. The current win curve starts at 20% and approaches 60%; its precise
 formula and proportional drawer-weighting assumption live in the feature spec.
 
-A user's locker contains exactly four compartments. Scheduled daily goals, task history, and
+When redemption is implemented, a user's locker contains exactly four compartments.
+Scheduled daily goals, task history, and
 profile data MUST derive from the same persisted activity records. Platform limits, tracking
 coverage, and interrupted-session behavior MUST be documented before the relevant feature ships.
 
@@ -75,4 +82,9 @@ existing governance obligations; minor versions add substantive principles; patc
 wording without changing obligations. Plans and reviews MUST identify constitution violations
 and justify exceptions explicitly. User instructions take precedence over this document.
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
+Amendment record — 2026-11-01, v3.0.0: user-directed redefinition of Principle IV.
+Retain token earning now and defer redemption/locker infrastructure until hardware readiness,
+replacing the initial simulator-first delivery obligation. Account isolation, credit integrity
+and future unlock-recovery requirements remain in force.
+
+**Version**: 3.0.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01

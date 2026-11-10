@@ -1,8 +1,20 @@
 # Tasks: Task Reward Locker
 
-**Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v2.0.0.
+**Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v3.0.0.
 **Planning branch**: `task-reward-spec` | **Initial implementation branch**: `SarthakInitialSetup` | **Created**: 2026-11-01
-**Status**: T001 complete. T005, T006, and T017 have scoped frontend progress and remain unchecked; the other tasks remain pending. See [implementation evidence](implementation-evidence.md). The full application is not complete.
+**Status**: T001 complete. T003–T005, T007–T008, T013 and T054 have scoped database progress; T005, T006 and T017 also have frontend progress. These broader tasks remain unchecked until all acceptance requirements and prerequisites pass. See [implementation evidence](implementation-evidence.md). The full application is not complete.
+
+## Current Scope — Auth, Activity and Token Earning
+
+**Immediate assignment — [issue #5](https://github.com/Sarthak3232/TTBuildProject/issues/5):** Database setup only. Target T003 and the schema/provisioning deliverables of T008; include SQL-only portions of T007, T013, T054 and the required DB tooling from T004/T005. No Next.js clients, auth pages, protected routes, application APIs or runtime earning/progress logic are included. Broader-task checkboxes remain unchecked until their entire acceptance scope and prerequisites pass; database setup does not finish T009–T011, T014–T016 or the foundation integration gate. Study/GPS-specific schema remains with T037/T048. The target is the hosted TTBuildProject Supabase project (`yruyulqwyalxmtseaoml`); local configuration is optional reproduction tooling. All ten core tables have been applied online. See [database setup](../../supabase/README.md) and [implementation evidence](implementation-evidence.md) for validation and remaining scope.
+
+User confirmation on 2026-11-01: keep earning/saving tokens in `tokenBalance`; defer redemption and hardware-facing database work until the hardware is ready. Auth setup provisions a profile, zero balance and predefined tasks, without lockers/compartments or roll-table dependencies. Activity/session/goal/history and study/GPS tables follow their feature tasks. Keep atomic earning entries and completion deduplication so retries cannot award twice.
+
+**Deferred:** US2 **T025–T035**, locker/compartment provisioning (moved from T008 to T026), roll-linked ledger columns/foreign keys, spending, probability logic and delivery-worker configuration. Their IDs and unchecked status remain in the full-product backlog. Redeem keeps its placeholder route; visual design previews do not activate spending.
+
+**Auth-first gate:** T003 and the relevant web/DB test tooling from T004/T005 support T007–T010. The existing accessible shell supports this slice; remaining ML tooling and shared form/progress styling must stay tracked without blocking auth. T018 still requires the shared identity/activity/earning checks before dependent live features. Current milestone validation runs the applicable portions of T066–T072 without US2; those cross-cutting tasks remain partial until their deferred redemption checks can run.
+
+Unimplemented migration filenames below are design targets. When deferred migrations are actually created, assign fresh ordered versions after already-applied migrations and update the paths; do not backfill older versions or change task IDs.
 
 ## Initial Setup Scope — Issue #1
 
@@ -42,7 +54,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T004 Configure Vitest, Playwright, isolated Supabase DB test fixtures and pytest in `web/vitest.config.ts`, `web/playwright.config.ts`, `web/tests/support/fixtures.ts`, `supabase/tests/setup.sql`, and `ml/tests/conftest.py`; fake clock/RNG/model adapters must be test-only. After T002, T003. Covers FR-002, FR-008, FR-015, SC-002, SC-003.
 
-- [ ] T005 Provide the exact setup/check scripts promised by quickstart in `package.json` and `scripts/validate.mjs`; include lint/typecheck/build, ML tests, isolated test DB lifecycle, and delivery-worker entry configuration without resetting hosted data. After T004. Covers FR-001.
+- [ ] T005 Provide the exact setup/check scripts promised by quickstart in `package.json` and `scripts/validate.mjs`; include lint/typecheck/build, ML tests and isolated test DB lifecycle without resetting hosted data; delivery-worker entry configuration is deferred to T031. After T004. Covers FR-001.
 
 - [ ] T006 [P] Define shared layout/typography CSS variables, readable text, reusable labeled controls and reduced-motion behavior in `web/src/app/globals.css`, `web/src/components/forms/Field.tsx`, and `web/src/components/progress/Progress.tsx` for responsive and accessible interaction. After T001. Covers FR-019.
 
@@ -57,9 +69,9 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 **Blocking checkpoint**: No feature implementation begins until the foundation gate passes. Minimal auth/profile schema belongs here so US1–US5 do not depend on a later profile UI.
 
-- [ ] T007 Write failing authorization/provisioning tests in `supabase/tests/auth_ownership.test.sql` and `web/tests/integration/auth-boundary.test.ts`: two users, forged ownership, browser RPC access, zero initial balance and exactly four owned slots. After T005, T006. Covers FR-002, FR-012, FR-018.
+- [ ] T007 Write failing authorization/provisioning tests in `supabase/tests/schema_validation.sql` and `web/tests/integration/auth-boundary.test.ts`: two users, forged ownership, browser RPC access, zero initial `tokenBalance`, and signup without any locker/roll tables. After T005, T006. Covers FR-002, FR-012, FR-018.
 
-- [ ] T008 Create profile/wallet/task/locker/compartment provisioning and owner FKs in `supabase/migrations/202611010001_identity.sql`; provision two predefined task families (study and run/walk), represented by study/run/walk kinds, plus zero wallet and four empty slots; regenerate `web/src/server/supabase/database.types.ts`. Model constraint (Profile): “One per auth user; valid IANA timezone; ownership root”. Model constraint (Wallet): “One per user; balance >= 0; updates only by restricted transactional functions”. Model constraint (TaskDefinition): “kind study/run/walk/custom; predefined kinds seeded per account; one question maximum; custom minimum required and >= 1,800,000 ms (30 minutes)”. Model constraint (Locker): “One per user initially; mode simulator; exactly four compartment indexes”. Model constraint (Compartment): “Unique locker/slot; slot 1–4; state empty/locked/reserved/open/collected; user cannot allocate to empty/reserved/open/collected”. After T007. Covers FR-002, FR-003, FR-012, FR-018.
+- [ ] T008 Create profile/tokenBalance/task provisioning and owner FKs in `supabase/migrations/20261101234524_identity.sql`; provision the study and run/walk predefined families as study/run/walk kinds and a zero-balance record in `public."tokenBalance"`, without locker/compartment or roll-table dependencies; regenerate `web/src/server/supabase/database.types.ts`. Model constraint (Profile): “One per auth user; valid IANA timezone; ownership root”. Model constraint (TokenBalance): “One per user; balance >= 0; updates only by restricted transactional functions”. Model constraint (TaskDefinition): “kind study/run/walk/custom; predefined kinds seeded per account; one question maximum; custom minimum required and >= 1,800,000 ms (30 minutes)”. Locker provisioning is deferred to T026. After T007. Covers FR-002, FR-003, FR-018.
 
 - [ ] T009 Implement Supabase browser/cookie-aware SSR clients, token refresh and fresh-user verification in `web/src/server/auth/session.ts`, `web/src/server/supabase/clients.ts`, and `web/src/proxy.ts`; isolate privileged keys in server-only modules and avoid authorizing from getSession alone. After T008. Covers FR-002.
 
@@ -69,7 +81,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T012 Write failing clock/reward/session concurrency tests in `web/tests/unit/activity-accounting.test.ts` and `web/tests/integration/session-accounting.test.ts`: reward arithmetic at 29:59/30:00/59:59/60:00 for eligible predefined activities, required custom minimum >=1,800,000 ms and below-target completion rejection, no cross-session carryover, repeated completion, paused intervals, stale revisions and simultaneous start. After T011. Covers FR-005, FR-008, FR-010, SC-002, SC-006.
 
-- [ ] T013 Create shared activity intervals, immutable completions/ledger and idempotency storage in `supabase/migrations/202611010002_activity.sql`; enforce ownership/unique references and one unfinished session with a DB constraint; regenerate database types. Model constraint (ActivitySession): “One unfinished earning session per user, including paused sessions; owner/task must match; state transitions versioned”. Model constraint (SessionInterval): “Unique sequence/session; no overlap within session; bounded server time; kind timer/study; canceled sessions excluded from summaries”. Model constraint (Completion): “One per session; immutable historical snapshot; required reflection nonblank; reward floor(eligible_ms/1,800,000)”. Model constraint (TokenEntry): “Immutable; unique completion or roll reference; exactly one reference; earnings may be zero; spending negative; resulting_balance >= 0”. Model constraint (IdempotencyRecord): “Unique user/operation/key; same key+payload returns original result; changed payload returns conflict”. After T012. Covers FR-005, FR-008, FR-010, SC-002.
+- [ ] T013 Create shared activity intervals, immutable completions/ledger and idempotency storage in `supabase/migrations/20261101234526_activity.sql`; enforce ownership/unique references and one unfinished session with a DB constraint; regenerate database types. Model constraint (ActivitySession): “One unfinished earning session per user, including paused sessions; owner/task must match; state transitions versioned”. Model constraint (SessionInterval): “Unique sequence/session; no overlap within session; bounded server time; kind timer/study; canceled sessions excluded from summaries”. Model constraint (Completion): “One per session; immutable historical snapshot; required reflection nonblank; reward floor(eligible_ms/1,800,000)”. Model constraint (TokenEntry): “Immutable; current milestone has one unique completion reference, delta >= 0 and resulting_balance >= 0; add roll-linked debits only with deferred redemption”. Model constraint (IdempotencyRecord): “Unique user/operation/key; same key+payload returns original result; changed payload returns conflict”. After T012. Covers FR-005, FR-008, FR-010, SC-002.
 
 - [ ] T014 Implement server-clock interval state transitions and whole-token arithmetic in `web/src/domain/time/session.ts` and `web/src/domain/rewards/earn.ts`; preserve manual timer state on refresh, reject backdated manual duration, and support study observations as a separate eligible-time source. After T013. Covers FR-005, FR-007, FR-008, SC-002, SC-006.
 
@@ -105,7 +117,9 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 **Checkpoint**: Complete the phase's independent test and retain evidence before declaring this increment complete.
 
-## Phase 4: User Story 2 — Roll to Unlock a Compartment (P1)
+## Phase 4: User Story 2 — Roll to Unlock a Compartment (P1, deferred)
+
+**Hardware gate:** Do not start T025–T035 or their database migrations until hardware readiness. This phase is retained future design; it does not block auth, activity features or token earning.
 
 **Goal**: Allocate tokens, persist one fixed roll, and deliver it once to a simulated drawer.
 
@@ -113,7 +127,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T025 [P] [US2] Write failing probability/idempotency/concurrent spend and simulator failure tests in `web/tests/unit/roll-policy.test.ts`, `web/tests/integration/roll-transaction.test.ts`, and `web/tests/integration/locker-delivery.test.ts`; use test fixtures rather than public force-win or grant-token controls. After T018. Covers FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, SC-003, SC-004, SC-005, SC-009, SC-010.
 
-- [ ] T026 [US2] Create quotes, immutable rolls, entitlements, durable events and processed receipts in `supabase/migrations/202611010004_roll_delivery.sql`; tie reservations/events to item revisions and regenerate database types. Model constraint (RollQuote): “Advisory, expires after 60 seconds; allocations integers >= 0, positive total, sufficient balance at acceptance”. Model constraint (Roll): “Immutable committed result; outcome loss/win; winning slot present iff win and funded; one debit per roll”. Model constraint (UnlockEntitlement): “One per winning roll; pending/acknowledged; tied to the exact reserved item revision”. Model constraint (DeliveryEvent): “One per roll, including losses; pending/inflight/retry/acknowledged; durable outbox”. Model constraint (SimulatorReceipt): “Unique event ID; repeated delivery returns original receipt without repeating effects”. After T025. Covers FR-012, FR-015, FR-016, FR-017, FR-018.
+- [ ] T026 [US2] Create owner-linked locker/compartment tables and provision one four-slot locker for existing/new users when redemption is enabled; create quotes, immutable rolls, entitlements, durable events and processed receipts in `supabase/migrations/202611010004_roll_delivery.sql`; tie reservations/events to item revisions, extend the earning ledger with roll-linked debits, and regenerate database types. Model constraint (Locker): “One per user when redemption is enabled; exactly four compartment indexes”. Model constraint (Compartment): “Unique locker/slot; slot 1–4; state empty/locked/reserved/open/collected; user cannot allocate to empty/reserved/open/collected”. Model constraint (RollQuote): “Advisory, expires after 60 seconds; allocations integers >= 0, positive total, sufficient balance at acceptance”. Model constraint (Roll): “Immutable committed result; outcome loss/win; winning slot present iff win and funded; one debit per roll”. Model constraint (UnlockEntitlement): “One per winning roll; pending/acknowledged; tied to the exact reserved item revision”. Model constraint (DeliveryEvent): “One per roll, including losses; pending/inflight/retry/acknowledged; durable outbox”. Model constraint (SimulatorReceipt): “Unique event ID; repeated delivery returns original receipt without repeating effects”. After T025. Covers FR-012, FR-015, FR-016, FR-017, FR-018.
 
 - [ ] T027 [US2] Implement pure curve/quantization/weighted-ticket math and secure server RNG boundaries in `web/src/domain/rolls/policy.ts` and `web/src/server/services/random.ts`; use roll-v1, 1,000,000 units, per-slot cap 1,000,000, total cap 4,000,000, and choose a funded drawer only after a win. After T026. Covers FR-013, FR-014, SC-009, SC-010.
 
@@ -196,7 +210,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 - [ ] T053 [P] [US5] Write failing schedule/date/history tests in `web/tests/unit/goal-calendar.test.ts` and `web/tests/integration/goals-history.test.ts`: today/daily/selected weekdays, empty weekday rejection, DST, future-only edits, canceled provisional time, and 20+20-minute progress without tokens. After T018. Covers FR-009, FR-010, FR-011, SC-007.
 
-- [ ] T054 [US5] Create schedules and unique per-date occurrences in `supabase/migrations/202611010010_goals.sql`; preserve historical target/timezone snapshots, enforce positive duration/nonempty weekdays and regenerate database types. Model constraint (GoalSchedule): “target > 0; repeat today/daily/weekdays; today requires one local date; weekdays requires nonempty unique values 1–7”. Model constraint (GoalOccurrence): “Unique schedule/date; derives from matching completed and current active session intervals on that date; no cross-date carryover”. After T053. Covers FR-009, SC-007.
+- [ ] T054 [US5] Create schedules and unique per-date occurrences in `supabase/migrations/20261101234528_goals.sql`; preserve historical target/timezone snapshots, enforce positive duration/nonempty weekdays and regenerate database types. Model constraint (GoalSchedule): “target > 0; repeat today/daily/weekdays; today requires one local date; weekdays requires nonempty unique values 1–7”. Model constraint (GoalOccurrence): “Unique schedule/date; derives from matching completed and current active session intervals on that date; no cross-date carryover”. After T053. Covers FR-009, SC-007.
 
 - [ ] T055 [US5] Implement local-date/weekday expansion, clipped matching intervals and provisional progress in `web/src/domain/time/goals.ts`; no 24-hour DST arithmetic, cross-day carryover, past occurrence generation, duplicate intervals, aggregate weekly targets or bonus tokens. After T054. Covers FR-009, SC-007.
 
@@ -258,18 +272,18 @@ Tests listed first must fail for the missing behavior before implementation and 
 ## Dependencies and Execution Order
 
 ```text
-Setup → Foundation → US1 (custom timers) ─┐
-                  ├→ US2 (roll/locker) ───┴→ first effort-to-unlock demo
-                  ├→ US3 (Studbot)
-                  ├→ US4 (run/walk)
-                  ├→ US5 (daily goals/history)
-                  └→ US6 (profile UI)
-All selected story gates → cross-cutting validation → final evidence
+Setup → Auth/activity foundation → US1 (custom timers + earning)
+                               ├→ US3 (Studbot)
+                               ├→ US4 (run/walk)
+                               ├→ US5 (daily goals/history)
+                               └→ US6 (profile UI)
+Hardware readiness + foundation → US2 (redemption/locker, deferred)
+Current story gates → scoped validation; all story gates → full-product evidence
 ```
 
-US2 core can be tested after foundation using isolated seeded balances; its full effort-to-unlock gate also requires US1. Other stories use shared foundation services and isolated fixtures, not another story's unfinished UI. US5 may be delivered after US1/US2 before US3/US4, as the plan's recommended demo sequence allows; the numbered phase layout retains the spec's story order. Complete all story gates before final validation.
+After hardware readiness, US2 core can be tested after foundation using isolated seeded balances; its full effort-to-unlock gate also requires US1. Other stories use shared foundation services and isolated fixtures, not another story's unfinished UI. US5, US3, US4 and US6 proceed from their activity-foundation prerequisites without waiting for deferred US2; the numbered phase layout retains the spec's story order. Complete all story gates before final validation.
 
-Within each phase: failing meaningful tests → storage/constraints → domain/service → endpoints → UI → evidence gate. A task starts only after every listed `After T###` prerequisite. SQL migration files have fixed increasing names; serialize migration/type generation across otherwise independent story work.
+Within each phase: failing meaningful tests → storage/constraints → domain/service → endpoints → UI → evidence gate. Except for the explicitly scoped auth-first gate above, a task starts only after every listed `After T###` prerequisite. SQL migrations use increasing versions assigned when implemented; serialize migration/type generation across otherwise independent story work.
 
 ## Parallel Examples
 
@@ -293,8 +307,8 @@ These are optional scheduling opportunities, not instructions to spawn agents. E
 
 1. Establish the repeatable local stack and pass shared identity/accounting gates.
 2. Deliver US1 first: create a custom task, measure time, finish once and inspect reward/receipt. This is the smallest useful MVP.
-3. Add US2 for the central effort-to-unlock demo; validate duplicate/concurrent spending and acknowledgement recovery before adding visual roll polish.
-4. Add US5 for daily scheduling/history, then US3/US4 and US6 enhancements as desired; do not label the full product complete until all specified stories and cross-cutting checks pass.
+3. Add US5 daily scheduling/history, US3/US4 tracking and US6 profile enhancements from their stated prerequisites; validate current activity and earning scope.
+4. Resume US2 only after hardware readiness, then validate duplicate/concurrent spending and acknowledgement recovery. Do not label the full product complete while its deferred stories or cross-cutting checks remain pending.
 5. Commit logical verified increments. Keep runtime test/measurement evidence separate from this generated backlog. No public deployment, real hardware integration, phone detection, separate weekly targets or extra recurring schedule types are introduced.
 
 ## Requirement Coverage

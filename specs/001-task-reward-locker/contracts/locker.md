@@ -1,6 +1,8 @@
 # Locker and simulator contract
 
-Initial adapter is a persistent four-drawer simulator. A future hardware adapter implements the same versioned event/acknowledgement semantics; no device board, transport, wiring or actuator implementation is selected now.
+**Deferred until hardware readiness.** No locker/compartment, roll or delivery tables are required for the current auth/activity/earning milestone. The retained adapter design below is future work and will be reviewed against the hardware interface before implementation.
+
+The retained test-adapter design is a persistent four-drawer simulator. A future hardware adapter implements the same versioned event/acknowledgement semantics; no device board, transport, wiring or actuator implementation is selected now.
 
 ## Roll event v1
 
