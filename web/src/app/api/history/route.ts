@@ -1,0 +1,5 @@
+import { z } from "zod";
+import { requireUser,jsonError,noStore,ApiError } from "@/server/api";
+import { createServiceClient } from "@/server/supabase/clients";
+const query=z.object({period:z.enum(["week","month","all"]).default("all"),before:z.iso.datetime({offset:true}).optional(),beforeId:z.uuid().optional(),limit:z.coerce.number().int().min(1).max(100).default(20),month:z.iso.date().optional()}).strict();
+export async function GET(request:Request){try{const {user}=await requireUser(request);const parsed=query.safeParse(Object.fromEntries(new URL(request.url).searchParams));if(!parsed.success)throw new ApiError(400,"query","Invalid history filter");const q=parsed.data;const db=createServiceClient();const {data,error}=q.month?await db.rpc("app_calendar",{p_user_id:user.id,p_month:q.month}):await db.rpc("app_history",{p_user_id:user.id,p_period:q.period,p_before:q.before??null,p_before_id:q.beforeId??null,p_limit:q.limit});if(error)throw error;return noStore(data);}catch(e){return jsonError(e)}}
