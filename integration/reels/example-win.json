@@ -1,0 +1,14 @@
+{
+  "roll": {
+    "id": "3fba37c1-1996-4216-803c-449202a445b5",
+    "allocations": [0, 0, 2, 0],
+    "cost": 2,
+    "threshold": 313387,
+    "won": true,
+    "slot": 3,
+    "policyVersion": "roll-v1",
+    "deliveryState": "hardware_pending",
+    "createdAt": "2026-11-09T20:00:00Z",
+    "balance": 8
+  }
+}

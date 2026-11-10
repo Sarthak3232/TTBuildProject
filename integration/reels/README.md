@@ -1,0 +1,54 @@
+# Slotty reel display prototype
+
+## Integration gaps at the reviewed heads
+
+| Boundary | Existing behavior | Missing piece |
+| --- | --- | --- |
+| Committed roll | PR #11 commits one debit and a fixed result. The owner can read `{roll: {id, won, slot, deliveryState, …}}` from `GET /api/rolls?id=<uuid>`. Wins also create an unlock entitlement. | A device-scoped source of committed display events, device assignment, claiming and receipt storage. The locker contract describes future work. |
+| Symbols | Software uses winning slots 1–4 and null for loss. Firmware consumes one zero-based index per active reel. | A calibrated correspondence between the outcome and the printed symbols. |
+| Motion | PR #12 uses 115200-baud line commands. One active reel has positions 0–7. The other two profiles have incomplete configuration. | A sequencer must home, await `DONE home`, issue the correctly sized spin and await `DONE spin`. `OK spinning` only means accepted. |
+| Recovery | Neither command nor response identifies the roll. A disconnect can hide a completed motion. | A stable event identity and durable receipt on each side before unattended retries are possible. |
+
+Reviewed [PR #11 roll route](https://github.com/Sarthak3232/TTBuildProject/blob/b927b7fb49256545ef29966a90edbd55d2fbac5d/web/src/app/api/rolls/route.ts), [accounting migration](https://github.com/Sarthak3232/TTBuildProject/blob/b927b7fb49256545ef29966a90edbd55d2fbac5d/supabase/migrations/20261110000100_application_transactions.sql), [locker contract](https://github.com/Sarthak3232/TTBuildProject/blob/b927b7fb49256545ef29966a90edbd55d2fbac5d/specs/001-task-reward-locker/contracts/locker.md) and [PR #12 sketch](https://github.com/Sarthak3232/TTBuildProject/blob/a824309b8f60e74fe164f5cd0526ffa612fb0a25/firmware/SlottyReels/SlottyReels.ino).
+
+## Run locally
+
+From the repository root, with Python 3.10+ and its standard library, run these commands. Use the **same persistent ledger path** across invocations for a given installation.
+
+```sh
+python integration/reels/bridge.py integration/reels/example-win.json --db ../slotty-demo.sqlite
+python integration/reels/bridge.py integration/reels/example-win.json --db ../slotty-demo.sqlite
+python -B -m unittest discover -s integration/reels -v
+```
+
+The example is a synthetic single-roll GET response. To try a stored result, substitute a JSON file exported from that authenticated GET. The CLI reads this file locally. The event ledger and serial session are local mocks. Nothing contacts the backend, and the program has no token, roll creation or entitlement mutation operation.
+
+**Provisional one-reel mapping.** Slots 1, 2, 3 and 4 select indices 0, 1, 2 and 3 respectively. A loss selects index 4. Indices 5–7 are unused. Every outcome produces one target. The first example run reports target 2, commands `["home","spin 2"]`, status `completed` and detail `DONE spin`. The second returns the stored result with `replay: true` and an empty command list.
+
+For independent **simulator-only** fault experiments, start each with a fresh demonstration ledger and add `--mode reject-spin` or `--mode drop-done`. The former returns `failed` with `ERR busy`. The latter applies motion, drops its terminal line and reports `unconfirmed`. The simulator models expiry instantly. Each command has its own deadline. Exit 0 means completed, 1 means incomplete or failed delivery, and 2 means input, ledger or invocation error.
+
+## Duplicate and crash behavior
+
+A unique SQLite primary key combines the reel-display purpose with the canonical stored roll UUID. The mapping uses only the stored outcome. The claim commits before the first command. A competing process sees the existing claim, and a changed outcome for that UUID raises a conflict. A crash between claim and receipt leaves `inflight`. A timeout or transport loss leaves `unconfirmed`. Replays of either state send zero commands, as do replays of a recorded failure or success. Inspect unresolved claims manually. Deleting or replacing the ledger removes this protection.
+
+This provides at-most-once dispatch per roll within one shared ledger. A crash can leave a roll undisplayed. The mock uses an exclusive serial session per invocation. A physical bridge will need exclusive ownership of the device across different rolls and a way to correlate replies after a reconnect. A completed display records only reel motion. Winning entitlements stay pending for future redemption.
+
+## Files and verification
+
+Four additions under `integration/reels/` on local branch `integration/reel-delivery-simulator`, based on PR #11. All existing application and firmware files are untouched.
+
+| File | Purpose |
+| --- | --- |
+| `bridge.py` | Stored-roll validation and mapping, mock serial transport, sequencer, SQLite ledger and CLI. |
+| `example-win.json` | Synthetic GET response for a committed slot-3 win. |
+| `test_bridge.py` | Automated protocol, outcome and duplicate-delivery tests. |
+| `README.md` | Reviewed contracts, mapping, run instructions, evidence and remaining work. |
+
+12/12 prototype tests passed on Windows with Python 3.14 and a writable temporary directory. Coverage includes all four winning slots, loss, invalid input, separate events, changed payload, concurrent duplicate claims, replay after reopen, crash after claim, homing failure, unrelated completion, rejected spin and lost completion after motion. Separate CLI runs verified success/replay, rejection, and lost-completion/replay. The test boundary is the saved GET response through the simulated terminal reply and persisted receipt. No live Supabase session, powered reel or full application regression suite was exercised.
+
+## Remaining ESP32 Wi-Fi/HTTPS work
+
+1. Have the backend create a durable, versioned reel-display event from the committed roll, atomically or through a backfill-safe outbox. Bind each event to the authorized owner and device. Implement authenticated, leased claims and idempotent status reporting with conflict checks. Display success and drawer entitlement need separate state.
+2. Confirm printed symbol order, zero offset, sensor behavior, active reel count and timings on the powered bench. For three reels, complete each hardware profile and agree on a deterministic winning/losing symbol tuple. Version the mapping before field deployment.
+3. On ESP32, validate TLS certificates and provision per-device credentials. Use a separate networking task with bounded queues for validated commands and receipts. Keep stepping and completion detection in the existing nonblocking motor loop. Handle reconnects and backoff in the networking task.
+4. Persist event IDs, payloads, dispatch state and completion receipts on-device. On reconnect, replay receipts before accepting new motion. Reconcile power loss during movement explicitly. Bench-test delayed/duplicate events, lost acknowledgements, reset during motion, unavailable network and sensor faults before enabling automatic recovery.
