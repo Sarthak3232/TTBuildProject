@@ -1,0 +1,2 @@
+export async function api<T>(path:string,options:RequestInit={}):Promise<T>{const response=await fetch(path,{...options,cache:"no-store",headers:{...(options.body?{"Content-Type":"application/json"}:{}),...options.headers}});const body=await response.json();if(!response.ok){if(response.status===401)window.location.assign("/sign-in");throw new Error(body.error?.message??"Request failed")};return body;}
+export function mutation<T>(path:string,body:Record<string,unknown>,method="POST",key=crypto.randomUUID()){return api<T>(path,{method,body:JSON.stringify({...body,key})})}
