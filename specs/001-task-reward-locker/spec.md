@@ -3,7 +3,7 @@
 **Feature Branch**: `task-reward-spec`; feature discovery uses `.specify/feature.json`.
 **Repository**: https://github.com/Sarthak3232/TTBuildProject
 **Created**: 2026-11-01
-**Status**: Implementation started with a basic frontend route shell; the full feature backlog remains pending. User decisions and implementation defaults are recorded in this specification and its linked plan/contracts.
+**Status**: Non-ML application and run/walk source is integrated with passing isolated domain/API/database/browser checks. Hosted Auth/migration verification, real-device GPS, ML and physical delivery acceptance remain pending. User decisions and defaults are recorded below.
 **Input**: A task and goal app connected to a physical four-compartment locker. Users earn tokens through focused study, runs/walks, and custom tasks, then allocate tokens among locked items and roll for a chance to unlock them. Includes dashboard, tasks, history, redeem, and profiles.
 
 ## Clarifications

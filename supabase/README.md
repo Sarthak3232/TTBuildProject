@@ -27,7 +27,7 @@ Supabase manages `auth.users` and credentials. An Auth insert provisions the pro
 
 All ten application tables have RLS. Signed-in users can read their own records except server-only idempotency data. They can edit their profile preferences, create/edit their own custom tasks, and create/edit their goal schedules. They cannot directly change balances, sessions, completion history, earning entries or calculated goal progress. Anonymous roles have no app-table access. Private trigger helpers cannot be invoked as browser RPCs.
 
-**This is schema setup only.** The Next.js pages do not connect to Supabase yet. Login/signup UI, session controls, atomic token crediting, goal expansion/progress, ML/GPS storage and application APIs remain later tasks. Storing a completion does not automatically credit a balance. Redemption, spending, drawers and delivery tables are deferred until the hardware is ready.
+**2026-11-09 application integration:** The source now includes real Auth/SSR clients, session controls, atomic completion credits, goals/history/profile, virtual roll debits/results and private GPS ingestion. Three forward migrations after the four foundation files add application transactions, read models and routes. The first four were already applied hosted; new application/GPS migrations still require verified hosted application. Configure ignored `web/.env.local` using `web/.env.example` and the Auth callback/site URLs. Merely storing an arbitrary completion does not credit a balance; trusted `app_mutate` is the atomic authority. Virtual wins remain hardware pending. ML and physical delivery stay separate integrations.
 
 ## Migrations and validation
 
@@ -61,3 +61,9 @@ npx --no-install supabase gen types --lang typescript --project-id yruyulqwyalxm
 Review successful output before replacing `web/src/server/supabase/database.types.ts`. `web/.env.example` reserves the future client/server variable names; the current page shell does not need them. Keep secret keys server-only and never commit populated environment files.
 
 The committed types were generated and downloaded from the hosted project's Data API docs (Tables and Views → Introduction → Generate and download types). They include the configured `public` and Supabase-managed `graphql_public` schemas. They are not imported into application code yet.
+
+## Isolated application database checks
+
+For a fresh native/CI PostgreSQL 17 database with contrib extensions, run `python3 scripts/test-postgres.py postgresql://postgres@127.0.0.1:55432/slotty_test`. The target must be empty and loopback with a `slotty_test*` name. It creates only test Auth catalog/roles, applies all committed migrations and runs rollback security/accounting/GPS fixtures plus real concurrent start/complete/spend checks. It never resets or targets hosted data and does not test Auth HTTP/email issuance. CI runs this same path against a disposable Postgres service.
+
+`python3 scripts/generate-public-types.py DATABASE_URL` regenerates public table/FK/RPC types via read-only catalog queries when the full CLI generator is unavailable. Preserve the separately exported managed GraphQL schema; record local/hosted parity separately. See current implementation evidence for commands, results and unperformed hosted/device checks.

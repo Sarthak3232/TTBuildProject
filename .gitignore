@@ -16,5 +16,6 @@ next-env.d.ts
 .vercel/
 
 # Browser test artifacts
-web/test-results/
-web/playwright-report/
+test-results/
+playwright-report/
+blob-report/

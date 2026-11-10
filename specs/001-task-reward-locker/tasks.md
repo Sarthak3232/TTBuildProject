@@ -2,7 +2,7 @@
 
 **Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v4.0.0 (2026-11-09 scope amendment).
 **Planning branch**: `task-reward-spec` | **Initial implementation branch**: `SarthakInitialSetup` | **Created**: 2026-11-01
-**Status**: T001 complete. T003–T005, T007–T008, T013 and T054 have scoped database progress; T005, T006 and T017 also have frontend progress. These broader tasks remain unchecked until all acceptance requirements and prerequisites pass. See [implementation evidence](implementation-evidence.md). The full application is not complete.
+**Status**: Current non-ML source is implemented and passes isolated validation (T074–T079/T082). T073/T080/T081 await hosted Auth/configuration/migration acceptance; full-product ML/hardware/research tasks remain unchecked. Earlier foundation and frontend contributions are retained in [implementation evidence](implementation-evidence.md).
 
 ## Current Scope — Non-ML Application and Run/Walk Tracking
 
@@ -277,11 +277,12 @@ Setup → Auth/activity foundation → US1 (custom timers + earning)
                                ├→ US4 (run/walk)
                                ├→ US5 (daily goals/history)
                                └→ US6 (profile UI)
-Hardware readiness + foundation → US2 (redemption/locker, deferred)
+Foundation → virtual US2 (spending/fixed results now)
+Hardware readiness → physical delivery/locker acknowledgement (deferred)
 Current story gates → scoped validation; all story gates → full-product evidence
 ```
 
-After hardware readiness, US2 core can be tested after foundation using isolated seeded balances; its full effort-to-unlock gate also requires US1. Other stories use shared foundation services and isolated fixtures, not another story's unfinished UI. US5, US3, US4 and US6 proceed from their activity-foundation prerequisites without waiting for deferred US2; the numbered phase layout retains the spec's story order. Complete all story gates before final validation.
+Virtual US2 is tested now after foundation using isolated balances; its effort-to-spend path also uses US1. Physical effort-to-unlock acceptance waits for hardware integration. Other stories use shared foundation services and isolated fixtures, not another story's unfinished UI. US5, US3, US4 and US6 proceed from their activity-foundation prerequisites without waiting for deferred US2; the numbered phase layout retains the spec's story order. Complete all story gates before final validation.
 
 Within each phase: failing meaningful tests → storage/constraints → domain/service → endpoints → UI → evidence gate. Except for the explicitly scoped auth-first gate above, a task starts only after every listed `After T###` prerequisite. SQL migrations use increasing versions assigned when implemented; serialize migration/type generation across otherwise independent story work.
 
@@ -308,7 +309,7 @@ These are optional scheduling opportunities, not instructions to spawn agents. E
 1. Establish the repeatable local stack and pass shared identity/accounting gates.
 2. Deliver US1 first: create a custom task, measure time, finish once and inspect reward/receipt. This is the smallest useful MVP.
 3. Add US5 daily scheduling/history, US3/US4 tracking and US6 profile enhancements from their stated prerequisites; validate current activity and earning scope.
-4. Resume US2 only after hardware readiness, then validate duplicate/concurrent spending and acknowledgement recovery. Do not label the full product complete while its deferred stories or cross-cutting checks remain pending.
+4. Validate virtual US2 spending/fixed results now, including duplicate/concurrent spending; defer only physical delivery/acknowledgement recovery. Do not label deferred ML/hardware/research checks complete.
 5. Commit logical verified increments. Keep runtime test/measurement evidence separate from this generated backlog. No public deployment, real hardware integration, phone detection, separate weekly targets or extra recurring schedule types are introduced.
 
 ## Requirement Coverage
@@ -409,12 +410,16 @@ Every FR and buildable SC has explicitly mapped work. The table is a planning co
 These scoped acceptance tasks complement the retained full-product backlog. They do not mark deferred ML/device/research work complete.
 
 - [ ] T073 [US6] Deliver real Supabase signup/signin/confirmation/recovery/logout, refreshed verified sessions, protected pages/APIs and profile edits in `web/src/server/auth/`, `web/src/server/supabase/`, `web/src/proxy.ts`, auth routes and profile feature. Cover T009–T011/T017/T062–T065; prove two-account ownership and no preview bypass. Issue #10.
-- [ ] T074 [US1] Deliver persistent custom create/edit/archive/reuse/reflection UI and API with minimum >=30 minutes; replace task/Create previews and preserve predefined identities. Cover T019–T023. Issue #10.
-- [ ] T075 Deliver shared server-clock lifecycle and atomic restricted completion/ledger/wallet RPCs with ordered locks, idempotency/revisions, one unfinished session, paused exclusion and boundary/concurrency tests. Fresh SQL migration plus shared activity/domain/client code; cover T012–T018/T024. Issue #10.
-- [ ] T076 [US5] Deliver persisted schedules, captured-timezone/DST daily matching progress, dashboard, filtered/cursor history and profile calendar from the same records; cover T053–T061 and newest-first consistent totals. Issue #10.
-- [ ] T077 [US2] Deliver four virtual slots, secure quantized two-stage odds, atomic full-stake debit/fixed result/pending entitlement and result recovery. Implement zero/fraction/negative/overspend/replay/concurrent-spend rejection and deterministic isolated win/loss tests. No fake delivery; cover current portions of T025–T028/T032/T033/T035. Issue #10.
-- [ ] T078 [US4] Deliver private sequenced GPS storage/ingestion and validated segmented distance with running-interval ownership checks; cover T047–T050, duplicate/late batches and pauses/gaps. Issue #9.
-- [ ] T079 [US4] Deliver live run/walk controls/map/route/distance/pace/summary with shared session accounting, foreground permission handling and independent GPS/tile errors. Cover T051/T052; mocked-device evidence is separate from real-device acceptance. Issue #9.
+- [X] T074 [US1] Deliver persistent custom create/edit/archive/reuse/reflection UI and API with minimum >=30 minutes; replace task/Create previews and preserve predefined identities. Cover T019–T023. Issue #10.
+- [X] T075 Deliver shared server-clock lifecycle and atomic restricted completion/ledger/wallet RPCs with ordered locks, idempotency/revisions, one unfinished session, paused exclusion and boundary/concurrency tests. Fresh SQL migration plus shared activity/domain/client code; cover T012–T018/T024. Issue #10.
+- [X] T076 [US5] Deliver persisted schedules, captured-timezone/DST daily matching progress, dashboard, filtered/cursor history and profile calendar from the same records; cover T053–T061 and newest-first consistent totals. Issue #10.
+- [X] T077 [US2] Deliver four virtual slots, secure quantized two-stage odds, atomic full-stake debit/fixed result/pending entitlement and result recovery. Implement zero/fraction/negative/overspend/replay/concurrent-spend rejection and deterministic isolated win/loss tests. No fake delivery; cover current portions of T025–T028/T032/T033/T035. Issue #10.
+- [X] T078 [US4] Deliver private sequenced GPS storage/ingestion and validated segmented distance with running-interval ownership checks; cover T047–T050, duplicate/late batches and pauses/gaps. Issue #9.
+- [X] T079 [US4] Deliver live run/walk controls/map/route/distance/pace/summary with shared session accounting, foreground permission handling and independent GPS/tile errors. Cover T051/T052; mocked-device evidence is separate from real-device acceptance. Issue #9.
 - [ ] T080 Verify the combined non-ML domain/API/database/browser flows, auth/RLS/CSRF/bounded inputs, no unverified study credits and no public grant/clock/RNG controls; keep existing visual design usable at desktop/phone sizes. Cover current T066–T069/T071. Both issues.
 - [ ] T081 Apply reviewed forward migrations to the intended database, regenerate schema types serially, verify migration source parity and record actual commands/results without secrets or hosted resets. Both issues.
-- [ ] T082 Update `README.md`, setup/environment guidance, API/contracts and `implementation-evidence.md`; reconcile only task boxes backed by evidence, document real-GPS/ML/hardware/usability limitations and verify optional extension hooks. Both issues.
+- [X] T082 Update `README.md`, setup/environment guidance, API/contracts and `implementation-evidence.md`; reconcile only task boxes backed by evidence, document real-GPS/ML/hardware/usability limitations and verify optional extension hooks. Both issues.
+
+### Current scoped evidence status
+
+T074–T079 and T082 have source, domain/database or mocked-browser evidence in `implementation-evidence.md`. T073 remains unchecked because hosted account/email/recovery verification awaits configuration. T080 remains unchecked for the real-account combined gate despite the passing isolated automated suite. T081 remains unchecked because the intended hosted migration application/parity has not been performed. These unchecked gates do not imply the implementation uses preview data or client-authoritative tokens; they identify unperformed live acceptance. Original mixed full-product task boxes remain unchanged until their entire ML/device/research scope and prerequisites are satisfied.

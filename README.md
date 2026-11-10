@@ -18,24 +18,42 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Project status:** The basic Next.js application shell has five main pages, a shared sidebar, and Studbot/run-tracker routes. The Supabase database foundation now has profiles, `tokenBalance`, tasks, activity/history and daily-goal tables with access rules and signup provisioning. The pages below describe planned features; account screens, activity tracking, token crediting, backend services, firmware, and the locker are still pending. Redemption, spending, locker/drawer tables and unlock delivery are deferred until the hardware is ready.
+> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result now; winning delivery remains pending physical hardware. ML/Studbot integration is excluded and cannot award unverified study time. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
 
-## Run the starter app
+## Run the app
 
-Use Node.js 22.20+ and npm 10.9.3+. If you use nvm, run `nvm use` first.
+Use Node.js 22.20+ and npm 10.9.3+ (`nvm use` if installed).
 
 ```sh
 npm ci
+cp web/.env.example web/.env.local
+```
+
+Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, server-only `SUPABASE_SECRET_KEY` and `APP_URL` in the ignored `web/.env.local`. Legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted for the server credential. Never prefix the secret key with `NEXT_PUBLIC_` or commit a populated environment file.
+
+Apply every committed migration in order to the intended Supabase project. The first four foundation migrations were already applied to the hosted [TTBuildProject database](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor); do not rerun their creation SQL there. Apply only the new application and GPS migrations after verifying migration history. No app flow resets a hosted database. Configure Auth's site URL and callback redirect allowlist for `APP_URL` (locally `http://localhost:3000` and `/auth/callback`, including recovery redirects). Email/password confirmation and recovery use Supabase email delivery.
+
+```sh
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). The root redirects to `/dashboard`. This starter needs no environment variables or backend services.
+Open [localhost:3000](http://localhost:3000). Sign up/confirm/sign in with a real account; blank preview login is gone. Without keys the app displays a development setup message. With keys but missing migrations, it reports the database error rather than awarding pretend tokens. See [database setup](supabase/README.md) and [quickstart](specs/001-task-reward-locker/quickstart.md).
 
-On phones, the three-bar menu button opens and closes navigation. Selecting a page closes the menu; Escape closes it and returns focus to the button. Desktop navigation stays in the left sidebar.
+```sh
+npm test
+npm run check
+npm run test:e2e
+```
 
-Run `npm run check` for lint, TypeScript checking, and a production build. `npm run start` serves the production build. See [Contributing](CONTRIBUTING.md) for the page file map and how to start a teammate branch.
+`check` runs lint, TypeScript and a production build. Browser tests use isolated test-only mocked Auth/activity/sensor contracts, without real accounts, time overrides or GPS collection. Install the Playwright Chromium version for a fresh machine, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing compatible test browser. The component harness exists only under `web/tests/` and adds no production route or auth bypass.
 
-The database is hosted in [Supabase](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor). See the [database setup guide](supabase/README.md) for the table list, migrations, access rules and verification instructions. The starter pages do not connect to it yet.
+For repeatable database/RLS/concurrency checks, create an **empty isolated local PostgreSQL 17 database** named `slotty_test*` with contrib extensions and `psql` available, then run:
+
+```sh
+python3 scripts/test-postgres.py postgresql://postgres@127.0.0.1:55432/slotty_test
+```
+
+The runner refuses hosted URLs and nonempty databases. It applies the migration chain, runs rollback fixtures and tests real concurrent requests; it supplies only the minimal Auth catalog/roles needed for PostgreSQL tests, not an Auth HTTP service. GitHub Actions creates a fresh Postgres service for the same checks. Generate public schema types with `python3 scripts/generate-public-types.py DATABASE_URL` against a migrated database; this uses read-only catalog queries and preserves the separately exported managed GraphQL metadata.
 
 ## Page-by-page features
 
@@ -44,7 +62,7 @@ The database is hosted in [Supabase](https://supabase.com/dashboard/project/yruy
 | **Dashboard** | See what you want to accomplish today. | Activity-specific daily goals; individual time progress such as **Study: 35/60 minutes**; completed tasks; token balance; tokens earned today; a shortcut to redeem rewards. |
 | **Tasks** | Start activities and earn tokens. | Studbot, run/walk tracking, and custom tasks; built-in session controls; required custom minimum-duration targets of at least 30 minutes; one optional reflection question per custom task. |
 | **History** | Review your completed activities. | Task name, description/reflection, date and time, duration, and tokens earned; newest-first daily groups; this-week, this-month, and all-time filters; saved run/walk summaries. |
-| **Redeem** | Spend tokens for a chance to open a drawer. | Four named items and drawer states; per-drawer token allocation; total cost and probability preview; two-stage rolls; win/loss results; unlock status and retry after a delivery failure. |
+| **Redeem** | Spend tokens for a virtual slot outcome. | Four allocations; cost and conditional/unconditional odds; secure two-stage rolls; immutable win/loss, token ledger and saved result recovery. Winning delivery is hardware pending. |
 | **Profile** | Keep your activity and rewards personal. | Account access; editable display name and timezone; private goals, task history, token balance, and associated locker. |
 
 ### Activity modes
@@ -70,7 +88,7 @@ The delivery scope includes the following:
 | **Accounts and activity records** | Profiles, private completion history, token balances, and earning/spending records. |
 | **Token and roll engine** | Time-based rewards, per-drawer allocations, probability previews, two-stage random outcomes, and protection against duplicate rewards or charges. |
 | **Four-drawer simulator** | Item assignment, locked/open states, collection and reload, offline behavior, and unlock-acknowledgement failure testing. |
-| **Physical locker and firmware** | Four lockable compartments, item-to-drawer mapping, roll-result communication, and control of the matching lock after a win; gates the later redemption/database integration milestone. |
+| **Physical locker and firmware** | Four lockable compartments, item-to-drawer mapping, roll-result communication, and control of the matching lock after a win; belongs to the later physical-delivery milestone; it does not gate virtual rolls. |
 | **Integration and validation** | End-to-end activity-to-unlock flow, reliable retry behavior, account isolation, privacy checks, usability checks, and documented validation results. |
 | **Project documentation** | Constitution, feature specification, technical plan, data model, interface contracts, validation guide, and implementation checklist. |
 
@@ -78,7 +96,7 @@ The delivery scope includes the following:
 
 ### 1. Prepare your rewards
 
-Assign an item to each of the four drawers and lock it. The Redeem page shows which items are available. This workflow is deferred until hardware readiness; the current milestone focuses on earning tokens.
+Assign an item to each of the four drawers and lock it. The Redeem page shows which items are available. Physical item setup is deferred until hardware readiness. Current virtual rolls use four allocation slots without claiming item availability or unlocking.
 
 ### 2. Plan your day
 
@@ -116,7 +134,7 @@ Check the Dashboard for today's goals and earnings, or filter History to review 
 
 ## Tech stack
 
-The stack below covers the web app, activity tracking, ML service, and locker firmware. React, Next.js, TypeScript, and the basic CSS layout are installed in the starter; backend, tracking, ML, and hardware integrations remain planned. Training and continuous-streaming additions are identified below.
+The stack below covers the web app, activity tracking, ML service, and locker firmware. React/Next.js, Supabase Auth/application services, transactional SQL and foreground map/GPS tracking are implemented in the current non-ML workstream; ML and physical hardware remain separate integrations. Training and continuous-streaming additions are identified below.
 
 ### Application, services, and hardware
 
@@ -124,7 +142,7 @@ The stack below covers the web app, activity tracking, ML service, and locker fi
 | --- | --- | --- |
 | **Frontend** | React.js, Next.js App Router, TypeScript, CSS modules / CSS variables | Responsive pages, navigation, timers, daily goals, history, and redeem controls. |
 | **Application backend** | Node.js, Next.js API routes, schema validation | Authenticated activity endpoints, session controls, token accounting, and roll requests. |
-| **Authentication and database** | Supabase Auth, PostgreSQL, Row Level Security, `@supabase/ssr` | User accounts, private profiles and routes, goal schedules, completion history, `tokenBalance`, and later roll records. |
+| **Authentication and database** | Supabase Auth, PostgreSQL, Row Level Security, `@supabase/ssr` | User accounts, private profiles and routes, goal schedules, completion history, `tokenBalance`, and fixed virtual roll records. |
 | **Transactions and locker delivery** | PostgreSQL RPC functions, Node.js `crypto`, persistent outbox worker | Atomic credits/spending, secure roll decisions, fixed outcomes, and retryable drawer commands. |
 | **Camera capture** | [MediaDevices `getUserMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), MediaStream, HTML Canvas | Request camera permission, preview the feed, and create small sampled JPEG frames. |
 | **Camera-to-model transport** | Authenticated HTTPS requests through Next.js to FastAPI | Send sampled frames for transient inference; return classification results without saving footage. |

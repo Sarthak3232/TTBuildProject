@@ -2,7 +2,7 @@
 
 **Branch**: `task-reward-spec` | **Date**: 2026-11-01 | **Spec**: [spec.md](spec.md)
 
-**Status**: Design and task breakdown complete. The initial frontend shell is implemented; see [tasks.md](tasks.md) and [implementation evidence](implementation-evidence.md) for its limited scope. The core Supabase schema is applied to the hosted TTBuildProject project; application backend and feature implementation remain pending.
+**Status**: Non-ML source is integrated with passing isolated validation. The hosted project has the earlier core schema; new migrations and real-account Auth verification await connection/configuration. See [tasks](tasks.md) and [implementation evidence](implementation-evidence.md) for current limits.
 
 ## Current milestone — issues #9 and #10
 
@@ -14,7 +14,7 @@ A virtual win records its slot/entitlement and `hardware_pending` delivery; a lo
 
 ## Summary
 
-Build a mobile-friendly React/Next.js application with Supabase Auth/Postgres and a private FastAPI MediaPipe service. Every custom task requires a selected minimum of at least 30 minutes (inclusive), with completion blocked until it is reached. Users earn whole tokens from timed custom activities, manually controlled runs/walks, and calibrated study-compatible camera observations. In the deferred redemption milestone, users allocate tokens among four drawers and roll with a total-stake win decision followed by weighted drawer selection. Dashboard goals are activity/time targets scheduled today only, daily, or on selected weekdays. Each local date has separate progress; no aggregate weekly targets.
+Build a mobile-friendly React/Next.js application with Supabase Auth/Postgres and a private FastAPI MediaPipe service. Every custom task requires a selected minimum of at least 30 minutes (inclusive), with completion blocked until it is reached. Users earn whole tokens from timed custom activities, manually controlled runs/walks, and calibrated study-compatible camera observations. In the current virtual-redemption milestone, users allocate tokens among four slots and commit a total-stake win decision followed by weighted slot selection. Physical delivery remains separate and pending hardware. Dashboard goals are activity/time targets scheduled today only, daily, or on selected weekdays. Each local date has separate progress; no aggregate weekly targets.
 
 The source-of-truth data is transactional: one completion credit, one roll debit/outcome, and an idempotent durable locker delivery. Study frames are analyzed transiently and discarded. Looking down to read/write is valid; the model does not prove cognitive attention or inspect screen content. See [research.md](research.md) for decisions, official sources, and explicit defaults.
 
@@ -32,13 +32,13 @@ The source-of-truth data is transactional: one completion credit, one roll debit
 
 **Target Platform**: Current mobile/desktop Chrome and Safari. Camera and GPS need localhost/HTTPS and foreground availability. No reliable screen-locked/background route promise; timer intervals can recover from server timestamps independently of route coverage.
 
-**Project Type**: Next.js full-stack web app, private FastAPI inference process, with a lightweight Node delivery worker deferred alongside redemption.
+**Project Type**: Next.js full-stack web app, private FastAPI inference process, with physical delivery/worker infrastructure deferred until hardware integration.
 
 **Performance Goals**: Local seeded dashboard/history/roll p95 under one second, excluding external model/map latency; one sampled study frame per second, bounded two-request inference concurrency, three-second timeout; normal simulator delivery within five seconds. Treat these as acceptance targets to measure, not current performance claims.
 
 **Constraints**: Exactly four drawers and one unfinished earning session per user; account isolation; zero saved study footage; no manual reward-bearing duration entry; no movement-based run auto-pause; no paid local service accounts required. Public deployment, real hardware, phone detection and learned cognitive-attention classification are outside scope.
 
-**Scale/Scope**: Local multi-account prototype with five main pages plus auth/calibration, two predefined activity families and custom tasks, schedules, histories, wallet, and persistent simulator recovery. Exercise 10,000 seeded completion records; no public production capacity promise.
+**Scale/Scope**: Local multi-account prototype with five main pages plus auth/calibration, two predefined activity families and custom tasks, schedules, histories, wallet, and fixed virtual roll recovery; physical simulator recovery remains future work. Exercise 10,000 seeded completion records; no public production capacity promise.
 
 ## Constitution Check
 
@@ -107,15 +107,15 @@ supabase/
 - Studbot uses ML landmarks plus calibrated orientation rules, not a nonexistent pretrained attention classifier. Five-second screen/book calibration, two-second reacquisition, five-second pending-away grace and unknown-state exclusion are specified in the ML and data contracts.
 - Keep one unfinished session per user to prevent simultaneous earning. Completion credits floor(milliseconds / 1,800,000); canceled sessions earn nothing. Distinct completed sessions may earn again from new time.
 - Daily goals sum matching intervals per local date, separately from token rounding. Active progress is provisional; canceled activity is excluded. Schedule changes apply to future occurrences and preserve history.
-- Generate secure roll random values only on the server, version/store the applied quantized curve, reject stale quotes without charge, and deliver each immutable outcome through a persistent event receipt.
+- Generate secure roll random values only on the server, version/store the applied quantized curve, validate allocations/balance atomically, and recover each immutable virtual result by idempotency key or roll id. Physical receipt delivery remains deferred.
 - One own-locker simulator includes normal/offline/fail-before-apply/drop-ack modes. Collection/reload follows acknowledged unlock; new items receive new revisions.
 
 ## Delivery Sequence
 
-1. Bootstrap workspace, Supabase auth/RLS/migrations, Next navigation/profile, accessible shared UI components and repeatable local setup.
-2. Deliver custom timers, completion ledger, dashboard goals/schedules/history as a vertical slice.
-3. Add FastAPI/MediaPipe calibration/classification and foreground run/walk maps with manual timer controls.
-4. Validate the auth/activity/earning milestone, including privacy, concurrency, date boundaries and account isolation.
-5. After hardware readiness, resume redemption: locker schema, quotes/rolls, delivery adapters and failure recovery. Revisit the retained simulator design against the hardware interface, then verify effort-to-unlock end to end.
+1. Reuse the existing Supabase foundation and frontend design; establish real verified Auth and shared session/accounting APIs.
+2. Deliver custom timers/reflections, immutable credits, goals/dashboard/history/profile and virtual rolls with atomic debits/fixed results.
+3. Build foreground run/walk GPS/map modules in parallel against the shared contract; integrate only after the foundation tests pass.
+4. Verify the combined non-ML application with domain/API/database/concurrency/browser checks. Apply forward migrations to the intended hosted project only with its connection available; record local and hosted evidence separately.
+5. Keep ML/camera observation integration, physical delivery/simulator workers, real-device GPS and five-person usability acceptance separately tracked. Never claim these passed from mocked tests.
 
-This sequence describes full delivery. [tasks.md](tasks.md) tracks actual completion; [quickstart.md](quickstart.md) separates runnable starter commands from future full-system setup and acceptance evidence.
+The original 72-task full-product backlog is retained, with T073–T082 tracking the current user-requested scope. See the API contract for the implemented `/api` routes, body UUID keys and direct JSON response shapes.
