@@ -166,3 +166,8 @@ revoke all on function public.app_mutate(uuid,text,uuid,jsonb) from public,anon,
 grant execute on function public.app_mutate(uuid,text,uuid,jsonb) to service_role;
 revoke all on function private.valid_allocations(integer[]),private.task_json(jsonb),private.session_json(public.activity_sessions),private.completion_json(public.completions),private.roll_json(public.rolls) from public,anon,authenticated;
 grant execute on function private.valid_allocations(integer[]),private.task_json(jsonb),private.session_json(public.activity_sessions),private.completion_json(public.completions),private.roll_json(public.rolls) to service_role;
+
+-- Browser writes must use the authenticated application boundary so schedule edits retain today's snapshot.
+revoke insert(id,user_id,task_id,target_ms,repeat_kind,date_once,weekdays,timezone,effective_from),
+ update(target_ms,repeat_kind,date_once,weekdays,timezone,effective_from,archived_at)
+ on public.goal_schedules from authenticated;

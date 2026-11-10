@@ -14,3 +14,7 @@ coverage/
 next-env.d.ts
 *.log
 .vercel/
+
+# Browser test artifacts
+web/test-results/
+web/playwright-report/

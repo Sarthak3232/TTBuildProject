@@ -179,7 +179,10 @@ begin
   update public.task_definitions set name = 'Changed predefined' where kind = 'study';
   get diagnostics affected = row_count;
   assert affected = 0, 'Owner changed a predefined task';
-  update public.goal_schedules set target_ms = 3600000 where id = goal_a;
+  begin
+    update public.goal_schedules set target_ms = 3600000 where id = goal_a;
+    raise exception 'Browser role bypassed effective-dated goal mutation';
+  exception when insufficient_privilege then null; end;
   assert (select target_snapshot = 1800000 from public.goal_occurrences where schedule_id = goal_a),
     'Editing a schedule changed its historical target';
   reset role;
