@@ -1,0 +1,11 @@
+import { createRoot } from "react-dom/client";
+import { AppProvider } from "@/features/app/AppProvider";
+import { ActivityPreview } from "@/features/tracking/ActivityPreview";
+import { TaskList } from "@/features/tasks/TaskList";
+import { CreateList } from "@/features/tasks/CreateList";
+import { RewardPreview } from "@/features/redeem/RewardPreview";
+import "@/app/globals.css";
+const session = new URL(window.location.href).searchParams.get("session") ?? undefined;
+const path = window.location.pathname;
+const content = path === "/tasks" ? <TaskList /> : path === "/create" ? <CreateList /> : path === "/redeem" ? <RewardPreview /> : <ActivityPreview savedSessionId={session} />;
+createRoot(document.getElementById("root")!).render(<AppProvider><main>{content}</main></AppProvider>);
