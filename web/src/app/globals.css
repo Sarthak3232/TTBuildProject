@@ -19,7 +19,23 @@ body {
 }
 
 a { color: inherit; text-underline-offset: 0.2em; }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+:where(a, button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+
+.field { display: grid; gap: 8px; min-width: 0; }
+.field > label, .progress-label > label { font-weight: 600; }
+.field-hint, .field-error { margin: 0; font-size: 0.875rem; }
+.field-hint { color: var(--muted); }
+.field-error { color: #a51d27; }
+.field :where(input, select, textarea) {
+  width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 4px; background: var(--surface); color: var(--text); font: inherit;
+}
+.field [aria-invalid="true"] { border-color: #a51d27; }
+.field :disabled { opacity: 0.65; cursor: not-allowed; }
+.progress-field { display: grid; gap: 8px; }
+.progress-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.progress-label > span { color: var(--muted); }
+.progress-field progress { width: 100%; height: 12px; accent-color: var(--text); }
 
 .app-shell { display: flex; min-height: 100dvh; }
 .sidebar {
@@ -76,5 +92,81 @@ p { max-width: 65ch; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
+
+/* Shared shell adapted from the supplied Dashboard reference. */
+:root {
+  --background: #080808; --surface: #121212; --text: #f5f5f5;
+  --muted: #a5a5aa; --border: #303030; --active: #211d10; --focus: #e2bd35;
+}
+.sidebar { flex-basis: 112px; padding: 28px 12px; background: linear-gradient(110deg, #111, #202020); display: flex; flex-direction: column; }
+.brand { display: grid; place-items: center; margin: 0 auto 32px; width: 48px; height: 48px; font-size: 10px; letter-spacing: -.03em; border: 1px solid #ef2b59; border-radius: 14px; background: linear-gradient(140deg, #f41c4d, #76001d); box-shadow: 0 0 25px #e5184240; }
+.navigation-list li + li { margin-top: 20px; }
+.navigation-list a { padding: 12px 3px; text-align: center; border-radius: 0; color: #aaaab0; font-size: 11px; border-bottom: 1px solid transparent; }
+.navigation-list a::before { display: block; font-size: 24px; margin-bottom: 5px; line-height: 1.3; }
+.navigation-list li:nth-child(1) a::before { content: '▦'; }
+.navigation-list li:nth-child(2) a::before { content: '☷'; }
+.navigation-list li:nth-child(3) a::before { content: '◷'; }
+.navigation-list li:nth-child(4) a::before { content: '♧'; }
+.navigation-list li:nth-child(5) a::before { content: '◎'; }
+.navigation-list a[aria-current='page'] { color: #e2bd35; border-color: #e2bd35; background: transparent; font-weight: 400; }
+main { padding: 40px clamp(24px, 5vw, 90px); }
+.field-error { color: #ff8199; }
+@media (max-width: 600px) {
+ .sidebar { display: block; padding: 12px 18px; } .brand { width: 40px; height: 40px; margin: 0; }
+ .menu-toggle { border-color: #444; color: #e2bd35; background: #1c1c1c; }
+ .navigation-list li + li { margin-top: 3px; } .navigation-list a { display: flex; gap: 12px; align-items: center; padding: 10px; text-align: left; font-size: 13px; }
+ .navigation-list a::before { width: 25px; margin: 0; font-size: 22px; } main { padding: 24px 18px; }
+}
+.brand img { display: block; width: 38px; height: 38px; }
+.navigation-list a[data-destination='create']::before { display: none; }
+.navigation-icon { display: block; margin: 0 auto 5px; }
+.navigation-list a[data-destination='history']::before { content: '◷'; }
+.navigation-list a[data-destination='redeem']::before { content: '♧'; }
+.navigation-list a[data-destination='profile']::before { content: '◎'; }
+@media(max-width:600px) { .navigation-icon { margin: 0; width: 25px; flex: 0 0 25px; } }
+.navigation-list a[data-destination='track activity']::before { display: none; }
+.navigation-list a[data-destination='studbot']::before { content: '♙'; }
+.navigation-list a[data-destination='profile']::before { display: none; }
+/* Casino marquee treatment for page titles and the custom-task popup. */
+body h1, #reuse-task-title {
+ font-family: Impact, 'Arial Narrow', 'Franklin Gothic Medium', sans-serif;
+ font-weight: 900;
+ text-transform: uppercase;
+ letter-spacing: .045em;
+ color: #f5cd46;
+ -webkit-text-stroke: .4px #ffdf71;
+ text-shadow: 0 2px 0 #8b5811, 0 4px 0 #4c2b0c, 0 0 18px #d89b2638;
+}
+body h1::after {
+ content: '';
+ display: block;
+ width: 88px;
+ height: 3px;
+ margin-top: 13px;
+ background: repeating-linear-gradient(90deg, #f4cf51 0 4px, transparent 4px 10px);
+ filter: drop-shadow(0 0 3px #e5af44);
+}
+@font-face {
+ font-family: 'Slotty Carnival';
+ src: url('/fonts/Rye-Regular.ttf') format('truetype');
+ font-style: normal;
+ font-weight: 400;
+ font-display: swap;
+}
+body h1, #reuse-task-title {
+ font-family: 'Slotty Carnival', Georgia, serif !important;
+ font-weight: 400 !important;
+ letter-spacing: .025em;
+ color: #ffda57;
+ -webkit-text-stroke: 0;
+ text-shadow: 1px 2px 0 #9a6417;
+ line-height: 1.25;
+}
+body h1::after { display: none; }

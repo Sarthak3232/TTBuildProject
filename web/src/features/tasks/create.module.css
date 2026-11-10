@@ -1,0 +1,29 @@
+.page { max-width: 800px; margin: 0 auto; padding: 28px; border: 1px solid #303030; border-radius: 28px; background: linear-gradient(125deg,#111,#242424); min-height: 680px; }
+.eyebrow { display:flex; justify-content:space-between; font-size:12px; } .eyebrow span {color:#ff365c;}
+.page h1 {font-family:Impact,'Arial Narrow',sans-serif; color:#e2bd35; font-size:clamp(28px,3.5vw,44px); margin:8px 0 12px;}
+.page header > p {color:var(--muted); font-size:14px; margin-bottom:28px;}
+.name {display:flex; align-items:center; gap:14px; background:#222; border:1px solid #303030; border-radius:13px; padding:14px;}
+.name > span {color:#f42553; font-size:25px;}
+.name input, .task > input {background:transparent; border:0; color:var(--text); font:inherit; min-width:0; width:100%; padding:4px;}
+.focus {border:0; padding:0; margin:24px 0; display:flex; gap:7px;} .focus legend {font-size:12px; color:var(--muted); margin-bottom:8px;}
+.focus label {position:relative;} .focus input {position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer;} .focus span {display:block; padding:7px 13px; border-radius:24px; background:#242424; border:1px solid #333; font-size:12px;}
+.focus input:checked + span {background:#a30831; border-color:#f52351;} .focus input:focus-visible + span {outline:2px solid var(--focus); outline-offset:3px;}
+.schedule {display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px;}.schedule label {font-size:12px;color:var(--muted);}
+.schedule select, .duration input {display:block; width:100%; background:#222; border:1px solid #333; color:#f5f5f5; border-radius:12px; padding:14px 10px; margin-top:6px; font:inherit;}
+.heading {display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}.heading h2 {font-size:20px;margin:0;}.heading > span {color:#ff365c;font-size:12px;}
+.tasks {display:grid;gap:10px;}.task {display:flex;gap:10px;align-items:center;padding:14px;background:#232323;border:1px solid #303030;border-radius:13px;}.grip {color:#f42553;}.task > input {font-size:14px;font-weight:600;flex:1;}.duration {flex:0 1 155px;min-width:95px;}.duration > span {display:block;color:var(--muted);font-size:10px;}.duration input {font-size:12px;padding:12px 6px;}.tokens {color:#e2bd35;font-size:12px;}
+.add {display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:10px;border:1px solid #e91e50;background:linear-gradient(100deg,#790520,#b80734);border-radius:12px;color:white;padding:15px;font:inherit;cursor:pointer;font-size:14px;}.add > span {font-size:25px;line-height:1;}.prepare {background:#252525;color:white;border:1px solid #555;border-radius:10px;padding:12px 18px;cursor:pointer;font:inherit;font-size:13px;}.hint {color:var(--muted);font-size:11px;}
+@media(max-width:600px){.page{padding:20px 16px;border-radius:20px;}.page header > p{font-size:12px;}.heading h2{font-size:18px;}.task{padding:12px 9px;gap:6px;}.task > input{font-size:12px;}.duration{flex-basis:115px;}.eyebrow{font-size:10px;}}
+
+.trash { flex: 0 0 36px; width: 36px; height: 40px; display: grid; place-items: center; padding: 0; color: #ff6484; background: transparent; border: 1px solid #69303e; border-radius: 9px; cursor: pointer; }
+.trash:hover { background: #491020; }
+.deleteDialog { width: min(420px, calc(100% - 32px)); padding: 26px; background: linear-gradient(125deg, #242424, #111); color: var(--text); border: 1px solid #d61c48; border-radius: 20px; box-shadow: 0 20px 70px #0009; }
+.deleteDialog::backdrop { background: #000b; }
+.deleteDialog h2 { font-size: 23px; margin: 0 0 12px; }
+.deleteDialog p { font-size: 14px; }
+.deleteName { color: var(--muted); overflow-wrap: anywhere; }
+.dialogActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.dialogActions button { padding: 11px 16px; border: 1px solid #555; border-radius: 9px; color: white; background: #262626; font: inherit; font-size: 13px; cursor: pointer; }
+.dialogActions .confirmDelete { background: #a80831; border-color: #ee2854; }
+@media(max-width:600px) { .task { flex-wrap: wrap; } .task > input { min-width: 65px; } .duration { flex-basis: 95px; } .trash { flex-basis: 32px; width: 32px; } }
+.prepare:disabled { opacity: .45; cursor: not-allowed; }

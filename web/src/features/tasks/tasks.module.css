@@ -1,0 +1,50 @@
+.page { max-width: 960px; margin: 0 auto; }
+.header { margin-bottom: 26px; }
+.eyebrow { display: flex; justify-content: space-between; font-size: 13px; }
+.eyebrow > span:last-child { color: #ff365c; font-size: 12px; }
+.header h1 { color: #e2bd35; font-family: Impact, 'Arial Narrow', sans-serif; font-size: clamp(28px, 3.5vw, 48px); margin: 8px 0 12px; }
+.header p { color: var(--muted); font-size: 14px; margin: 0; }
+.rhythm { background: #202020; border: 1px solid #c81540; border-radius: 20px; margin-bottom: 24px; }
+.rhythm summary { list-style: none; display: flex; align-items: center; gap: 16px; padding: 20px; cursor: pointer; }
+.rhythm summary::-webkit-details-marker { display: none; }
+.sun { font-size: 30px; color: #f22550; }
+.rhythm strong { font-size: 17px; font-weight: 600; display: block; }
+.rhythm small { display: block; font-size: 12px; color: var(--muted); }
+.chevron { color: var(--muted); margin-left: auto; }
+.rhythm > p, .rhythm > div { margin: 0; padding: 0 20px 20px; font-size: 13px; color: var(--muted); }
+.rhythm > div { display: flex; gap: 20px; flex-wrap: wrap; }
+.rhythm a { color: #f7d159; }
+.filters { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid #333; background: #141414; border-radius: 10px; padding: 4px; gap: 4px; }
+.filters button { border: 1px solid #303030; color: var(--muted); background: transparent; padding: 10px; border-radius: 7px; cursor: pointer; font: inherit; font-size: 13px; }
+.filters button[aria-pressed='true'] { color: white; background: linear-gradient(110deg, #790520, #b10c34); border-color: #dc1946; }
+.progress { margin: 24px 0 26px; font-size: 13px; }
+.progress :global(.progress-label > span) { color: #ff365c; }
+.progress progress { appearance: none; display: block; height: 5px; border: 0; border-radius: 5px; overflow: hidden; }
+.progress progress::-webkit-progress-bar { background: #303030; }
+.progress progress::-webkit-progress-value { background: #d91c47; }
+.progress progress::-moz-progress-bar { background: #d91c47; }
+.section { margin: 0 0 28px; }
+.sectionTitle { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sectionTitle h2, .empty h2, .form h2 { margin: 0; font-size: 20px; }
+.sectionTitle > span { color: #ff365c; font-size: 12px; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.list li { display: flex; align-items: center; gap: 15px; background: linear-gradient(110deg, #1a1a1a, #242424); border: 1px solid #303030; border-radius: 14px; padding: 18px; }
+.list h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.list p { color: var(--muted); margin: 3px 0 0; font-size: 12px; }
+.check { width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center; background: #111; border: 1px solid #333; border-radius: 8px; }
+.checked { background: linear-gradient(140deg, #d91440, #75071e); border-color: #ff2856; }
+.tokens { margin-left: auto; color: #e2bd35; font-weight: 600; font-size: 13px; }
+.add { display: flex; justify-content: space-between; align-items: center; width: 100%; color: #fff; background: linear-gradient(100deg, #790520, #b80734); border: 1px solid #e91e50; border-radius: 13px; padding: 16px 20px; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; }
+.add > span { font-size: 24px; font-weight: 400; line-height: 1; }
+.add:hover { background: #ba0b36; }
+.form { margin-top: 20px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; display: grid; gap: 18px; background: #171717; }
+.empty { padding: 28px 0; } .empty p { color: var(--muted); font-size: 14px; }
+.notice, .preview { font-size: 11px; color: var(--muted); }
+.notice:empty { display: none; }
+.activityLinks { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 24px; font-size: 12px; color: #e2bd35; }
+@media (max-width: 600px) {
+ .header h1 { font-size: 29px; } .header p { font-size: 11px; } .eyebrow { font-size: 11px; } .eyebrow > span:last-child { font-size: 10px; }
+ .rhythm summary { padding: 15px; gap: 12px; } .rhythm strong { font-size: 14px; } .rhythm small { font-size: 10px; }
+ .filters button { font-size: 11px; padding: 9px 4px; } .sectionTitle h2 { font-size: 17px; } .list li { padding: 16px 13px; gap: 12px; }
+ .list h3 { font-size: 13px; } .list p { font-size: 10px; } .progress { font-size: 11px; } .form { padding: 16px; }
+}
