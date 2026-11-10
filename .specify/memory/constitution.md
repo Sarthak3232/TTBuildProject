@@ -24,18 +24,20 @@ Raw study video MUST NOT be stored by default. Routes, activity, balances, and l
 MUST be account-scoped. Focus detection MUST be presented as an observable estimate rather
 than proof of learning. Missing observations MUST NOT be credited as tracked activity.
 
-### IV. Phased Redemption and Replaceable Hardware
+### IV. Virtual Redemption Before Physical Delivery
 
-The current milestone MUST support identity, activities, history, goals and token earning
-independently of redemption infrastructure. Current balances MUST use the user-selected table
-name `tokenBalance`. Roll/spending, locker/compartment provisioning and unlock-delivery
-infrastructure MUST be deferred until hardware readiness. These tables and services MUST NOT
-be prerequisites for signup or activity credits. This keeps current development focused on
-earning and tracking while the physical reward system is unfinished.
+The current milestone MUST support authentication, activities, history, goals, token earning,
+and virtual redemption independently of physical hardware. Current balances MUST use the
+user-selected table name `tokenBalance`. A valid roll MUST deduct the accepted allocation
+and persist one immutable win/loss result now. A winning result MUST retain its selected
+slot and entitlement with delivery explicitly pending hardware. The interface MUST NOT
+claim an unlock or acknowledgement when no device performed one. Hardware readiness MUST
+NOT block quoting, rolling, spending, result recovery, signup or activity credits.
 
-When redemption is implemented, roll outcome, unlock intent and locker acknowledgement MUST
-remain distinct states. Device adapters MUST preserve fixed outcomes and retry-safe unlocks.
-A simulator MAY support later adapter/recovery tests; it is not a prerequisite for this milestone.
+Physical locker provisioning, transport, actuator control, acknowledgement workers, collection
+and simulator-delivery recovery remain later work. Roll outcome and physical delivery MUST
+remain separate so integration cannot reroll or charge again. ML integration is outside this
+assignment; unverified study observations MUST NOT generate reward-bearing time.
 
 ### V. Accessible Flows and Evidence-Based Verification
 
@@ -57,7 +59,7 @@ remainder. Rolls have two stages: win/no-win from total allocation, then one dra
 from funded drawers. The current win curve starts at 20% and approaches 60%; its precise
 formula and proportional drawer-weighting assumption live in the feature spec.
 
-When redemption is implemented, a user's locker contains exactly four compartments.
+Virtual redemption contains exactly four allocation slots corresponding to the future locker compartments.
 Scheduled daily goals, task history, and
 profile data MUST derive from the same persisted activity records. Platform limits, tracking
 coverage, and interrupted-session behavior MUST be documented before the relevant feature ships.
@@ -87,4 +89,8 @@ Retain token earning now and defer redemption/locker infrastructure until hardwa
 replacing the initial simulator-first delivery obligation. Account isolation, credit integrity
 and future unlock-recovery requirements remain in force.
 
-**Version**: 3.0.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
+Amendment record — 2026-11-09, v4.0.0: explicit user request in issues #9/#10 enables
+virtual rolls, fixed outcomes and token spending before hardware readiness, while excluding
+ML integration and physical delivery. This supersedes the v3.0.0 blanket redemption gate.
+
+**Version**: 4.0.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-09

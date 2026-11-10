@@ -1,20 +1,20 @@
 # Tasks: Task Reward Locker
 
-**Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v3.0.0.
+**Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [data model](data-model.md), [contracts](contracts/api.md), [quickstart](quickstart.md), and constitution v4.0.0 (2026-11-09 scope amendment).
 **Planning branch**: `task-reward-spec` | **Initial implementation branch**: `SarthakInitialSetup` | **Created**: 2026-11-01
 **Status**: T001 complete. T003–T005, T007–T008, T013 and T054 have scoped database progress; T005, T006 and T017 also have frontend progress. These broader tasks remain unchecked until all acceptance requirements and prerequisites pass. See [implementation evidence](implementation-evidence.md). The full application is not complete.
 
-## Current Scope — Auth, Activity and Token Earning
+## Current Scope — Non-ML Application and Run/Walk Tracking
 
-**Immediate assignment — [issue #5](https://github.com/Sarthak3232/TTBuildProject/issues/5):** Database setup only. Target T003 and the schema/provisioning deliverables of T008; include SQL-only portions of T007, T013, T054 and the required DB tooling from T004/T005. No Next.js clients, auth pages, protected routes, application APIs or runtime earning/progress logic are included. Broader-task checkboxes remain unchecked until their entire acceptance scope and prerequisites pass; database setup does not finish T009–T011, T014–T016 or the foundation integration gate. Study/GPS-specific schema remains with T037/T048. The target is the hosted TTBuildProject Supabase project (`yruyulqwyalxmtseaoml`); local configuration is optional reproduction tooling. All ten core tables have been applied online. See [database setup](../../supabase/README.md) and [implementation evidence](implementation-evidence.md) for validation and remaining scope.
+User-directed 2026-11-09 scope is tracked in [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) (tracking) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) (all other app logic). Real auth, tasks/timers/reflections, earning, goals/dashboard/history/profile, GPS tracking and virtual rolls/spending are current. Physical hardware, simulator delivery workers/acknowledgements and ML/FastAPI/Studbot integration remain deferred. The old issue #5 database-only milestone is complete as a scoped contribution; its broader tasks were deliberately not checked from schema evidence alone.
 
-User confirmation on 2026-11-01: keep earning/saving tokens in `tokenBalance`; defer redemption and hardware-facing database work until the hardware is ready. Auth setup provisions a profile, zero balance and predefined tasks, without lockers/compartments or roll-table dependencies. Activity/session/goal/history and study/GPS tables follow their feature tasks. Keep atomic earning entries and completion deduplication so retries cannot award twice.
+The user explicitly requested two parallel agents. They may author independent modules/tests against one shared auth/session/accounting API; integration still requires the foundation gate. Shared manifests/types/migrations remain serialized. This scheduling authorization does not permit duplicate wallets, client-authoritative time/credits, public test bypasses or false live-device validation claims.
 
-**Deferred:** US2 **T025–T035**, locker/compartment provisioning (moved from T008 to T026), roll-linked ledger columns/foreign keys, spending, probability logic and delivery-worker configuration. Their IDs and unchecked status remain in the full-product backlog. Redeem keeps its placeholder route; visual design previews do not activate spending.
+**Virtual redemption override:** T025/T027/T028/T032/T033 apply to the current virtual quote/roll/result path, with T026 reduced to virtual slots/results/debit schema and pending entitlements. Hardware-online gating, physical provision/load/collect/acknowledgements, T029–T031, T034 and physical parts of T035 remain later work. Keep these mixed tasks unchecked until their full retained scope is complete; scoped current acceptance is tracked by T073–T082 below.
 
-**Auth-first gate:** T003 and the relevant web/DB test tooling from T004/T005 support T007–T010. The existing accessible shell supports this slice; remaining ML tooling and shared form/progress styling must stay tracked without blocking auth. T018 still requires the shared identity/activity/earning checks before dependent live features. Current milestone validation runs the applicable portions of T066–T072 without US2; those cross-cutting tasks remain partial until their deferred redemption checks can run.
+**ML exclusion:** T002 and T036–T046, plus ML portions of shared/cross-cutting tasks, are outside this assignment. The shared accounting layer must reject unverified study earning. Track real-GPS and five-person usability results honestly rather than inferring them from mocked tests.
 
-Unimplemented migration filenames below are design targets. When deferred migrations are actually created, assign fresh ordered versions after already-applied migrations and update the paths; do not backfill older versions or change task IDs.
+Unimplemented migration filenames below are original design targets. New migrations receive fresh increasing versions after already-applied files, which must not be edited. Current endpoints use `/api` in place of the original `/api/v1` paths while retaining the same access/accounting guarantees.
 
 ## Initial Setup Scope — Issue #1
 
@@ -119,7 +119,7 @@ Tests listed first must fail for the missing behavior before implementation and 
 
 ## Phase 4: User Story 2 — Roll to Unlock a Compartment (P1, deferred)
 
-**Hardware gate:** Do not start T025–T035 or their database migrations until hardware readiness. This phase is retained future design; it does not block auth, activity features or token earning.
+**Revised gate — 2026-11-09:** Virtual probability, spending, fixed results and hardware-pending entitlements are current scope. Physical unlock/provisioning/acknowledgement/simulator worker portions remain deferred. See current-scope overrides and T073–T082; do not mark a mixed physical task complete from virtual-only evidence.
 
 **Goal**: Allocate tokens, persist one fixed roll, and deliver it once to a simulated drawer.
 
@@ -403,3 +403,18 @@ Every FR and buildable SC has explicitly mapped work. The table is a planning co
 | Polish and Cross-Cutting Validation | 7 |
 
 | **Total** | **72** |
+
+## Phase 10: User-Requested Non-ML Delivery — 2026-11-09
+
+These scoped acceptance tasks complement the retained full-product backlog. They do not mark deferred ML/device/research work complete.
+
+- [ ] T073 [US6] Deliver real Supabase signup/signin/confirmation/recovery/logout, refreshed verified sessions, protected pages/APIs and profile edits in `web/src/server/auth/`, `web/src/server/supabase/`, `web/src/proxy.ts`, auth routes and profile feature. Cover T009–T011/T017/T062–T065; prove two-account ownership and no preview bypass. Issue #10.
+- [ ] T074 [US1] Deliver persistent custom create/edit/archive/reuse/reflection UI and API with minimum >=30 minutes; replace task/Create previews and preserve predefined identities. Cover T019–T023. Issue #10.
+- [ ] T075 Deliver shared server-clock lifecycle and atomic restricted completion/ledger/wallet RPCs with ordered locks, idempotency/revisions, one unfinished session, paused exclusion and boundary/concurrency tests. Fresh SQL migration plus shared activity/domain/client code; cover T012–T018/T024. Issue #10.
+- [ ] T076 [US5] Deliver persisted schedules, captured-timezone/DST daily matching progress, dashboard, filtered/cursor history and profile calendar from the same records; cover T053–T061 and newest-first consistent totals. Issue #10.
+- [ ] T077 [US2] Deliver four virtual slots, secure quantized two-stage odds, atomic full-stake debit/fixed result/pending entitlement and result recovery. Implement zero/fraction/negative/overspend/replay/concurrent-spend rejection and deterministic isolated win/loss tests. No fake delivery; cover current portions of T025–T028/T032/T033/T035. Issue #10.
+- [ ] T078 [US4] Deliver private sequenced GPS storage/ingestion and validated segmented distance with running-interval ownership checks; cover T047–T050, duplicate/late batches and pauses/gaps. Issue #9.
+- [ ] T079 [US4] Deliver live run/walk controls/map/route/distance/pace/summary with shared session accounting, foreground permission handling and independent GPS/tile errors. Cover T051/T052; mocked-device evidence is separate from real-device acceptance. Issue #9.
+- [ ] T080 Verify the combined non-ML domain/API/database/browser flows, auth/RLS/CSRF/bounded inputs, no unverified study credits and no public grant/clock/RNG controls; keep existing visual design usable at desktop/phone sizes. Cover current T066–T069/T071. Both issues.
+- [ ] T081 Apply reviewed forward migrations to the intended database, regenerate schema types serially, verify migration source parity and record actual commands/results without secrets or hosted resets. Both issues.
+- [ ] T082 Update `README.md`, setup/environment guidance, API/contracts and `implementation-evidence.md`; reconcile only task boxes backed by evidence, document real-GPS/ML/hardware/usability limitations and verify optional extension hooks. Both issues.

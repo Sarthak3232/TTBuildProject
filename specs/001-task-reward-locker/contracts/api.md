@@ -1,10 +1,12 @@
 # Web API contract
 
-Planned JSON interface under `/api/v1`, implemented by Next.js. Auth routes use Supabase Auth. Except auth/public health endpoints, require a valid cookie session verified server-side. Derive user ID from auth; never accept a request-body owner ID. Return 404 for another user's resource. Use same-origin/CSRF protection for cookie mutations, schema validation, and per-user rate limits.
+Planned JSON interface under `/api`, implemented by Next.js. Auth routes use Supabase Auth. Except auth/public health endpoints, require a valid cookie session verified server-side. Derive user ID from auth; never accept a request-body owner ID. Return 404 for another user's resource. Use same-origin/CSRF protection for cookie mutations, schema validation, and per-user rate limits.
 
-## Current milestone
+## Current milestone — 2026-11-09
 
-Auth/profile, task/activity, earning, goals/history and their study/GPS integrations are current scope; balances persist in `tokenBalance`. Locker, simulator-settings, roll-quote, roll-result and retry-delivery endpoints below are deferred until hardware readiness. Do not create their tables or require their availability for signup/completion. Balance/history endpoints initially report earning entries only; spending is added with redemption.
+Auth/profile, custom tasks and server-clock sessions, foreground GPS runs/walks, atomic earning, goals/history/dashboard/wallet, virtual allocations and fixed-result rolls are current scope. Balances persist in `tokenBalance`; the ledger records both credits and roll debits. The accepted allocation is spent once even on loss. Exactly four virtual slots represent future compartments; winning entitlements remain hardware-pending. Hardware availability/acknowledgement must not gate virtual rolls. ML calibration/frame endpoints and all physical/simulator delivery, collect/load/retry/settings endpoints in the retained design below remain deferred.
+
+The original versioned path design is implemented as `/api`; clients and handlers must agree on one path family. Shared activity/client types are defined in `web/src/domain/activity.ts` and shared state lives in `web/src/features/app/AppProvider.tsx`. Tracking consumes the same session and completion APIs. Endpoint/envelope details are reconciled to executable handlers during integration.
 
 ## Common envelopes
 
@@ -47,6 +49,8 @@ Custom-task creation requires an integer `minimumMs >= 1_800_000`; reject missin
 For positive allocated total n: `p = 0.60 - 0.40 * exp(-(n-1)/3)`. Store applied `winUnits = round(p * 1_000_000)` and policy `roll-v1`. Draw a secure uniform stage-one integer in `[0, 1_000_000)`; win iff it is below winUnits. Only a win selects a secure uniform token ticket in `[0,n)` and maps it to slot allocation ranges. Zero-funded slots never win. The resulting slot probability is `(winUnits / 1_000_000) * allocation/n`. All four allocations are spent even on a loss.
 
 Next generates random values exclusively with secure server randomness; the restricted RPC validates totals/policy and persists the result. Browser random values/outcome hints are ignored/rejected. Retrying a committed key returns the original result. Per-slot allocation limit 1,000,000 and total limit 4,000,000 are numeric validation bounds. Increasing stakes eventually changes displayed rounded odds by tiny or invisible amounts; there is never a guaranteed win.
+
+Virtual-roll delivery is `hardware_pending` for wins and has no successful unlock acknowledgement. Absent hardware does not block new virtual quotes/rolls. Physical drawer revision/known-online checks and durable adapter event delivery below apply only to the later physical milestone.
 
 Quote lifetime is 60 seconds. Expired/stale policy or drawer revisions require a new quote and cause no charge. Balance is checked at acceptance, not guaranteed by quoting. An accepted roll always charges once and creates one event, including losses; delivery can be pending after the result is known.
 

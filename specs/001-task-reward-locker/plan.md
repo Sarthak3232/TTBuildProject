@@ -4,11 +4,13 @@
 
 **Status**: Design and task breakdown complete. The initial frontend shell is implemented; see [tasks.md](tasks.md) and [implementation evidence](implementation-evidence.md) for its limited scope. The core Supabase schema is applied to the hosted TTBuildProject project; application backend and feature implementation remain pending.
 
-## Current milestone
+## Current milestone — issues #9 and #10
 
-The immediate assignment is [issue #5](https://github.com/Sarthak3232/TTBuildProject/issues/5): **Supabase schema setup only**. Create configuration, migrations, core tables, constraints/RLS, signup provisioning, generated schema types and SQL checks in the hosted TTBuildProject project (`yruyulqwyalxmtseaoml`). Local configuration supports optional reproduction only. Supabase clients, login pages, route protection, API services and runtime earning/progress logic are later application-integration work. The broader milestone below describes the subsequent product scope, not functionality delivered by the schema issue.
+The 2026-11-09 user request replaces the old schema-only/earning-only assignment. Implement all non-ML application flows and foreground run/walk GPS: real Supabase accounts, private tasks/sessions, atomic completion credits, persisted dashboard/goals/history/profile, virtual allocations and fixed server-authoritative rolls with atomic debits. Physical delivery remains pending hardware; no simulator/worker/unlock claim is required. Existing migrations are applied and immutable; append fresh migrations only. Preserve the visual design already merged in PR #8 and database foundation from PR #6.
 
-The user confirmed auth/profiles, tasks, activity/history, daily goals and **token earning** as the current delivery scope. Persist current balances in `tokenBalance`. Redeem/spending, locker/compartment provisioning, probability logic and delivery infrastructure wait until hardware readiness. The Redeem route stays a placeholder; none of its tables/services are prerequisites for signup or earning. Auth setup first creates profiles, zero balances and predefined task definitions; the activity tasks add measured earning afterward.
+Two user-requested agents use isolated worktrees. Tracking owns GPS ingestion/storage/distance/map and run/walk UI. Backend owns shared auth/session/accounting/API types, all other features, dependencies and core migrations. The coordinator owns specification reconciliation, serial schema/type application, combined tests and browser QA. Independent tests/modules may be authored in parallel before integration; foundation identity/accounting tests must pass before live features are accepted. ML/FastAPI/camera integration remains deferred, and study sessions must not earn without verified observations.
+
+A virtual win records its slot/entitlement and `hardware_pending` delivery; a loss records no winning slot. Hardware absence never blocks these rolls. Physical transport, successful acknowledgement, collection and simulator failure modes remain retained future design. API implementation uses `/api` consistently with no second wallet or session subsystem.
 
 ## Summary
 
@@ -45,10 +47,10 @@ The source-of-truth data is transactional: one completion credit, one roll debit
 | Traceable rules | Pass | Pass | User choices in spec; numeric/calibration/lifecycle defaults explicitly labeled |
 | Consistent rewards/outcomes | Pass | Pass | Restricted atomic RPCs, ownership checks, locks, idempotency and immutable outcomes |
 | Observation/privacy | Pass | Pass | Authenticated bounded inference, transient frames, aggregate results, private routes |
-| Phased redemption | Pass | Pass | Earning is independent of hardware; redemption tables and adapters wait until hardware readiness |
+| Phased redemption | Pass | Pass | Earning and virtual rolls are independent of hardware; only physical delivery/acknowledgement waits |
 | Accessible verification | Pass | Pass | Keyboard/labeled forms and status states; domain, RLS, concurrency, browser/device checks |
 
-Constitution v3.0.0 applies. Its user-directed scope amendment removes the earlier simulator-first prerequisite while preserving secure earning now and recovery requirements for future redemption. Gates are design checks; implementation must still supply evidence. The user-authorized initial shell implements routing before T010 and the full foundation gate: it contains public placeholders only, with no accounts, private records, earning, rolling, sensors, or locker control. T017 stays unchecked until protected navigation is implemented. This scope adjustment does not relax the authorization or accounting requirements for future features.
+Constitution v4.0.0 applies; the 2026-11-09 amendment enables virtual redemption now and keeps physical delivery/ML integration deferred. Historical sequence notes below describe the earlier plan where they differ from the current milestone. Constitution v3.0.0 previously applied. Its user-directed scope amendment removes the earlier simulator-first prerequisite while preserving secure earning now and recovery requirements for future redemption. Gates are design checks; implementation must still supply evidence. The user-authorized initial shell implements routing before T010 and the full foundation gate: it contains public placeholders only, with no accounts, private records, earning, rolling, sensors, or locker control. T017 stays unchecked until protected navigation is implemented. This scope adjustment does not relax the authorization or accounting requirements for future features.
 
 ## Project Structure
 

@@ -1,6 +1,6 @@
 # Locker and simulator contract
 
-**Deferred until hardware readiness.** No locker/compartment, roll or delivery tables are required for the current auth/activity/earning milestone. The retained adapter design below is future work and will be reviewed against the hardware interface before implementation.
+**Physical delivery deferred; virtual redemption enabled 2026-11-09.** Current scope includes four virtual allocation slots, transactional token debits, fixed win/loss results and pending winning entitlements. Hardware absence must not block rolling. No current result asserts an unlock/acknowledgement or sends an actuator command. A win keeps its slot/result and `hardware_pending` state for later delivery without reroll/payment. The physical/simulator adapter design below is retained future work and must be reviewed against the hardware interface before implementation.
 
 The retained test-adapter design is a persistent four-drawer simulator. A future hardware adapter implements the same versioned event/acknowledgement semantics; no device board, transport, wiring or actuator implementation is selected now.
 

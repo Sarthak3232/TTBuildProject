@@ -4,13 +4,11 @@ Design artifact, not an implemented database schema. All instants are UTC; calen
 
 The TokenBalance record maps to the database table `public."tokenBalance"`, using the exact user-selected name `tokenBalance`. Quote the mixed-case identifier in SQL. It stores each user's current whole-token balance; TokenEntry records store the earning/spending history separately.
 
-## Current and deferred schema
+## Current and deferred schema — 2026-11-09
 
-The current milestone covers accounts/profiles, `tokenBalance`, task definitions, activity sessions/intervals/completions, earning entries, daily goals and the study/route records needed by their features. Signup creates a profile, zero token balance and predefined tasks. Feature-specific activity/goal/model tables arrive with their respective tasks.
+Current scope covers accounts/profiles, `tokenBalance`, task definitions, activity sessions/intervals/completions, earning and spending entries, daily goals, private route points and virtual reward allocations/results. Signup provisions a profile, zero balance and predefined tasks. Current virtual redemption has exactly four slots per account and a fixed accepted outcome; winning results keep a hardware-pending entitlement. There is no device unlock or acknowledged delivery now. ML calibration/observations and physical locker/outbox/simulator receipts remain deferred.
 
-Locker, Compartment, RollQuote, Roll, UnlockEntitlement, DeliveryEvent and SimulatorReceipt are deferred until hardware readiness. Do not create or provision these during auth setup. Their rows below describe future design only.
-
-TokenEntry initially references a unique completion, records a nonnegative credit (including zero), and has no roll column or foreign key. Add roll-linked debits only with the deferred redemption migration. Shared IdempotencyRecord protection for session controls/completion remains relevant now, so retries cannot credit a completion twice; roll operations are added later.
+Extend TokenEntry in a new migration to allow exactly one completion credit or roll debit reference, never both, with one unique entry per source and nonnegative resulting balance. Existing immutable earning history remains intact. A roll debit/outcome/idempotency record commits atomically while holding the wallet lock. Clients cannot select authoritative owner/clock/randomness/outcome, edit balances, or invoke privileged functions. Physical locker/compartment/event rows below are retained future adapter design rather than required current tables.
 
 ## Records and constraints
 
