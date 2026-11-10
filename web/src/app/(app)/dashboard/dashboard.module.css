@@ -1,0 +1,48 @@
+.dashboard { max-width: 960px; margin: 0 auto; }
+.header { margin-bottom: 28px; }
+.eyebrow { display: flex; justify-content: space-between; align-items: center; font-size: 13px; letter-spacing: .03em; }
+.streak { color: #ff365c; font-size: 12px; }
+.header h1 { color: #e2bd35; font-family: Impact, 'Arial Narrow', sans-serif; font-stretch: condensed; font-size: clamp(28px, 3.5vw, 48px); letter-spacing: .015em; margin: 8px 0 12px; }
+.header p { color: #a5a5aa; font-size: 14px; margin: 0; }
+.hero { display: flex; align-items: center; gap: 32px; padding: 30px; border-radius: 24px; background: linear-gradient(120deg, #151515, #242424); }
+.ring { width: 154px; height: 154px; flex: 0 0 154px; border-radius: 50%; background: conic-gradient(#be1238 0 60%, #282828 60%); padding: 7px; transform: rotate(0deg); }
+.ring > div { height: 100%; border-radius: 50%; background: #1c1c1c; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring strong { color: #f52c55; font-size: 38px; font-weight: 400; line-height: 1.2; }
+.ring span { color: #a5a5aa; font-size: 12px; }
+.heroCopy > span { color: #ff365c; font-size: 11px; letter-spacing: .06em; }
+.heroCopy h2 { font-size: 28px; line-height: 1.15; font-weight: 600; margin: 10px 0 12px; }
+.heroCopy p { font-size: 12px; color: #a5a5aa; margin: 0; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+.stat { padding: 22px; border-radius: 16px; background: linear-gradient(120deg, #161616, #252525); }
+.stat > div { font-size: 28px; line-height: 1.3; }
+.stat > div span { color: #f52c55; margin-right: 7px; }
+.stat p { font-size: 12px; color: #a5a5aa; margin: 6px 0 0; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.sectionHeading h2 { font-size: 20px; margin: 0; }
+.sectionHeading a { font-size: 12px; color: #ff365c; text-decoration: none; padding: 8px 0; }
+.goals { padding: 0; margin: 0; list-style: none; display: grid; gap: 7px; }
+.goals li { display: flex; align-items: center; gap: 14px; border-radius: 14px; padding: 19px; background: linear-gradient(110deg, #191919, #242424); }
+.goals h3 { font-size: 15px; font-weight: 600; margin: 0; }
+.goals p { color: #a5a5aa; font-size: 12px; margin: 3px 0 0; }
+.check { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border: 1px solid #383838; border-radius: 9px; background: #252525; }
+.checked { background: linear-gradient(140deg, #db1541, #710e26); border-color: #ee2453; }
+.reward { margin-left: auto; color: #e2bd35; font-size: 12px; }
+.rewardNote { display: flex; gap: 18px; align-items: center; margin: 26px 0; padding: 20px; border-radius: 15px; background: linear-gradient(110deg, #191919, #242424); font-size: 14px; }
+.rewardNote > span { color: #ff365c; font-size: 28px; }
+.rewardNote p { color: #a5a5aa; font-size: 12px; margin: 3px 0 0; }
+.cta { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(100deg, #790520, #bb0735); border: 1px solid #e91e50; padding: 18px 20px; border-radius: 14px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 6px 24px #ba07352b; }
+.cta:hover { background: #ba0b36; }
+.cta span { font-size: 23px; }
+.preview { color: #a5a5aa; font-size: 11px; margin: 22px 0 0; }
+@media (min-width: 1000px) { .hero { padding: 36px; } .stats { gap: 24px; } }
+@media (max-width: 600px) {
+ .header { margin-bottom: 20px; } .header h1 { font-size: 29px; } .header p { font-size: 11px; }
+ .eyebrow { font-size: 11px; } .streak { font-size: 10px; }
+ .hero { padding: 20px 15px; gap: 18px; border-radius: 20px; }
+ .ring { width: 112px; height: 112px; flex-basis: 112px; padding: 5px; } .ring strong { font-size: 30px; } .ring span { font-size: 9px; }
+ .heroCopy > span { font-size: 9px; } .heroCopy h2 { font-size: 23px; } .heroCopy p { font-size: 10px; }
+ .stats { margin: 18px 0; gap: 10px; } .stat { padding: 16px; } .stat > div { font-size: 25px; }
+ .sectionHeading h2 { font-size: 17px; } .goals li { padding: 16px 13px; gap: 12px; } .goals h3 { font-size: 13px; } .goals p { font-size: 10px; }
+ .rewardNote { margin: 22px 0; } .cta { font-size: 13px; }
+}
+@media (max-width: 350px) { .hero { gap: 12px; padding: 18px 12px; } .ring { width: 95px; height: 95px; flex-basis: 95px; } }
