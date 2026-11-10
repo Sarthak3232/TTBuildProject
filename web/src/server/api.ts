@@ -15,9 +15,11 @@ export async function requireUser(request:Request,mutating=false) {
 export async function readBody<T extends z.ZodType>(request:Request,schema:T):Promise<z.infer<T>> {
  if(!request.headers.get("content-type")?.startsWith("application/json")) throw new ApiError(415,"content_type","Send JSON.");
  if(Number(request.headers.get("content-length")??0)>65536) throw new ApiError(413,"body_size","Request too large.");
- const content=await request.text();if(content.length>65536) throw new ApiError(413,"body_size","Request too large.");
+ const reader=request.body?.getReader();let bytes=0;const chunks:Uint8Array[]=[];
+ if(reader){try{while(true){const next=await reader.read();if(next.done)break;bytes+=next.value.byteLength;if(bytes>65536){await reader.cancel();throw new ApiError(413,"body_size","Request too large.")}chunks.push(next.value)}}finally{reader.releaseLock()}}
+ const buffer=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.byteLength}const content=new TextDecoder().decode(buffer);
  let value:unknown;try{value=JSON.parse(content)}catch{throw new ApiError(400,"json","Invalid JSON.")}
- const parsed=schema.safeParse(value);if(!parsed.success) throw new ApiError(400,"validation",parsed.error.issues[0]?.message??"Invalid request.");return parsed.data;
+ const parsed=schema.safeParse(value);if(!parsed.success) throw new ApiError(422,"validation",parsed.error.issues[0]?.message??"Invalid request.");return parsed.data;
 }
 export function noStore(data:unknown,status=200) {return Response.json(data,{status,headers:{"Cache-Control":"private, no-store"}})}
 export function jsonError(error:unknown) {

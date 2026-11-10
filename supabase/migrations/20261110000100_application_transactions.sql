@@ -5,7 +5,7 @@ alter table public.token_entries add column roll_id uuid unique;
 create table public.rolls (
  id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(user_id) on delete cascade,
  allocations integer[] not null,
- cost integer not null check (cost between 1 and 1000000), threshold integer not null check(threshold between 200000 and 600000),
+ cost integer not null check (cost between 1 and 4000000), threshold integer not null check(threshold between 200000 and 600000),
  won boolean not null, slot smallint check(slot between 1 and 4), policy_version text not null default 'roll-v1',
  delivery_state text not null check(delivery_state in ('hardware_pending','not_applicable')),
  created_at timestamptz not null default now(), resulting_balance bigint not null check(resulting_balance>=0),
@@ -53,7 +53,7 @@ declare
  v_task public.task_definitions; v_session public.activity_sessions; v_completion public.completions; v_roll public.rolls;
  v_profile public.profiles; v_id uuid; v_result jsonb; v_action text; v_elapsed bigint; v_award bigint; v_distance double precision;
  v_alloc integer[]; v_total integer; v_threshold integer; v_sample integer; v_slot integer; v_cumulative integer:=0; v_i integer;
- v_schedule public.goal_schedules; v_day date;
+ v_schedule public.goal_schedules; v_day date; v_timezone text; v_effective date;
 begin
  -- Every mutation takes the same owner wallet lock before a session/other row: no lost updates/deadlocks.
  select balance into v_balance from public."tokenBalance" where user_id=p_user_id for update;
@@ -123,12 +123,20 @@ begin
  elsif p_operation='goal.save' then
   select * into v_task from public.task_definitions where id=(p_payload->>'taskId')::uuid and user_id=p_user_id and archived_at is null;
   if not found then raise exception 'Task not found' using errcode='P0002';end if;
-  v_day:=(v_now at time zone v_profile.timezone)::date;
-  -- Editing archives the schedule and starts a fresh future definition; snapshots survive.
-  if p_payload ? 'id' then update public.goal_schedules set archived_at=v_now where id=(p_payload->>'id')::uuid and user_id=p_user_id; if not found then raise exception 'Goal not found' using errcode='P0002';end if;end if;
-  insert into public.goal_schedules(user_id,task_id,target_ms,repeat_kind,date_once,weekdays,timezone,effective_from) values(p_user_id,v_task.id,(p_payload->>'targetMs')::bigint,p_payload->>'repeatKind',case when p_payload->>'repeatKind'='today' then v_day end,case when p_payload->>'repeatKind'='weekdays' then array(select value::smallint from jsonb_array_elements_text(p_payload->'weekdays')) end,v_profile.timezone,v_day) returning * into v_schedule;
+  v_timezone:=coalesce(p_payload->>'timezone',v_profile.timezone);
+  if p_payload ? 'id' then
+   select * into v_schedule from public.goal_schedules where id=(p_payload->>'id')::uuid and user_id=p_user_id and archived_at is null for update;
+   if not found then raise exception 'Goal not found' using errcode='P0002';end if;
+   v_timezone:=coalesce(p_payload->>'timezone',v_schedule.timezone);
+   perform public.app_snapshot(p_user_id);
+   update public.goal_schedules set archived_at=v_now where id=v_schedule.id;
+  end if;
+  v_day:=(v_now at time zone v_timezone)::date;
+  v_effective:=v_day+case when p_payload ? 'id' then 1 else 0 end;
+  insert into public.goal_schedules(user_id,task_id,target_ms,repeat_kind,date_once,weekdays,timezone,effective_from) values(p_user_id,v_task.id,(p_payload->>'targetMs')::bigint,p_payload->>'repeatKind',case when p_payload->>'repeatKind'='today' then v_effective end,case when p_payload->>'repeatKind'='weekdays' then array(select value::smallint from jsonb_array_elements_text(p_payload->'weekdays')) end,v_timezone,v_effective) returning * into v_schedule;
   v_id:=v_schedule.id;v_result:=jsonb_build_object('id',v_id);
  elsif p_operation='goal.archive' then
+  perform public.app_snapshot(p_user_id);
   update public.goal_schedules set archived_at=v_now where id=(p_payload->>'id')::uuid and user_id=p_user_id returning id into v_id;
   if not found then raise exception 'Goal not found' using errcode='P0002';end if;
   v_result:=jsonb_build_object('id',v_id);
@@ -136,8 +144,8 @@ begin
   v_alloc:=array(select value::integer from jsonb_array_elements_text(p_payload->'allocations'));
   if not private.valid_allocations(v_alloc) then raise exception 'Invalid whole-token allocation' using errcode='22023';end if;
   select sum(v) into v_total from unnest(v_alloc) v;
-  if v_total<1 or v_total>1000000 or v_total>v_balance then raise exception 'Insufficient tokens or invalid stake' using errcode='22023';end if;
-  v_threshold:=floor((0.60-0.40*exp(-(v_total-1)::numeric/3))*1000000+0.00000001);
+  if v_total<1 or v_total>4000000 or v_total>v_balance then raise exception 'Insufficient tokens or invalid stake' using errcode='22023';end if;
+  v_threshold:=round((0.60-0.40*exp(-(v_total-1)::numeric/3))*1000000);
   v_sample:=(p_payload->>'winSample')::integer;
   if v_sample is null or v_sample<0 or v_sample>=1000000 then raise exception 'Invalid trusted random sample' using errcode='22023';end if;
   if v_sample<v_threshold then
