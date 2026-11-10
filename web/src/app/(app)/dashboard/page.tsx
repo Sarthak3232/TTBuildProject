@@ -1,40 +1,6 @@
-import type { Metadata } from "next";
+"use client";
 import Link from "next/link";
+import { useApp } from "@/features/app/AppProvider";
+import { SessionTimer } from "@/features/tasks/SessionTimer";
 import styles from "./dashboard.module.css";
-
-export const metadata: Metadata = { title: "Dashboard" };
-const goals = [
-  { name: "Run 1 hour", category: "Personal growth", time: "12:30 PM", complete: false },
-  { name: "Walk 1 hour", category: "Wellbeing", time: "6:00 PM", complete: false },
-  { name: "Study 1 hour", category: "Wellbeing", time: "Done at 7:15 AM", complete: true },
-];
-
-export default function DashboardPage() {
-  return (
-    <div className={styles.dashboard}>
-      <header className={styles.header}>
-        <div className={styles.eyebrow}><span>Slotty</span><span className={styles.streak}>♨ 5 day streak</span></div>
-        <h1>MAKE TODAY COUNT.</h1>
-        <p>Thursday, October 29 · Good morning, Sar</p>
-      </header>
-      <section className={styles.hero} aria-label="Daily goal summary">
-        <div className={styles.ring} role="img" aria-label="60 percent of today's goal"><div><strong>60%</strong><span>of today’s goal</span></div></div>
-        <div className={styles.heroCopy}><span>YOU’RE ON A ROLL</span><h2>3 down.<br />2 to go.</h2><p>A little focus goes a long way.</p></div>
-      </section>
-      <div className={styles.stats}>
-        <section className={styles.stat}><div><span aria-hidden="true">◎</span> 3</div><p>Your tokens</p></section>
-        <section className={styles.stat}><div><span aria-hidden="true">↗</span> +3</div><p>Earned today</p></section>
-      </div>
-      <section aria-labelledby="next-moves">
-        <div className={styles.sectionHeading}><h2 id="next-moves">Your next moves</h2><Link href="/tasks">View all 5 →</Link></div>
-        <ul className={styles.goals}>{goals.map(goal => <li key={goal.name}>
-          <span className={`${styles.check} ${goal.complete ? styles.checked : ""}`} aria-label={goal.complete ? "Completed" : "Not completed"}>{goal.complete ? "✓" : ""}</span>
-          <div><h3>{goal.name}</h3><p>{goal.category} · {goal.time}</p></div><span className={styles.reward}>+1</span>
-        </li>)}</ul>
-      </section>
-      <aside className={styles.rewardNote}><span aria-hidden="true">♧</span><div>Your next chance awaits.<p>1 token = 1 slot roll</p></div></aside>
-      <Link className={styles.cta} href="/redeem">Explore your rewards <span aria-hidden="true">♧</span></Link>
-      <p className={styles.preview}>Design preview · Sample goals and tokens</p>
-    </div>
-  );
-}
+export default function DashboardPage(){const{data}=useApp();const goals=data?.goals??[];const complete=goals.filter(g=>g.progressMs>=g.targetMs).length;const progress=goals.length?Math.round(100*goals.reduce((n,g)=>n+Math.min(1,g.progressMs/g.targetMs),0)/goals.length):0;return <div className={styles.dashboard}><header className={styles.header}><div className={styles.eyebrow}><span>Slotty</span><span>{data?.completedToday??0} completed today</span></div><h1>MAKE TODAY COUNT.</h1><p>{data?.today??"Loading today…"} · Hello{data?.profile.displayName?`, ${data.profile.displayName}`:""}</p></header><section className={styles.hero} aria-label="Daily goal summary"><div className={styles.ring} role="img" aria-label={`${progress}% of today's goals`}><div><strong>{progress}%</strong><span>of today’s goals</span></div></div><div className={styles.heroCopy}><span>YOUR DAILY RHYTHM</span><h2>{complete} down.<br/>{goals.length-complete} to go.</h2><p>{goals.length?"A little focus goes a long way.":"Create your first activity goal."}</p></div></section><div className={styles.stats}><section className={styles.stat}><div>◎ {data?.balance??"…"}</div><p>Your tokens</p></section><section className={styles.stat}><div>↗ +{data?.earnedToday??"…"}</div><p>Earned today</p></section></div><SessionTimer/><section aria-labelledby="next-moves"><div className={styles.sectionHeading}><h2 id="next-moves">Your next moves</h2><Link href="/create">Plan goals →</Link></div>{goals.length?<ul className={styles.goals}>{goals.map(goal=><li key={goal.id}><span className={`${styles.check} ${goal.progressMs>=goal.targetMs?styles.checked:""}`}>{goal.progressMs>=goal.targetMs?"✓":""}</span><div><h3>{goal.taskName}</h3><p>{Math.floor(goal.progressMs/60000)} / {Math.ceil(goal.targetMs/60000)} minutes{goal.provisionalMs>0?` · +${Math.floor(goal.provisionalMs/60000)} minutes in progress`:""}</p><progress value={Math.min(goal.progressMs,goal.targetMs)} max={goal.targetMs} aria-label={`${goal.taskName} progress`}/></div></li>)}</ul>:<p>No goals scheduled for today. <Link href="/create">Set a daily target.</Link></p>}</section><aside className={styles.rewardNote}><span aria-hidden="true">♧</span><div>Your next chance awaits.<p>Whole tokens earned from completed activity</p></div></aside><Link className={styles.cta} href="/redeem">Explore your rewards ♧</Link></div>}

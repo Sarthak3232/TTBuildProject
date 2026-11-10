@@ -9,7 +9,7 @@ export function supabaseConfig() {
 }
 export async function createServerSupabaseClient() {
  const {url,key}=supabaseConfig(); const store=await cookies();
- return createServerClient(url,key,{cookies:{getAll:()=>store.getAll(),setAll:values=>{try{values.forEach(({name,value,options})=>store.set(name,value,options))}catch{/* Refresh cookies are written by proxy/route handlers. */}}});
+ return createServerClient(url,key,{cookies:{getAll:()=>store.getAll(),setAll:values=>{try{values.forEach(({name,value,options})=>store.set(name,value,options))}catch{/* Refresh cookies are written by proxy/route handlers. */}}}});
 }
 export function createServiceClient() {
  const {url}=supabaseConfig();const secret=process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
