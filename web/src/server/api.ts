@@ -25,7 +25,7 @@ export function noStore(data:unknown,status=200) {return Response.json(data,{sta
 export function jsonError(error:unknown) {
  if(error instanceof ApiError)return noStore({error:{code:error.code,message:error.message}},error.status);
  const value=error as {code?:string;message?:string};
- const statuses:Record<string,number>={P0002:404,"23505":409,"40001":409,"22023":400,"23514":400,"54000":429};
+ const statuses:Record<string,number>={P0002:404,"23505":409,"40001":409,"22023":422,"23514":422,"54000":429};
  if(value.code && statuses[value.code])return noStore({error:{code:value.code,message:value.message??"Request failed"}},statuses[value.code]);
  const setup=value.message?.startsWith("Supabase")?value.message:undefined;
  if(!setup)console.error("Application request failed",{code:value.code??"unexpected"});
