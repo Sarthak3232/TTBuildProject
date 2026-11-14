@@ -4,7 +4,7 @@ Current non-ML implementation uses Next.js routes under `/api`. The earlier `/ap
 
 ## Access, requests and responses
 
-Except for auth entry points, each handler verifies the Supabase cookie session with `getUser()` near data access. Owner identity comes from that verified user, never from a client-supplied owner ID. Service credentials and database mutation RPCs stay server-only. Every JSON response has `Cache-Control: private, no-store`.
+Except for auth entry points, each handler verifies the Supabase cookie session with `getUser()` near data access. Owner identity comes from that verified user, never from a client-supplied owner ID. The same authenticated client makes owner-scoped database calls. Postgres RLS protects table reads. The database RPCs derive the owner from `auth.uid()` and validate inputs independently of the Next.js routes. Every JSON response has `Cache-Control: private, no-store`.
 
 Cookie mutations require matching `Origin`, reject cross-site requests, validate strict JSON input and stop reading after 64 KiB. Successful responses are the typed JSON object directly. Errors use `{error: {code, message}}`; expected classes include 401, 403, 404, 409, 413, 415, 422, 429 and dependency failures as 503. Malformed JSON is 400. A resource owned by another user is not returned.
 
@@ -45,7 +45,7 @@ GPS points use sequence, capturedAt, latitude/longitude and accuracy. The truste
 
 ## Virtual roll policy and hardware boundary
 
-For total allocated stake n: `p = 0.60 - 0.40 * exp(-(n-1)/3)`. Store `threshold = round(p * 1_000_000)` and `policyVersion = roll-v1`. Secure server randomness first chooses an integer in `[0,1_000_000)`; a win occurs below the threshold. Only a win samples a ticket in `[0,n)` to select one funded slot proportional to its allocation. The client displays both conditional and unconditional probabilities. Per-slot maximum is 1,000,000 and total maximum is 4,000,000. Zero/negative/fractional/overspend requests fail without a charge.
+For total allocated stake n: `p = 0.60 - 0.40 * exp(-(n-1)/3)`. Store `threshold = round(p * 1_000_000)` and `policyVersion = roll-v1`. Cryptographic randomness in Postgres first chooses an integer in `[0,1_000_000)`; a win occurs below the threshold. Only a win samples a ticket in `[0,n)` to select one funded slot proportional to its allocation. The client displays both conditional and unconditional probabilities. Per-slot maximum is 1,000,000 and total maximum is 4,000,000. Zero/negative/fractional/overspend requests fail without a charge.
 
 The fixed policy and allocations are validated atomically at acceptance; the current virtual interface does not require a separate quote resource. A retry may generate discarded server samples, but the committed key always returns its original stored outcome without another debit. No browser-supplied randomness is accepted. Both wins and losses spend the entire allocation exactly once. A win stores one slot and a `hardware_pending` entitlement; a loss has no slot and `not_applicable` delivery. Hardware absence must not block virtual rolls, and no result claims a physical unlock.
 

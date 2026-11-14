@@ -4,7 +4,7 @@ Current scope is issues #9/#10: real Supabase auth/profile, custom tasks and mea
 
 ## Configure and run
 
-Use Node 22.20+/npm 10.9.3+. Run `npm ci`, copy `web/.env.example` to ignored `web/.env.local`, and set the project URL/publishable key, server-only `SUPABASE_SECRET_KEY` and `APP_URL`. The secret must never have a `NEXT_PUBLIC_` prefix. Legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted. Apply the committed forward migrations in order; never edit/rerun the four already-applied hosted foundation migrations. Configure Supabase Auth site URL, confirmation/recovery email and callback allowlist for the actual app origin.
+Use Node 22.20+/npm 10.9.3+. Run `npm ci`, copy `web/.env.example` to ignored `web/.env.local`, and set the project URL, publishable key and `APP_URL`. Data requests use the signed-in user’s session. Apply pending migrations in order, including `authenticated_app_sessions` for session-based database access. Configure Supabase Auth site URL, confirmation/recovery email and callback allowlist for the actual app origin.
 
 Run `npm run dev` and open http://localhost:3000. Sign up, confirm email and sign in. Logout and password recovery use Supabase; account pages and APIs are protected. With no configuration the app gives a setup message, not a fixture-account bypass. The hosted project is `yruyulqwyalxmtseaoml`; production migration application and real Auth verification require its connection and are recorded separately from local evidence.
 

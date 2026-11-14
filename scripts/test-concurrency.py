@@ -43,11 +43,13 @@ def literal(value):
 
 def mutate(user, operation, key, payload):
     return json.loads(sql(
-        "select public.app_mutate(" + ",".join([
-            literal(user) + "::uuid", literal(operation), literal(key) + "::uuid",
+        "begin; set local role authenticated; select set_config('request.jwt.claim.sub',"
+        + literal(user)
+        + ",true); select public.my_app_mutate(" + ",".join([
+            literal(operation), literal(key) + "::uuid",
             literal(json.dumps(payload)) + "::jsonb",
-        ]) + ");"
-    ))
+        ]) + "); commit;"
+    ).splitlines()[-1])
 
 
 def together(calls):
@@ -93,8 +95,8 @@ try:
     assert sql("select count(*) from public.token_entries where user_id=" + literal(user_a) + "::uuid and completion_id is not null;") == "1"
 
     rolls, overspends = together([
-        lambda: mutate(user_a, "roll", str(uuid.uuid4()), {"allocations": [1, 0, 0, 0], "winSample": 0, "slotSample": 0}),
-        lambda: mutate(user_a, "roll", str(uuid.uuid4()), {"allocations": [1, 0, 0, 0], "winSample": 999999, "slotSample": None}),
+        lambda: mutate(user_a, "roll", str(uuid.uuid4()), {"allocations": [1, 0, 0, 0]}),
+        lambda: mutate(user_a, "roll", str(uuid.uuid4()), {"allocations": [1, 0, 0, 0]}),
     ])
     assert len(rolls) == 1 and len(overspends) == 1, (rolls, overspends)
     assert sql('select balance from public."tokenBalance" where user_id=' + literal(user_a) + '::uuid;') == "0"

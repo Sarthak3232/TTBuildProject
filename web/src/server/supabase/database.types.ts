@@ -635,6 +635,48 @@ export type Database = {
         }
         Returns: Json
       }
+      "my_app_calendar": {
+        Args: {
+          "p_month": string
+        }
+        Returns: Json
+      }
+      "my_app_history": {
+        Args: {
+          "p_period": string
+          "p_before": string
+          "p_before_id": string
+          "p_limit": number
+        }
+        Returns: Json
+      }
+      "my_app_mutate": {
+        Args: {
+          "p_operation": string
+          "p_key": string
+          "p_payload": Json
+        }
+        Returns: Json
+      }
+      "my_app_snapshot": {
+        Args: never
+        Returns: Json
+      }
+      "my_ingest_route_points": {
+        Args: {
+          "p_session_id": string
+          "p_revision": number
+          "p_points": Json
+          "p_gap": boolean
+        }
+        Returns: Json
+      }
+      "my_read_session_route": {
+        Args: {
+          "p_session_id": string
+        }
+        Returns: Json
+      }
       "read_session_route": {
         Args: {
           "p_user_id": string
