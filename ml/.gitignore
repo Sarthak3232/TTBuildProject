@@ -5,3 +5,4 @@ __pycache__/
 .uv-cache/
 /models/
 /devtools/results/
+/test-results/

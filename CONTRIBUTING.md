@@ -41,4 +41,41 @@ Before opening a PR:
 npm run check
 ```
 
-Also check your page and its navigation at desktop and phone widths. Root scripts include `dev` / `dev:web`, `lint`, `typecheck`, `build`, and `start`. CI runs the same frontend checks. Full ML, Supabase, and feature-test tooling will be added by their assigned Spec Kit tasks.
+Also check your page and its navigation at desktop and phone widths. Root scripts include `dev` / `dev:web`, `lint`, `typecheck`, `build`, and `start`. CI runs the same frontend checks. Supabase and full application feature-test tooling remain pending their assigned Spec Kit tasks.
+
+## ML continuous integration
+
+`.github/workflows/ml-checks.yml` runs on every pull request, on pushes to `main`
+and the Studbot ML feature branch, and through the Actions **Run workflow** button
+once the workflow is available on the default branch. It uses Ubuntu 24.04,
+Python 3.11, uv 0.11.29, and the committed `ml/uv.lock`. No repository secrets or
+camera are required. The `ML tests` job:
+
+1. Installs locked development dependencies and native runtime libraries.
+2. Runs the existing unit, API contract, runtime, and development-tool tests.
+3. Downloads the model/license assets and verifies their pinned sizes and hashes.
+4. Starts the real FastAPI lifespan and exercises MediaPipe classification using
+   an in-memory synthetic checkerboard JPEG, including readiness and auth checks.
+5. Uploads JUnit XML reports for seven days, including reports from failed tests.
+
+Reproduce the Python checks from the repository root:
+
+```sh
+uv sync --directory ml --locked --dev
+uv run --directory ml --locked --no-sync pytest
+uv run --directory ml --locked --no-sync python -m app.models.fetch
+uv run --directory ml --locked --no-sync pytest -m model_smoke
+```
+
+The ordinary `pytest` command excludes the `model_smoke` marker so local unit
+tests need no model downloads. Explicitly selecting `-m model_smoke` requires the
+real assets and fails if they cannot load; it does not silently skip. On Linux,
+install the native libraries listed in the workflow. Downloads require network
+access to the model/license sources in `ml/app/models/manifest.json`.
+
+This extends the ML portion of T005 and exercises the existing standalone work
+for T036/T038–T041. It does not complete those tasks' application prerequisites,
+T045's controlled accuracy evaluation, or deployment. A synthetic empty scene
+checks native runtime integration, not study-detection accuracy. No task
+checkboxes are changed. To enforce checks before merging, a repository ruleset
+must separately require `ML tests`.
