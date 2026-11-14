@@ -1,34 +1,106 @@
 "use client";
+
+import Link from "next/link";
 import { useState } from "react";
+import type { Completion } from "@/domain/activity";
+import { formatDuration, formatPace } from "@/domain/time/route";
+import { useApp } from "@/features/app/AppProvider";
+import { RouteMap } from "./RouteMap";
+import { useRouteTracker } from "./useRouteTracker";
+import { SavedActivityRoute } from "./SavedActivityRoute";
 import styles from "./tracking.module.css";
-export function ActivityPreview() {
- const [state,setState] = useState<"ready"|"tracking"|"paused"|"finished">("tracking");
- const [activity,setActivity] = useState("Walk");
- const [centered,setCentered] = useState(false);
- return <div className={styles.page}>
-  <header className={styles.header}><div className={styles.eyebrow}><span>SLOTTY</span><span>● {state === "tracking" ? "IN PROGRESS" : state.toUpperCase()}</span></div><h1>TRACK ACTIVITY</h1><p>Central Park, New York · Morning {activity.toLowerCase()}</p></header>
-  <label className={styles.type}>Activity type <select value={activity} disabled={state === "tracking" || state === "paused"} onChange={e => setActivity(e.target.value)}><option>Walk</option><option>Run</option></select></label>
-  <p className={styles.hint}>{state === "tracking" || state === "paused" ? "Activity type is locked while tracking." : "Choose your activity before starting."}</p>
-  <details className={styles.verification}>
-   <summary>View Slotty verification <span aria-hidden="true">⌄</span></summary>
-   <div><h2>Slotty verification</h2><p className={styles.verificationStatus}>Preview only · Not verified</p><dl><div><dt>Activity</dt><dd>{activity}</dd></div><div><dt>GPS collection</dt><dd>Not connected</dd></div><div><dt>Measured session time</dt><dd>Not connected</dd></div><div><dt>Token eligibility</dt><dd>Not evaluated</dd></div></dl><p>The map, distance, pace and timer use sample data. Slotty has not verified this activity, and no tokens will be awarded in this preview.</p><p>When tracking is connected, rewards will use measured activity time: one token per full 30 minutes in a completed session.</p></div>
-  </details>
-  <div className={styles.map}>
-   <svg viewBox="0 0 360 380" role="img" aria-label="Illustrated preview of a loop around Central Park reservoir. This is not a live GPS map.">
-    <rect width="360" height="380" fill="#223128"/>
-    <g transform="rotate(-8 180 190)"><path d="M60 -20L74 410M294 -20L304 410" stroke="#d0d0bc" strokeWidth="16"/><path d="M60 -20L74 410M294 -20L304 410" stroke="#fffef0" strokeWidth="7"/>
-    <g fill="none" stroke="#555955" strokeWidth="6"><path d="M23 30h24v300H23zM316 55h22v150h-22M23 80h24m-24 50h24m-24 50h24m-24 50h24m-24 50h24M316 105h22m-22 50h22"/></g>
-    <path d="M95 73Q165 84 247 82Q258 124 240 178Q219 202 233 235Q250 275 235 297Q170 305 102 290Q77 242 88 210Q104 180 94 145Q81 106 95 73Z" fill="none" stroke="#f5f4e8" strokeWidth="4"/>
-    <ellipse cx="173" cy="175" rx="74" ry="91" fill="#203a43" stroke="#f7f6e9" strokeWidth="11"/>
-    <path d="M130 320L132 260C80 231 85 113 139 83C181 68 228 95 243 128" fill="none" stroke="#0d1210" strokeWidth="9"/><path d="M130 320L132 260C80 231 85 113 139 83C181 68 228 95 243 128" fill="none" stroke="#f94d7a" strokeWidth="4"/>
-    <circle cx="130" cy="320" r="5" fill="#26382e" stroke="#ff4b7a" strokeWidth="3"/><circle cx="243" cy="128" r="12" fill="#5399e755"/><circle cx="243" cy="128" r="5" fill="#4f9fe9" stroke="#cbe6ff" strokeWidth="2"/></g>
-    <g fill="#a8afac" fontFamily="Arial,sans-serif" textAnchor="middle"><text x="184" y="43" fontSize="10" letterSpacing="2">CENTRAL PARK</text><text x="193" y="166" fontSize="10">Jacqueline</text><text x="193" y="181" fontSize="10">Kennedy Onassis</text><text x="193" y="196" fontSize="10">Reservoir</text><text x="224" y="344" fontSize="9">Great Lawn</text><text x="39" y="357" fontSize="8">500 ft</text></g>
-   </svg>
-   <span className={styles.signal}>● GPS preview</span><span className={styles.north}>N ↑</span><button className={styles.center} type="button" aria-label="Center preview map" onClick={() => setCentered(true)}>⌖</button>
-  </div>
-  <div className={styles.stats}><div><span>Distance</span><strong>1.24<small> mi</small></strong></div><div><span>Elapsed time</span><strong>24:48</strong></div><div><span>Current pace</span><strong className={styles.pace}>19:32<small> /mi</small></strong></div><div><span>Average pace</span><strong className={styles.pace}>20:00<small> /mi</small></strong></div></div>
-  <div className={styles.controls}><button type="button" disabled={state === "tracking"} onClick={() => {setState("tracking");setCentered(false);}}>▷ {state === "paused" ? "Resume" : "Start Activity"}</button><button className={styles.primary} type="button" disabled={state !== "tracking"} onClick={() => setState("paused")}>Ⅱ Pause</button></div>
-  <button className={styles.finish} type="button" disabled={state === "finished" || state === "ready"} onClick={() => setState("finished")}>□ Finish Activity</button>
-  <p role="status" className={styles.hint}>{state === "finished" ? "Preview finished. No activity or tokens were saved." : centered ? "Preview map is centered on the sample route." : state === "paused" ? "Preview paused. Resume when you’re ready." : "Design preview · Static sample route and metrics · GPS is not active"}</p>
- </div>;
+
+/** Kept at the existing import path so links continue to open the real tracker. */
+export function ActivityPreview({ savedSessionId }: { savedSessionId?: string }) {
+  if (savedSessionId) return <div className={styles.page}><header className={styles.header}><h1>Saved activity</h1><p>Your private recorded run or walk.</p></header><SavedActivityRoute sessionId={savedSessionId} /><p><Link href="/history">Back to history</Link> · <Link href="/tasks/runTracker">Track a new activity</Link></p></div>;
+  return <LiveActivityTracker />;
+}
+
+function LiveActivityTracker() {
+  const { data, activity, elapsedMs, online, busy, error, startTask, controlSession } = useApp();
+  const [selection, setSelection] = useState<"run" | "walk">("walk");
+  const [summary, setSummary] = useState<Completion | null>(null);
+  const [notice, setNotice] = useState("");
+  const [description, setDescription] = useState("");
+  const [reflection, setReflection] = useState("");
+  const [saving, setSaving] = useState(false);
+  const current = activity && (activity.task.kind === "run" || activity.task.kind === "walk") ? activity : null;
+  const routeSessionId = current?.id ?? summary?.sessionId ?? null;
+  const tracking = useRouteTracker(routeSessionId, current, online);
+  const kind = current?.task.kind ?? summary?.task.kind ?? selection;
+  const activityName = kind === "run" ? "Run" : "Walk";
+  const activeMs = current ? elapsedMs : summary?.eligibleMs ?? 0;
+  const distanceM = summary?.sessionId === routeSessionId && !current ? summary.distanceM ?? tracking.route.distanceM : tracking.route.distanceM;
+  const stateLabel = current?.state ?? (summary ? "saved" : "ready");
+  const disabled = busy || saving || !online;
+  const anotherActivity = Boolean(activity && !current);
+
+  async function start() {
+    const task = data?.tasks.find(task => task.kind === selection && !task.archivedAt);
+    if (!task) { setNotice("Your activity list is still loading. Retry in a moment."); return; }
+    setNotice("");
+    try {
+      await startTask(task.id);
+      setSummary(null); setDescription(""); setReflection("");
+    } catch (cause) { setNotice((cause as Error).message); }
+  }
+
+  async function control(action: "pause" | "resume" | "complete" | "cancel") {
+    setSaving(true); setNotice("");
+    try {
+      if (action !== "resume") await tracking.stopAndFlush();
+      const result = await controlSession(action, { description, reflection });
+      if (action === "complete" && result.completion) {
+        setSummary(result.completion);
+        setSelection(result.completion.task.kind === "run" ? "run" : "walk");
+        setNotice(`Activity saved. ${result.completion.tokenAward} ${result.completion.tokenAward === 1 ? "token" : "tokens"} earned.`);
+      } else if (action === "cancel") { setSummary(null); setNotice("Activity cancelled. No completion or tokens were added."); }
+      else if (action === "resume") tracking.retryGps();
+    } catch (cause) {
+      setNotice((cause as Error).message);
+      tracking.retryGps();
+    } finally { setSaving(false); }
+  }
+
+  return <div className={styles.page}>
+    <header className={styles.header}>
+      <div className={styles.eyebrow}><span>SLOTTY</span><span>{stateLabel.toUpperCase()}</span></div>
+      <h1>Track activity</h1>
+      <p>Record a run or walk with a private GPS route and a saved activity summary.</p>
+    </header>
+    <label className={styles.type}>Activity type <select value={current ? current.task.kind : summary ? summary.task.kind : selection} disabled={Boolean(current) || disabled || anotherActivity} onChange={event => { setSelection(event.target.value as "run" | "walk"); setSummary(null); setNotice(""); }}><option value="walk">Walk</option><option value="run">Run</option></select></label>
+    <p className={styles.hint}>{current ? "Activity type is locked until you finish or cancel." : "Choose your activity before starting."}</p>
+    {anotherActivity && <p role="status" className={styles.banner}>You already have {activity?.task.name} in progress. <Link href="/tasks">Finish or cancel that activity</Link> before starting a run or walk.</p>}
+    <div className={styles.foregroundNote}>GPS records only while this page is visible. Keep your screen on for route coverage. Hidden pages, GPS loss, and network outages leave gaps; the server timer keeps running until you save a pause or finish. Standing still does not pause your timer.</div>
+    <RouteMap key={routeSessionId ?? "ready"} points={tracking.route.points} />
+    <p role="status" className={styles.gpsStatus}>{current?.state === "paused" ? "Paused. GPS is off; paused time and movement do not count." : summary && !current ? "Saved route. Missing GPS coverage stays a gap." : current ? tracking.status : "GPS is off. Starting an activity requests location access."}</p>
+    {current?.state === "running" && <button className={styles.retryGps} type="button" disabled={disabled} onClick={tracking.retryGps}>Retry GPS</button>}
+    {tracking.loading && <p role="status" className={styles.hint}>Loading the saved route before GPS collection…</p>}
+    {tracking.error && <p role="alert" className={styles.error}>{tracking.error} <button type="button" disabled={disabled} onClick={tracking.retryGps}>Reload route</button></p>}
+    <dl className={styles.stats}>
+      <div><dt>Distance</dt><dd>{(distanceM / 1000).toFixed(2)}<small> km</small></dd></div>
+      <div><dt>Active time</dt><dd data-testid="activity-timer">{formatDuration(activeMs)}</dd></div>
+      <div><dt>Average pace</dt><dd className={styles.pace}>{formatPace(distanceM, activeMs)}<small> /km</small></dd></div>
+      <div><dt>{summary && !current ? "Tokens earned" : "Tokens on completion"}</dt><dd>{summary && !current ? summary.tokenAward : Math.floor(activeMs / 1_800_000)}</dd></div>
+    </dl>
+    <details className={styles.verification}>
+      <summary>Activity and reward details <span aria-hidden="true">⌄</span></summary>
+      <div><p>One token per full 30 minutes of server-measured running time in a completed session. Manual pauses do not count. Unused minutes are discarded per session. GPS coverage does not determine your timer reward.</p><dl><div><dt>GPS fixes saved</dt><dd>{tracking.route.coverage.pointCount}</dd></div><div><dt>Route segments</dt><dd>{tracking.route.coverage.segmentCount}</dd></div><div><dt>Location privacy</dt><dd>Only your account can read this route.</dd></div></dl><p>Fixes with accuracy worse than 50 m, impossible jumps, stale timestamps, or missing coverage are excluded from distance. Small GPS jitter is filtered. Maps use OpenFreeMap; tile availability does not control recording.</p></div>
+    </details>
+    {current && <div className={styles.notes}>
+      <label>Activity notes (optional)<textarea maxLength={2000} value={description} onChange={event => setDescription(event.target.value)} disabled={disabled} rows={2} /></label>
+      {current.task.reflectionQuestion && <label>{current.task.reflectionQuestion}<textarea maxLength={4000} value={reflection} onChange={event => setReflection(event.target.value)} disabled={disabled} rows={2} required /></label>}
+    </div>}
+    {!current && <button className={styles.start} type="button" disabled={disabled || anotherActivity || !data} onClick={() => void start()}>Start {summary ? "another activity" : activityName.toLowerCase()}</button>}
+    {current && <>
+      <div className={styles.controls}>
+        <button className={styles.primary} type="button" disabled={disabled} onClick={() => void control(current.state === "paused" ? "resume" : "pause")}>{current.state === "paused" ? "Resume activity" : "Pause activity"}</button>
+        <button type="button" disabled={disabled || Boolean(current.task.reflectionQuestion && !reflection.trim())} onClick={() => void control("complete")}>Finish and save</button>
+      </div>
+      <details className={styles.cancel}><summary>Discard activity</summary><p>Discarding keeps no completion and awards no tokens.</p><button type="button" disabled={disabled} onClick={() => void control("cancel")}>Confirm discard</button></details>
+    </>}
+    {saving && <p role="status" className={styles.hint}>Saving your activity…</p>}
+    {notice && <p role="status" className={error ? styles.error : styles.notice}>{notice}</p>}
+    {summary && !current && <div className={styles.savedSummary}><h2>{activityName} saved</h2><p>{formatDuration(summary.eligibleMs)} active · {(distanceM / 1000).toFixed(2)} km · {summary.tokenAward} tokens earned</p><Link href="/history">View activity history →</Link></div>}
+  </div>;
 }

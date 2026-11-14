@@ -32,7 +32,11 @@ begin
     select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private') and p.prosecdef
       and (has_function_privilege('anon', p.oid, 'EXECUTE')
-        or has_function_privilege('authenticated', p.oid, 'EXECUTE'))
+        or (has_function_privilege('authenticated', p.oid, 'EXECUTE') and not (
+          n.nspname = 'private' and p.proname in (
+            'my_app_mutate', 'my_app_snapshot', 'my_app_history', 'my_app_calendar',
+            'my_ingest_route_points', 'my_read_session_route')
+        )))
   ), 'Browser roles can execute a privileged database helper';
 
   insert into auth.users(id, email, aud, role, raw_user_meta_data) values
@@ -179,7 +183,10 @@ begin
   update public.task_definitions set name = 'Changed predefined' where kind = 'study';
   get diagnostics affected = row_count;
   assert affected = 0, 'Owner changed a predefined task';
-  update public.goal_schedules set target_ms = 3600000 where id = goal_a;
+  begin
+    update public.goal_schedules set target_ms = 3600000 where id = goal_a;
+    raise exception 'Browser role bypassed effective-dated goal mutation';
+  exception when insufficient_privilege then null; end;
   assert (select target_snapshot = 1800000 from public.goal_occurrences where schedule_id = goal_a),
     'Editing a schedule changed its historical target';
   reset role;

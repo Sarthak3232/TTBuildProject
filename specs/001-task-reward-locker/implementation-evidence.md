@@ -86,3 +86,44 @@ The fourth migration revokes browser execution of the dashboard-created `public.
 T003 has configuration, pinned CLI, redacted environment template and local helper implementation, but the fresh local runtime acceptance remains unverified. T004/T005 have only supporting SQL fixture/tooling contributions. T007 has database ownership/provisioning validation; web auth-boundary tests remain pending. T008 has identity schema/provisioning and generated schema types; its prerequisite gate is not complete. T013 and T054 have their shared storage portions; runtime accounting, goal expansion/progress and prerequisite tests remain pending. These broader task boxes remain unchecked. T009–T011, T014–T016, T020, T055–T057 and T063 application integration is not delivered here. Study/GPS-specific schemas remain T037/T048. T025–T035 stay hardware-gated and unimplemented.
 
 The database can store earned tokens, but there is no runtime crediting RPC or application API yet. No rewards, spending, drawers or delivery tables were created, and no populated credentials are committed. See [database setup](../../supabase/README.md) for reproduction and verification.
+
+
+## 2026-11-09 — Parallel non-ML application integration (#9/#10)
+
+The user explicitly requested two agents: run/walk tracking in issue #9 and all other non-ML application logic in #10. Supabase database foundation and the styled frontend were already merged into main. Work is integrated on `codex/full-app-integration`; this is code/test evidence, not evidence of a deployed hosted application.
+
+### Scope delivered in source
+
+- Real Supabase email/password signup/signin, confirmation callback, recovery/update/logout; verified cookie auth near every data boundary. Protected app routes are explicitly dynamic; the production build lists account pages as dynamic rather than freezing a setup fallback. Blank preview entry and simulated private records were removed.
+- Persistent custom task create/edit/archive/reuse, selected >=30-minute minimum, optional nonblank completion reflection, one shared server-clock session, pause/resume/cancel/complete, refresh recovery and one unfinished session per account. Studbot is explicitly unavailable pending ML integration and cannot start reward-bearing study activity.
+- New restricted transactional `app_mutate` RPC validates owner, serializes wallet before session/other rows, persists UUID-key/payload idempotency and commits immutable completion/ledger credits or virtual-roll debits/results together. API clients never supply owner, elapsed time or authoritative random outcome. Default mutation keys survive uncertain replies/reload; accepted roll recovery returns the original result.
+- Goals/calendar/dashboard/history/profile derive from persisted records. Goal effective dates preserve today/past occurrences, capture IANA timezones and split intervals at local DST boundaries. Browser goal writes were revoked so direct requests cannot bypass future-only edits. History/ledger/results paginate with stable timestamp/id cursors.
+- Four virtual allocation slots, exact quantized two-stage server RNG, displayed conditional/unconditional odds, full-stake charge for win/loss, immutable roll history and a fixed winning slot with hardware-pending entitlement. No physical unlock, simulator delivery receipt or hardware command is claimed.
+- Real foreground run/walk geolocation, MapLibre/OpenFreeMap with attribution, private sequenced points, segmented distance/coverage, manual controls, saved route/summary and errors independent of timer rewards. Invalid/stale/jumping/paused points never fabricate distance. GPS capture stops on pause/end/hidden/offline; no background or screen-locked GPS promise.
+
+### Reproducible validation
+
+On the final integrated source:
+
+| Check | Result |
+| --- | --- |
+| `npm run check` | PASS: ESLint zero warnings, generated route types/TypeScript and production build. Protected account pages are dynamic. |
+| `npm test` | PASS: 47 tests across accounting/probabilities, GPS domain, trusted API input/auth/origin/RNG ordering/bounded streams, and client retry keys. |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=... npm run test:e2e` | PASS: 20 cases across desktop and Pixel 7 Chromium. Used an existing local Chromium binary; no browser download. |
+| `python3 scripts/test-postgres.py postgresql://postgres@127.0.0.1:55432/slotty_test_final` | PASS: fresh complete migration chain, base schema validation, application validation, tracking validation and actual concurrent transactions. Runner refuses hosted/nonempty databases. |
+| Fixture cleanup | Zero Auth fixture users remain after rollback/concurrency cleanup. |
+| Public type regeneration | 13 public tables and 6 public RPC signatures regenerated serially from the final migrated PG catalog; separately exported managed GraphQL metadata preserved. |
+
+PostgreSQL 17 was installed and an isolated native test cluster used. `bootstrap-local.sql` supplies minimal Supabase-style Auth roles/catalog/uid only; these are database fixtures, not an Auth HTTP implementation. The SQL suite proves 29:59/30:00/59:59/60:00 rounding, custom minimum/reflection, paused/canceled/stale/idempotency behavior, immutable ledger/results, exact win/loss/funded slot/pending entitlement, insufficient balance, goal/date/DST snapshots, pagination and RLS/privileged function boundaries. Real concurrent connections prove one accepted start, one completion credit and no overspending under simultaneous rolls.
+
+The browser suite runs the actual Next auth/protected surfaces and production React task/goal/roll/tracking components. Its test-only Vite host, network fixtures and synthetic GPS are under `web/tests/`; there is no production auth bypass or public fake clock/token/result route. Browser mocks validate client integration, not actual Supabase email/session issuance or real-device geolocation. GPS tests cover start/flush/pause/resume/finish, cursor/timer refresh, denied location and saved summaries under map failure. Task/roll cases cover reflected completion/wallet refresh, definition/schedule saves and fixed virtual results/debits at desktop/phone widths.
+
+GitHub Actions now runs unit/API tests, fresh PostgreSQL migration/RLS/concurrency checks, lint/typecheck/build and the browser suite. CI uses its own disposable service/database and synthetic test credentials, never the hosted project.
+
+### Access and remaining acceptance
+
+At the time of these checks, `web/.env.local` was absent and no Supabase management/CLI connection was verified. The user is preparing project URL/publishable/server secret values. The Supabase plugin was suggested, but attempted tools returned unknown-tool errors, and the CLI had no access token. No new migrations were applied to the hosted project, no real Auth account/email/recovery was exercised and hosted schema/type parity is not claimed. Configure keys, connect migration access, apply the three new forward migrations after verifying the four existing versions, configure Auth callback/site URLs, then verify the real account→activity→credit→roll flow.
+
+Docker-backed local Supabase startup encountered disk exhaustion and incomplete image files; task-created duplicate dependencies/build files and task-downloaded broken images were cleaned up without removing existing user files/images. The complete Docker/Auth stack did not pass startup. Native PostgreSQL tests are separate evidence. Do not assume local Supabase authentication is available from the SQL pass.
+
+Deferred: ML/FastAPI/calibration/camera integration; physical hardware/unlock/acknowledgement/retry/collection; real phone/GPS permission and background limits; five-person usability and full-product performance acceptance. Reviewer checklist markers were left unchanged. No `.specify/extensions.yml` or before/after implementation hooks exist. Constitution/spec/plan/contracts were reconciled to the user's virtual-roll-now amendment; mixed original tasks stay unchecked when their ML/device/live acceptance remains incomplete.

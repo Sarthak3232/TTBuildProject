@@ -3,3 +3,31 @@
 .studyLink { display: flex; align-items: center; gap: 12px; margin: 16px 0; padding: 14px 16px; color: #efcb39; background: #202018; border: 1px solid #746226; border-radius: 13px; text-decoration: none; font-size: 14px; }
 .studyLink > span:last-child { margin-left: auto; }
 .studyLink:hover { background: #2c2818; }
+.foregroundNote { margin: 18px 0; padding: 14px 16px; background: #171f27; border: 1px solid #33455a; border-radius: 12px; color: #c5d3e1; font-size: 12px; }
+.mapFrame { position: relative; margin: 18px 0; overflow: hidden; border-radius: 18px; background: #202e29; border: 1px solid #39433c; }
+.liveMap { height: 380px; width: 100%; }
+.mapFrame .center { z-index: 2; bottom: 92px; }
+.mapEmpty { position: absolute; top: 16px; left: 16px; right: 60px; margin: 0; padding: 8px 12px; color: #f4f4ee; background: #18201ee8; border-radius: 8px; font-size: 12px; pointer-events: none; }
+.mapError { position: relative; padding: 12px 16px; background: #38232a; color: #ffc2ce; font-size: 12px; }
+.mapError button, .error button { border: 0; padding: 2px 6px; border-radius: 4px; background: #f5f0e9; color: #301c21; font: inherit; cursor: pointer; }
+.mapAttribution { padding: 5px 12px; background: #17201b; color: #d1d9d4; font-size: 10px; }
+.gpsStatus { margin: 12px 0 6px; color: #badcc8; font-size: 13px; }
+.retryGps { color: #d7c768; border: 1px solid #6e653c; border-radius: 8px; background: #201f16; padding: 8px 12px; margin: 0 0 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.stats { margin: 24px 0; }
+.stats dt { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+.stats dd { margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -.04em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stats dd.pace { font-size: 30px; }
+.stats small { margin-left: 3px; }
+.notes { margin: 20px 0; }
+.notes label { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.notes textarea { resize: vertical; min-height: 70px; width: 100%; color: #f5f5f5; background: #161616; border: 1px solid #444; border-radius: 9px; padding: 10px; font: inherit; }
+.start { width: 100%; color: white; background: #b50735; border: 1px solid #da3059; border-radius: 13px; padding: 16px; font: inherit; cursor: pointer; }
+.start:disabled, .retryGps:disabled { opacity: .5; cursor: not-allowed; }
+.cancel { margin: 18px 0; color: #c7a5ac; font-size: 12px; }
+.cancel summary { cursor: pointer; }
+.cancel button { color: #ffb4c4; background: #351722; border: 1px solid #993449; border-radius: 8px; padding: 10px; font: inherit; cursor: pointer; }
+.banner, .notice, .savedSummary { margin: 18px 0; border: 1px solid #6d6237; background: #201e13; padding: 16px; border-radius: 12px; color: #e7d89d; font-size: 13px; }
+.savedSummary h2 { margin: 0; color: #f3d66d; }
+.error { color: #ffb0bf; font-size: 13px; }
+.savedRoute { margin-top: 14px; }
+@media (max-width: 600px) { .liveMap { height: 320px; } .stats dd { font-size: 30px; } .stats dd.pace { font-size: 26px; } }

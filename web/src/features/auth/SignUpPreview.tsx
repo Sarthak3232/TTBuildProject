@@ -1,24 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SlotMachineIcon } from "@/components/navigation/SlotMachineIcon";
+import { api } from "@/features/app/client";
 import styles from "./login.module.css";
-export function SignUpPreview(){
- const [showPassword,setShowPassword]=useState(false);
- const [notice,setNotice]=useState("");
- return <main className={styles.page}><div className={styles.content}>
-  <div className={styles.brand}><SlotMachineIcon /><span>Slotty</span></div>
-  <h1>YOUR NEXT MOVE.</h1><p className={styles.intro}>Build habits. Earn tokens. Make a little progress every day.</p>
-  <form className={styles.form} onSubmit={event=>{event.preventDefault();setNotice("This is a sign-up preview. Account creation is not connected yet.");}}>
-   <label>Display name<div className={styles.input}><input aria-label="Display name" autoComplete="nickname" placeholder="Your name" /></div></label>
-   <label>Email address<div className={styles.input}><span aria-hidden="true">✉</span><input type="email" aria-label="Email address" autoComplete="email" placeholder="you@example.com" /></div></label>
-   <label>Password<div className={styles.input}><input type={showPassword?"text":"password"} aria-label="Password" autoComplete="new-password" placeholder="Create a password" /><button type="button" aria-label={showPassword?"Hide password":"Show password"} onClick={()=>setShowPassword(!showPassword)}>◎</button></div></label>
-   <button className={styles.login} type="submit">Sign up <span aria-hidden="true">→</span></button>
-   <p className={styles.preview}>Preview only · No account is created.<br />Do not enter a real password.</p>
-  </form>
-  <p role="status" className={styles.notice}>{notice}</p>
-  <p className={styles.signup}>Already have an account? <Link href="/sign-in">Sign in</Link></p>
-  <footer><span />A little focus. A little reward. All you.</footer>
- </div></main>;
-}
-
+export function SignUpPreview(){const router=useRouter();const[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();const f=new FormData(event.currentTarget);setBusy(true);try{const r=await api<{signedIn:boolean;message:string}>("/api/auth",{method:"POST",body:JSON.stringify({action:"signup",email:String(f.get("email")),password:String(f.get("password")),displayName:String(f.get("name")),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone})});if(r.signedIn){router.push("/dashboard");router.refresh()}else setNotice(r.message)}catch(e){setNotice((e as Error).message)}finally{setBusy(false)}}return <main className={styles.page}><div className={styles.content}><div className={styles.brand}><SlotMachineIcon/><span>Slotty</span></div><h1>YOUR NEXT MOVE.</h1><p className={styles.intro}>Build habits. Earn tokens. Make a little progress every day.</p><form className={styles.form} onSubmit={submit}><label>Display name<div className={styles.input}><input name="name" required maxLength={80} autoComplete="nickname" placeholder="Your name"/></div></label><label>Email address<div className={styles.input}><input name="email" required type="email" maxLength={254} autoComplete="email" placeholder="you@example.com"/></div></label><label>Password<div className={styles.input}><input name="password" required type="password" minLength={8} maxLength={256} autoComplete="new-password" placeholder="At least 8 characters"/></div></label><button className={styles.login} disabled={busy}>{busy?"Creating account…":"Sign up →"}</button></form><p role="status" className={styles.notice}>{notice}</p><p className={styles.signup}>Already have an account? <Link href="/sign-in">Sign in</Link></p><footer>A little focus. A little reward. All you.</footer></div></main>}

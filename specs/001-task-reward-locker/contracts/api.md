@@ -1,59 +1,52 @@
 # Web API contract
 
-Planned JSON interface under `/api/v1`, implemented by Next.js. Auth routes use Supabase Auth. Except auth/public health endpoints, require a valid cookie session verified server-side. Derive user ID from auth; never accept a request-body owner ID. Return 404 for another user's resource. Use same-origin/CSRF protection for cookie mutations, schema validation, and per-user rate limits.
+Current non-ML implementation uses Next.js routes under `/api`. The earlier `/api/v1` layout was a planning default, not a second supported API. Shared public shapes are in `web/src/domain/activity.ts`; account state and the one shared activity clock are consumed through `web/src/features/app/AppProvider.tsx`.
 
-## Current milestone
+## Access, requests and responses
 
-Auth/profile, task/activity, earning, goals/history and their study/GPS integrations are current scope; balances persist in `tokenBalance`. Locker, simulator-settings, roll-quote, roll-result and retry-delivery endpoints below are deferred until hardware readiness. Do not create their tables or require their availability for signup/completion. Balance/history endpoints initially report earning entries only; spending is added with redemption.
+Except for auth entry points, each handler verifies the Supabase cookie session with `getUser()` near data access. Owner identity comes from that verified user, never from a client-supplied owner ID. The same authenticated client makes owner-scoped database calls. Postgres RLS protects table reads. The database RPCs derive the owner from `auth.uid()` and validate inputs independently of the Next.js routes. Every JSON response has `Cache-Control: private, no-store`.
 
-## Common envelopes
+Cookie mutations require matching `Origin`, reject cross-site requests, validate strict JSON input and stop reading after 64 KiB. Successful responses are the typed JSON object directly. Errors use `{error: {code, message}}`; expected classes include 401, 403, 404, 409, 413, 415, 422, 429 and dependency failures as 503. Malformed JSON is 400. A resource owned by another user is not returned.
 
-Success: `{data: ...}`. Error: `{error: {code, message, retryable, fieldErrors?}}`.
+Activity/task/profile/goal/roll mutations carry a UUID `key` in their JSON body. The shared client retains a key for retries of the same logical input, including uncertain replies; deliberate successful actions receive new keys. The database scopes keys to owner + operation, hashes input, locks the owner wallet before other mutable rows, and saves the committed response atomically. Same key/content returns the original result; changed content conflicts. Session controls also require the current `revision`.
 
-Mutations that create or transition resources require an `Idempotency-Key` UUID and expected `revision` where applicable. Identical committed requests return the saved resource; the same key with different content returns 409. The DB transaction owns this guarantee, not an in-memory cache. Timestamps are ISO UTC, durations integer milliseconds, token quantities integers. Do not put camera bytes in JSON or logs.
+## Implemented routes
 
-| Method and path | Input | Output/behavior |
+All paths below are relative to `/api`.
+
+| Method/path | Input | Result |
 | --- | --- | --- |
-| GET/PATCH `/profile` | displayName/timezone for patch | Own profile; timezone change affects new schedules only |
-| GET/POST `/tasks` | name, required minimumMs >= 1,800,000, optional reflectionQuestion | Own predefined/custom tasks; POST creates custom type only |
-| PATCH `/tasks/{id}` | editable fields, revision | Update own task; reject null/below-30-minute custom minimum; omitted PATCH fields retain existing required values; existing completions remain snapshots |
-| POST `/sessions` | taskId | Start one unfinished session; returns server clock/state/revision; may need calibration first |
-| GET `/sessions/current` | none | Persisted current session plus serverTime; restore running timer or paused study state honestly |
-| POST `/sessions/{id}/controls` | action pause/resume/cancel, revision | Apply timestamped state transition; a new request is needed for each deliberate action |
-| POST `/sessions/{id}/complete` | reflection?, revision | Validate and finalize; return completion, awardedTokens, walletBalance |
-| POST `/sessions/{id}/route` | bounded batch of sequenced fixes | Accept valid fixes into route segments; return accepted/rejected counts and distance; never pauses timer based on motion |
-| POST `/study/calibrations` | camera setup metadata | Start five-second screen and five-second book-position calibration; return calibration ID |
-| POST `/study/calibrations/{id}/frames` | bounded JPEG; X-Calibration-Phase screen/book and sequence headers | Forward to private calibration-observation inference; aggregate usable poses; return phase/progress/ready |
-| POST `/sessions/{id}/focus-frame` | bounded JPEG plus sequence/calibration headers | Authenticate before streaming to FastAPI; persist aggregate observation, return state/count; private ML contract applies |
-| GET `/goals?date=YYYY-MM-DD` | local date | Due goal occurrences with target, progress, provisional flag and completion |
-| POST `/goals` | taskId, targetMs, repeatKind today/daily/weekdays, weekdays? | Create schedule in profile timezone; validate nonempty weekday selection |
-| PATCH/DELETE `/goals/{id}` | changes, revision | Future occurrences only by default; preserve historical snapshots |
-| GET `/dashboard?date=...` | optional date | Due goals, today's completed tasks, wallet, tokens earned that day |
-| GET `/history?period=week|month|all&cursor=...` | optional cursor | Newest-first completion groups and period totals, 25 records per page |
-| GET `/wallet` | cursor? | Balance and paginated immutable earning/spending entries |
-| GET `/locker` | none | Four compartment labels/states/revisions, simulation badge, connectivity |
-| POST `/locker/slots/{slot}/load` | itemLabel, expectedRevision | Load/relock own empty or collected drawer, or update locked item's label; reject reserved/unresolved drawer |
-| POST `/locker/slots/{slot}/collect` | expectedRevision | Acknowledged open drawer becomes collected; does not reroll or grant tokens |
-| POST `/roll-quotes` | allocations: four slot/token pairs | Validate numbers, return quoteId, expiry, total, overall and conditional/unconditional drawer chances, revisions, policy |
-| POST `/rolls` | quoteId | Revalidate quote, debit, persist fixed win/loss and durable delivery event atomically |
-| GET `/rolls/{id}` | none | Fixed outcome and separate delivery/entitlement status; refresh returns this result |
-| POST `/rolls/{id}/retry-delivery` | none | Requeue existing unresolved event only; no new outcome or cost |
-| POST `/simulator/settings` | online, failureMode | Own simulated locker only; visible simulation controls; no direct balance/outcome mutation |
+| POST `/auth` | `action`: login/signup/reset/password/logout, corresponding validated fields | Supabase auth/cookies, confirmation/recovery messages; no preview authentication bypass |
+| GET `/app` | None | Own profile/email, balance, nonarchived tasks, current activity, due goals, daily counts/earnings, latest fixed roll and server time |
+| POST/PATCH `/tasks` | key, optional id, name, description, minimumMs, optional reflectionQuestion | Create or save a complete custom-task definition; predefined kinds cannot be rewritten |
+| DELETE `/tasks` | key, id | Archive own custom task; captured completion/session snapshots survive |
+| POST `/sessions` | key, taskId | Start one unfinished server-timed custom/run/walk session; study is rejected pending ML integration |
+| GET `/sessions/{id}` | Own session id | Persisted shared activity, revision and server clock |
+| PATCH `/sessions/{id}` | key, revision, action pause/resume/complete/cancel, optional reflection/description | Acknowledged state and optional completion/balance; no client duration accepted |
+| GET `/sessions/{id}/route` | Own run/walk id | Private saved sequenced route, distance/coverage, next cursor and completion summary when completed |
+| POST `/sessions/{id}/route` | revision, bounded points array, optional gap flag | Accepted/rejected fixes and reasons, distance, segments and next cursor; duplicate sequences are replay-safe |
+| POST `/goals` | key, optional id, taskId, targetMs, repeatKind, optional weekdays/timezone | Persisted today/daily/weekday schedule; editing creates a future replacement while preserving today/past snapshots |
+| DELETE `/goals` | key, id | Stop future recurrence; today's occurrence and history remain |
+| PATCH `/profile` | key, displayName, timezone | Own persisted preferences; existing schedules keep their captured timezone |
+| GET `/history` | period week/month/all, paired before/beforeId cursor, optional limit (default 25) | Newest-first completions, matching period totals and hasMore |
+| GET `/history?month=YYYY-MM-DD` | Month date | Private per-day completion counts for the profile calendar |
+| GET `/wallet` | Optional paired before/beforeId cursor | 25 immutable earning/spending entries with resulting balances and roll references |
+| POST `/rolls` | key, exactly four whole-number allocations | Atomic full-stake debit and one immutable virtual result/entitlement |
+| GET `/rolls` | Optional paired cursor | Own saved roll history, 25 per page |
+| GET `/rolls?id={uuid}` | Own roll id | Original accepted result; no new debit or random outcome |
 
-Custom-task creation requires an integer `minimumMs >= 1_800_000`; reject missing, null, disabled, and smaller values with 422. Exactly `1_800_000` is valid. Partial edits may retain the existing minimum but cannot remove it. Completion below the selected required minimum returns 422 and creates no completion, ledger entry, or reward.
+Auth confirmation/recovery is handled by `/auth/callback` (outside `/api`) using supported code exchange or token-hash verification and an allowlisted internal redirect. Account updates require a verified session. Configure the Supabase Auth site URL and callback allowlist for the actual app origin.
 
-## Roll probabilities
+## Activity and GPS rules
 
-For positive allocated total n: `p = 0.60 - 0.40 * exp(-(n-1)/3)`. Store applied `winUnits = round(p * 1_000_000)` and policy `roll-v1`. Draw a secure uniform stage-one integer in `[0, 1_000_000)`; win iff it is below winUnits. Only a win selects a secure uniform token ticket in `[0,n)` and maps it to slot allocation ranges. Zero-funded slots never win. The resulting slot probability is `(winUnits / 1_000_000) * allocation/n`. All four allocations are spent even on a loss.
+Custom definitions require integer `minimumMs >= 1_800_000`; exactly 30 minutes is valid. Completion below the selected minimum or without the configured nonblank reflection fails without a history record/credit. Active time comes from server-clock intervals, excludes pauses, survives refresh and is rounded separately per completed session: `floor(eligibleMs / 1_800_000)`. Canceling earns nothing. Only one unfinished earning session may exist per account. Study earning is unavailable until authenticated observation integration is implemented.
 
-Next generates random values exclusively with secure server randomness; the restricted RPC validates totals/policy and persists the result. Browser random values/outcome hints are ignored/rejected. Retrying a committed key returns the original result. Per-slot allocation limit 1,000,000 and total limit 4,000,000 are numeric validation bounds. Increasing stakes eventually changes displayed rounded odds by tiny or invisible amounts; there is never a guaranteed win.
+GPS points use sequence, capturedAt, latitude/longitude and accuracy. The trusted ingestion RPC rechecks owner, running state/revision and running interval; timestamps increase, accuracy is <=50m, age/gap <=15s and jump speed <=12m/s. Duplicate uploads do not duplicate distance. Pauses, hidden/offline gaps, invalid fixes and missing coverage never bridge segments. Stationary time/GPS/map failure do not pause the server timer. Storage/batch/rate limits and a private cursor bound collection. No background GPS promise is made.
 
-Quote lifetime is 60 seconds. Expired/stale policy or drawer revisions require a new quote and cause no charge. Balance is checked at acceptance, not guaranteed by quoting. An accepted roll always charges once and creates one event, including losses; delivery can be pending after the result is known.
+## Virtual roll policy and hardware boundary
 
-## Errors and failure behavior
+For total allocated stake n: `p = 0.60 - 0.40 * exp(-(n-1)/3)`. Store `threshold = round(p * 1_000_000)` and `policyVersion = roll-v1`. Cryptographic randomness in Postgres first chooses an integer in `[0,1_000_000)`; a win occurs below the threshold. Only a win samples a ticket in `[0,n)` to select one funded slot proportional to its allocation. The client displays both conditional and unconditional probabilities. Per-slot maximum is 1,000,000 and total maximum is 4,000,000. Zero/negative/fractional/overspend requests fail without a charge.
 
-401 unauthenticated; 404 missing/not-owned; 409 stale revision, active-session conflict, insufficient balance, expired quote, idempotency mismatch, reserved drawer; 422 invalid input/minimum/reflection; 413 frame too large; 429 rate/concurrency limit; 503 unavailable inference or retry-exhausted transient dependency. Inference failure returns unknown/no study credit, not a false compatible label. GPS/map failure never fabricates distance; a tile failure does not stop the manual timer.
+The fixed policy and allocations are validated atomically at acceptance; the current virtual interface does not require a separate quote resource. A retry may generate discarded server samples, but the committed key always returns its original stored outcome without another debit. No browser-supplied randomness is accepted. Both wins and losses spend the entire allocation exactly once. A win stores one slot and a `hardware_pending` entitlement; a loss has no slot and `not_applicable` delivery. Hardware absence must not block virtual rolls, and no result claims a physical unlock.
 
-Profile/auth/session and sensitive payloads are not cacheable as public content. Secrets stay in server-only modules; FastAPI receives only its internal credential and verified session identifiers, never privileged Supabase keys.
-
-Late inference responses must recheck the active session revision before persisting observations; a completed, canceled, or manually paused session cannot receive delayed credit. Batch route requests likewise validate the running interval and do not turn paused movement into distance.
+ML calibration/frame APIs, physical locker loading/collection, delivery retry/settings, simulator receipts and actuator transport remain later work, documented in the separate ML/locker contracts. There are no public clock overrides, token grants or force-win endpoints.

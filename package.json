@@ -22,7 +22,9 @@
     "supabase:stop": "node scripts/supabase.mjs stop",
     "db:migrate": "node scripts/supabase.mjs migrate",
     "db:check": "node scripts/supabase.mjs check",
-    "db:types": "node scripts/supabase.mjs types"
+    "db:types": "node scripts/supabase.mjs types",
+    "test": "npm run test --workspace @slotty/web",
+    "test:e2e": "npm run test:e2e --workspace @slotty/web"
   },
   "devDependencies": {
     "supabase": "2.122.0"

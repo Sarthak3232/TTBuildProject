@@ -25,15 +25,13 @@ Project reference: `yruyulqwyalxmtseaoml`. This identifier and the project URL a
 
 Supabase manages `auth.users` and credentials. An Auth insert provisions the profile, zero balance and three predefined task kinds. Existing accounts are backfilled during the identity migration.
 
-All ten application tables have RLS. Signed-in users can read their own records except server-only idempotency data. They can edit their profile preferences, create/edit their own custom tasks, and create/edit their goal schedules. They cannot directly change balances, sessions, completion history, earning entries or calculated goal progress. Anonymous roles have no app-table access. Private trigger helpers cannot be invoked as browser RPCs.
+All ten application tables have RLS. Signed-in users can read their own records. Idempotency records are internal to the database. Users can edit their own profiles and custom tasks, and use the session RPC to edit goals. They cannot directly change balances, sessions, completion history, earning entries or calculated goal progress. Anonymous roles have no app-table access. Private trigger helpers cannot be invoked as browser RPCs.
 
-**This is schema setup only.** The Next.js pages do not connect to Supabase yet. Login/signup UI, session controls, atomic token crediting, goal expansion/progress, ML/GPS storage and application APIs remain later tasks. Storing a completion does not automatically credit a balance. Redemption, spending, drawers and delivery tables are deferred until the hardware is ready.
+The application migrations add activity accounting, goals and history projections, virtual rolls and private GPS routes. The `authenticated_app_sessions` migration adds authenticated RPCs that derive ownership from `auth.uid()`. The existing accounting functions remain restricted to trusted database roles. Roll randomness is generated inside Postgres and browser-role grants limit direct access to private records.
 
 ## Migrations and validation
 
-Apply the SQL files in `migrations/` in filename order to a fresh database. The hosted project already has them applied and recorded in `supabase_migrations.schema_migrations`. Do not rerun the creation SQL there or edit an applied migration; create a new migration for further changes.
-
-The hosted setup was applied through the signed-in Supabase SQL Editor in transactions. Migration history records the exact file contents, with source checksums verified against this checkout. No database password or API key is stored in Git. A CLI login/link is separate from signing in to the dashboard; it has not been configured by this setup.
+Apply the SQL files in `migrations/` in filename order to a fresh database. For a hosted database, check `supabase_migrations.schema_migrations` and apply only pending versions.
 
 Run `tests/schema_validation.sql` as `postgres` in Supabase's SQL Editor to check the schema. It creates two temporary fixture accounts inside one transaction, verifies provisioning/ownership/constraints and rolls back all fixtures. It does not reset tables or leave login-capable test accounts behind. This validates database behavior; it does not test signup emails, browser cookies or application endpoints.
 
@@ -58,6 +56,12 @@ To regenerate types from the hosted project, use the dashboard's schema type exp
 npx --no-install supabase gen types --lang typescript --project-id yruyulqwyalxmtseaoml --schema public,graphql_public > /tmp/slotty-database.types.ts
 ```
 
-Review successful output before replacing `web/src/server/supabase/database.types.ts`. `web/.env.example` reserves the future client/server variable names; the current page shell does not need them. Keep secret keys server-only and never commit populated environment files.
+Review successful output before replacing `web/src/server/supabase/database.types.ts`. `web/.env.example` lists the settings the application needs. Hosted database administration uses separate credentials.
 
-The committed types were generated and downloaded from the hosted project's Data API docs (Tables and Views → Introduction → Generate and download types). They include the configured `public` and Supabase-managed `graphql_public` schemas. They are not imported into application code yet.
+The committed types cover the `public` and Supabase-managed `graphql_public` schemas.
+
+## Isolated application database checks
+
+For a fresh native/CI PostgreSQL 17 database with contrib extensions, run `python3 scripts/test-postgres.py postgresql://postgres@127.0.0.1:55432/slotty_test`. The target must be empty and loopback with a `slotty_test*` name. It creates only test Auth catalog/roles, applies all committed migrations and runs rollback security/accounting/GPS fixtures plus real concurrent start/complete/spend checks. It never resets or targets hosted data and does not test Auth HTTP/email issuance. CI runs this same path against a disposable Postgres service.
+
+`python3 scripts/generate-public-types.py DATABASE_URL` regenerates public table/FK/RPC types via read-only catalog queries when the full CLI generator is unavailable. Preserve the separately exported managed GraphQL schema; record local/hosted parity separately. See current implementation evidence for commands, results and unperformed hosted/device checks.

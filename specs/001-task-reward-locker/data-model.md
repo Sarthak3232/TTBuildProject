@@ -4,13 +4,11 @@ Design artifact, not an implemented database schema. All instants are UTC; calen
 
 The TokenBalance record maps to the database table `public."tokenBalance"`, using the exact user-selected name `tokenBalance`. Quote the mixed-case identifier in SQL. It stores each user's current whole-token balance; TokenEntry records store the earning/spending history separately.
 
-## Current and deferred schema
+## Current and deferred schema — 2026-11-09
 
-The current milestone covers accounts/profiles, `tokenBalance`, task definitions, activity sessions/intervals/completions, earning entries, daily goals and the study/route records needed by their features. Signup creates a profile, zero token balance and predefined tasks. Feature-specific activity/goal/model tables arrive with their respective tasks.
+Current scope covers accounts/profiles, `tokenBalance`, task definitions, activity sessions/intervals/completions, earning and spending entries, daily goals, private route points and virtual reward allocations/results. Signup provisions a profile, zero balance and predefined tasks. Current virtual redemption has exactly four slots per account and a fixed accepted outcome; winning results keep a hardware-pending entitlement. There is no device unlock or acknowledged delivery now. ML calibration/observations and physical locker/outbox/simulator receipts remain deferred.
 
-Locker, Compartment, RollQuote, Roll, UnlockEntitlement, DeliveryEvent and SimulatorReceipt are deferred until hardware readiness. Do not create or provision these during auth setup. Their rows below describe future design only.
-
-TokenEntry initially references a unique completion, records a nonnegative credit (including zero), and has no roll column or foreign key. Add roll-linked debits only with the deferred redemption migration. Shared IdempotencyRecord protection for session controls/completion remains relevant now, so retries cannot credit a completion twice; roll operations are added later.
+Extend TokenEntry in a new migration to allow exactly one completion credit or roll debit reference, never both, with one unique entry per source and nonnegative resulting balance. Existing immutable earning history remains intact. A roll debit/outcome/idempotency record commits atomically while holding the wallet lock. Clients cannot select authoritative owner/clock/randomness/outcome, edit balances, or invoke privileged functions. Physical locker/compartment/event rows below are retained future adapter design rather than required current tables.
 
 ## Records and constraints
 
@@ -59,10 +57,10 @@ Today-only schedules use creation's local date. Daily/weekday schedules take eff
 
 ## Transactions and access boundary
 
-The auth/activity milestone enforces only the tables and operations implemented for that milestone. Roll/locker transaction and worker behavior below is deferred design and must not create dependencies for signup or activity credits.
+The current milestone enforces activity and virtual roll transactions now. Physical locker/outbox/worker behavior below remains later design and must not block signup, credits or virtual spending. Current four virtual allocation slots are implicit indexes 1–4 in validated roll allocations; there is no physical locker provisioning requirement.
 
 Enable RLS on every exposed user table. Users may read their own data; use explicit policies for harmless profile/task/goal edits. Revoke browser-role writes to sessions, observations, completions, ledger/wallet, rolls, quotes, deliveries, and simulator receipts; route those through authenticated Next services and restricted RPC functions. Privileged RPC execution is revoked from PUBLIC/anon/authenticated and granted only to the trusted server role. Because that role bypasses RLS, each function checks every relevant row's owner against the server-verified user ID.
 
-Use short transactions with fixed lock order: user/wallet, active session if involved, locker, compartments in slot order. Roll acceptance checks idempotency, quote expiry/policy, current drawer revisions, simulator known-online status, and balance before debiting and persisting the fixed result/outbox. No inference/network delivery inside database transactions. Bound retry on serialization/deadlock conflicts to three attempts with jitter; exhausted retries return a retryable error without partial writes.
+Use short transactions with fixed lock order: user/wallet, active session if involved, locker, compartments in slot order. Current virtual acceptance checks idempotency, allocations, the fixed policy and balance before debiting/persisting a result and pending entitlement. Quote/physical drawer revisions, simulator online state and outbox delivery apply only to the future hardware adapter. No inference/network delivery inside database transactions. Bound retry on serialization/deadlock conflicts to three attempts with jitter; exhausted retries return a retryable error without partial writes.
 
 The worker leases outbox events and retries with backoff. Simulator receipt creation and state change are atomic. Acknowledge loss after an applied unlock is safe: retry returns the original receipt. A drawer remains reserved/open until entitlement acknowledgement, collection, and explicit item reload/relock; stale events cannot unlock a new item revision. Changing simulator connectivity does not alter a committed roll or spend.

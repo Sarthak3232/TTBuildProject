@@ -1,3 +1,4 @@
+// Public schema generated from the migrated PostgreSQL catalog by scripts/generate-public-types.py.
 export type Json =
   | string
   | number
@@ -39,48 +40,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      activity_sessions: {
+      "activity_sessions": {
         Row: {
-          accumulated_ms: number
-          active_since: string | null
-          eligible_ms: number
-          id: string
-          pause_reason: string | null
-          policy_version: string
-          revision: number
-          started_at: string
-          state: string
-          task_id: string
-          task_snapshot: Json
-          user_id: string
+          "id": string
+          "user_id": string
+          "task_id": string
+          "task_snapshot": Json
+          "state": string
+          "pause_reason": string | null
+          "started_at": string
+          "active_since": string | null
+          "accumulated_ms": number
+          "eligible_ms": number
+          "revision": number
+          "policy_version": string
         }
         Insert: {
-          accumulated_ms?: number
-          active_since?: string | null
-          eligible_ms?: number
-          id?: string
-          pause_reason?: string | null
-          policy_version?: string
-          revision?: number
-          started_at?: string
-          state?: string
-          task_id: string
-          task_snapshot: Json
-          user_id: string
+          "id"?: string
+          "user_id": string
+          "task_id": string
+          "task_snapshot": Json
+          "state"?: string
+          "pause_reason"?: string | null
+          "started_at"?: string
+          "active_since"?: string | null
+          "accumulated_ms"?: number
+          "eligible_ms"?: number
+          "revision"?: number
+          "policy_version"?: string
         }
         Update: {
-          accumulated_ms?: number
-          active_since?: string | null
-          eligible_ms?: number
-          id?: string
-          pause_reason?: string | null
-          policy_version?: string
-          revision?: number
-          started_at?: string
-          state?: string
-          task_id?: string
-          task_snapshot?: Json
-          user_id?: string
+          "id"?: string
+          "user_id"?: string
+          "task_id"?: string
+          "task_snapshot"?: Json
+          "state"?: string
+          "pause_reason"?: string | null
+          "started_at"?: string
+          "active_since"?: string | null
+          "accumulated_ms"?: number
+          "eligible_ms"?: number
+          "revision"?: number
+          "policy_version"?: string
         }
         Relationships: [
           {
@@ -99,83 +100,83 @@ export type Database = {
           },
         ]
       }
-      completions: {
+      "completions": {
         Row: {
-          completed_at: string
-          description: string
-          distance_m: number | null
-          eligible_ms: number
-          id: string
-          reflection: string | null
-          session_id: string
-          task_snapshot: Json
-          timezone: string
-          token_award: number
-          user_id: string
+          "id": string
+          "user_id": string
+          "session_id": string
+          "task_snapshot": Json
+          "description": string
+          "reflection": string | null
+          "completed_at": string
+          "timezone": string
+          "eligible_ms": number
+          "distance_m": number | null
+          "token_award": number
         }
         Insert: {
-          completed_at?: string
-          description?: string
-          distance_m?: number | null
-          eligible_ms: number
-          id?: string
-          reflection?: string | null
-          session_id: string
-          task_snapshot: Json
-          timezone?: string
-          token_award: number
-          user_id: string
+          "id"?: string
+          "user_id": string
+          "session_id": string
+          "task_snapshot": Json
+          "description"?: string
+          "reflection"?: string | null
+          "completed_at"?: string
+          "timezone"?: string
+          "eligible_ms": number
+          "distance_m"?: number | null
+          "token_award": number
         }
         Update: {
-          completed_at?: string
-          description?: string
-          distance_m?: number | null
-          eligible_ms?: number
-          id?: string
-          reflection?: string | null
-          session_id?: string
-          task_snapshot?: Json
-          timezone?: string
-          token_award?: number
-          user_id?: string
+          "id"?: string
+          "user_id"?: string
+          "session_id"?: string
+          "task_snapshot"?: Json
+          "description"?: string
+          "reflection"?: string | null
+          "completed_at"?: string
+          "timezone"?: string
+          "eligible_ms"?: number
+          "distance_m"?: number | null
+          "token_award"?: number
         }
         Relationships: [
           {
             foreignKeyName: "completions_user_id_session_id_fkey"
             columns: ["user_id", "session_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "activity_sessions"
             referencedColumns: ["user_id", "id"]
           },
         ]
       }
-      goal_occurrences: {
+      "goal_occurrences": {
         Row: {
-          completed_at: string | null
-          local_date: string
-          progress_ms: number
-          schedule_id: string
-          target_snapshot: number
-          timezone: string
-          user_id: string
+          "user_id": string
+          "schedule_id": string
+          "local_date": string
+          "target_snapshot": number
+          "progress_ms": number
+          "completed_at": string | null
+          "timezone": string
         }
         Insert: {
-          completed_at?: string | null
-          local_date: string
-          progress_ms?: number
-          schedule_id: string
-          target_snapshot: number
-          timezone: string
-          user_id: string
+          "user_id": string
+          "schedule_id": string
+          "local_date": string
+          "target_snapshot": number
+          "progress_ms"?: number
+          "completed_at"?: string | null
+          "timezone": string
         }
         Update: {
-          completed_at?: string | null
-          local_date?: string
-          progress_ms?: number
-          schedule_id?: string
-          target_snapshot?: number
-          timezone?: string
-          user_id?: string
+          "user_id"?: string
+          "schedule_id"?: string
+          "local_date"?: string
+          "target_snapshot"?: number
+          "progress_ms"?: number
+          "completed_at"?: string | null
+          "timezone"?: string
         }
         Relationships: [
           {
@@ -187,45 +188,45 @@ export type Database = {
           },
         ]
       }
-      goal_schedules: {
+      "goal_schedules": {
         Row: {
-          archived_at: string | null
-          created_at: string
-          date_once: string | null
-          effective_from: string
-          id: string
-          repeat_kind: string
-          target_ms: number
-          task_id: string
-          timezone: string
-          user_id: string
-          weekdays: number[] | null
+          "id": string
+          "user_id": string
+          "task_id": string
+          "target_ms": number
+          "repeat_kind": string
+          "date_once": string | null
+          "weekdays": number[] | null
+          "timezone": string
+          "effective_from": string
+          "archived_at": string | null
+          "created_at": string
         }
         Insert: {
-          archived_at?: string | null
-          created_at?: string
-          date_once?: string | null
-          effective_from: string
-          id?: string
-          repeat_kind: string
-          target_ms: number
-          task_id: string
-          timezone: string
-          user_id: string
-          weekdays?: number[] | null
+          "id"?: string
+          "user_id": string
+          "task_id": string
+          "target_ms": number
+          "repeat_kind": string
+          "date_once"?: string | null
+          "weekdays"?: number[] | null
+          "timezone": string
+          "effective_from": string
+          "archived_at"?: string | null
+          "created_at"?: string
         }
         Update: {
-          archived_at?: string | null
-          created_at?: string
-          date_once?: string | null
-          effective_from?: string
-          id?: string
-          repeat_kind?: string
-          target_ms?: number
-          task_id?: string
-          timezone?: string
-          user_id?: string
-          weekdays?: number[] | null
+          "id"?: string
+          "user_id"?: string
+          "task_id"?: string
+          "target_ms"?: number
+          "repeat_kind"?: string
+          "date_once"?: string | null
+          "weekdays"?: number[] | null
+          "timezone"?: string
+          "effective_from"?: string
+          "archived_at"?: string | null
+          "created_at"?: string
         }
         Relationships: [
           {
@@ -244,33 +245,33 @@ export type Database = {
           },
         ]
       }
-      idempotency_records: {
+      "idempotency_records": {
         Row: {
-          created_at: string
-          key: string
-          operation: string
-          request_hash: string
-          resource_id: string
-          response_snapshot: Json
-          user_id: string
+          "user_id": string
+          "operation": string
+          "key": string
+          "request_hash": string
+          "resource_id": string
+          "response_snapshot": Json
+          "created_at": string
         }
         Insert: {
-          created_at?: string
-          key: string
-          operation: string
-          request_hash: string
-          resource_id: string
-          response_snapshot: Json
-          user_id: string
+          "user_id": string
+          "operation": string
+          "key": string
+          "request_hash": string
+          "resource_id": string
+          "response_snapshot": Json
+          "created_at"?: string
         }
         Update: {
-          created_at?: string
-          key?: string
-          operation?: string
-          request_hash?: string
-          resource_id?: string
-          response_snapshot?: Json
-          user_id?: string
+          "user_id"?: string
+          "operation"?: string
+          "key"?: string
+          "request_hash"?: string
+          "resource_id"?: string
+          "response_snapshot"?: Json
+          "created_at"?: string
         }
         Relationships: [
           {
@@ -282,57 +283,155 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      "profiles": {
         Row: {
-          created_at: string
-          display_name: string
-          timezone: string
-          user_id: string
+          "user_id": string
+          "display_name": string
+          "timezone": string
+          "created_at": string
         }
         Insert: {
-          created_at?: string
-          display_name?: string
-          timezone?: string
-          user_id: string
+          "user_id": string
+          "display_name"?: string
+          "timezone"?: string
+          "created_at"?: string
         }
         Update: {
-          created_at?: string
-          display_name?: string
-          timezone?: string
-          user_id?: string
+          "user_id"?: string
+          "display_name"?: string
+          "timezone"?: string
+          "created_at"?: string
         }
-        Relationships: []
+        Relationships: [
+        ]
       }
-      session_intervals: {
+      "rolls": {
         Row: {
-          eligibility: boolean
-          end_at: string | null
-          id: string
-          kind: string
-          sequence: number
-          session_id: string
-          start_at: string
-          user_id: string
+          "id": string
+          "user_id": string
+          "allocations": number[]
+          "cost": number
+          "threshold": number
+          "won": boolean
+          "slot": number | null
+          "policy_version": string
+          "delivery_state": string
+          "created_at": string
+          "resulting_balance": number
         }
         Insert: {
-          eligibility?: boolean
-          end_at?: string | null
-          id?: string
-          kind: string
-          sequence: number
-          session_id: string
-          start_at: string
-          user_id: string
+          "id"?: string
+          "user_id": string
+          "allocations": number[]
+          "cost": number
+          "threshold": number
+          "won": boolean
+          "slot"?: number | null
+          "policy_version"?: string
+          "delivery_state": string
+          "created_at"?: string
+          "resulting_balance": number
         }
         Update: {
-          eligibility?: boolean
-          end_at?: string | null
-          id?: string
-          kind?: string
-          sequence?: number
-          session_id?: string
-          start_at?: string
-          user_id?: string
+          "id"?: string
+          "user_id"?: string
+          "allocations"?: number[]
+          "cost"?: number
+          "threshold"?: number
+          "won"?: boolean
+          "slot"?: number | null
+          "policy_version"?: string
+          "delivery_state"?: string
+          "created_at"?: string
+          "resulting_balance"?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rolls_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      "route_points": {
+        Row: {
+          "user_id": string
+          "session_id": string
+          "sequence": number
+          "segment_id": number
+          "captured_at": string
+          "received_at": string
+          "lat": number
+          "lng": number
+          "accuracy_m": number
+          "distance_delta_m": number
+        }
+        Insert: {
+          "user_id": string
+          "session_id": string
+          "sequence": number
+          "segment_id": number
+          "captured_at": string
+          "received_at"?: string
+          "lat": number
+          "lng": number
+          "accuracy_m": number
+          "distance_delta_m"?: number
+        }
+        Update: {
+          "user_id"?: string
+          "session_id"?: string
+          "sequence"?: number
+          "segment_id"?: number
+          "captured_at"?: string
+          "received_at"?: string
+          "lat"?: number
+          "lng"?: number
+          "accuracy_m"?: number
+          "distance_delta_m"?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_points_user_id_session_id_fkey"
+            columns: ["user_id", "session_id"]
+            isOneToOne: false
+            referencedRelation: "activity_sessions"
+            referencedColumns: ["user_id", "id"]
+          },
+        ]
+      }
+      "session_intervals": {
+        Row: {
+          "id": string
+          "user_id": string
+          "session_id": string
+          "sequence": number
+          "kind": string
+          "start_at": string
+          "end_at": string | null
+          "eligibility": boolean
+        }
+        Insert: {
+          "id"?: string
+          "user_id": string
+          "session_id": string
+          "sequence": number
+          "kind": string
+          "start_at": string
+          "end_at"?: string | null
+          "eligibility"?: boolean
+        }
+        Update: {
+          "id"?: string
+          "user_id"?: string
+          "session_id"?: string
+          "sequence"?: number
+          "kind"?: string
+          "start_at"?: string
+          "end_at"?: string | null
+          "eligibility"?: boolean
         }
         Relationships: [
           {
@@ -344,39 +443,39 @@ export type Database = {
           },
         ]
       }
-      task_definitions: {
+      "task_definitions": {
         Row: {
-          archived_at: string | null
-          created_at: string
-          description: string
-          id: string
-          kind: string
-          minimum_ms: number | null
-          name: string
-          reflection_question: string | null
-          user_id: string
+          "id": string
+          "user_id": string
+          "kind": string
+          "name": string
+          "description": string
+          "minimum_ms": number | null
+          "reflection_question": string | null
+          "archived_at": string | null
+          "created_at": string
         }
         Insert: {
-          archived_at?: string | null
-          created_at?: string
-          description?: string
-          id?: string
-          kind: string
-          minimum_ms?: number | null
-          name: string
-          reflection_question?: string | null
-          user_id: string
+          "id"?: string
+          "user_id": string
+          "kind": string
+          "name": string
+          "description"?: string
+          "minimum_ms"?: number | null
+          "reflection_question"?: string | null
+          "archived_at"?: string | null
+          "created_at"?: string
         }
         Update: {
-          archived_at?: string | null
-          created_at?: string
-          description?: string
-          id?: string
-          kind?: string
-          minimum_ms?: number | null
-          name?: string
-          reflection_question?: string | null
-          user_id?: string
+          "id"?: string
+          "user_id"?: string
+          "kind"?: string
+          "name"?: string
+          "description"?: string
+          "minimum_ms"?: number | null
+          "reflection_question"?: string | null
+          "archived_at"?: string | null
+          "created_at"?: string
         }
         Relationships: [
           {
@@ -388,56 +487,21 @@ export type Database = {
           },
         ]
       }
-      token_entries: {
+      "tokenBalance": {
         Row: {
-          completion_id: string
-          created_at: string
-          delta: number
-          id: string
-          resulting_balance: number
-          user_id: string
+          "user_id": string
+          "balance": number
+          "version": number
         }
         Insert: {
-          completion_id: string
-          created_at?: string
-          delta: number
-          id?: string
-          resulting_balance: number
-          user_id: string
+          "user_id": string
+          "balance"?: number
+          "version"?: number
         }
         Update: {
-          completion_id?: string
-          created_at?: string
-          delta?: number
-          id?: string
-          resulting_balance?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "token_entries_user_id_completion_id_fkey"
-            columns: ["user_id", "completion_id"]
-            isOneToOne: false
-            referencedRelation: "completions"
-            referencedColumns: ["user_id", "id"]
-          },
-        ]
-      }
-      tokenBalance: {
-        Row: {
-          balance: number
-          user_id: string
-          version: number
-        }
-        Insert: {
-          balance?: number
-          user_id: string
-          version?: number
-        }
-        Update: {
-          balance?: number
-          user_id?: string
-          version?: number
+          "user_id"?: string
+          "balance"?: number
+          "version"?: number
         }
         Relationships: [
           {
@@ -449,19 +513,180 @@ export type Database = {
           },
         ]
       }
+      "token_entries": {
+        Row: {
+          "id": string
+          "user_id": string
+          "completion_id": string | null
+          "delta": number
+          "resulting_balance": number
+          "created_at": string
+          "roll_id": string | null
+        }
+        Insert: {
+          "id"?: string
+          "user_id": string
+          "completion_id"?: string | null
+          "delta": number
+          "resulting_balance": number
+          "created_at"?: string
+          "roll_id"?: string | null
+        }
+        Update: {
+          "id"?: string
+          "user_id"?: string
+          "completion_id"?: string | null
+          "delta"?: number
+          "resulting_balance"?: number
+          "created_at"?: string
+          "roll_id"?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_entries_user_id_completion_id_fkey"
+            columns: ["user_id", "completion_id"]
+            isOneToOne: true
+            referencedRelation: "completions"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "token_entries_user_id_roll_id_fkey"
+            columns: ["user_id", "roll_id"]
+            isOneToOne: true
+            referencedRelation: "rolls"
+            referencedColumns: ["user_id", "id"]
+          },
+        ]
+      }
+      "unlock_entitlements": {
+        Row: {
+          "roll_id": string
+          "user_id": string
+          "slot": number
+          "state": string
+          "created_at": string
+        }
+        Insert: {
+          "roll_id": string
+          "user_id": string
+          "slot": number
+          "state"?: string
+          "created_at"?: string
+        }
+        Update: {
+          "roll_id"?: string
+          "user_id"?: string
+          "slot"?: number
+          "state"?: string
+          "created_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unlock_entitlements_user_id_roll_id_fkey"
+            columns: ["user_id", "roll_id"]
+            isOneToOne: true
+            referencedRelation: "rolls"
+            referencedColumns: ["user_id", "id"]
+          },
+        ]
+      }
     }
-    Views: {
-      [_ in never]: never
-    }
+    Views: { [_ in never]: never }
     Functions: {
-      [_ in never]: never
+      "app_calendar": {
+        Args: {
+          "p_user_id": string
+          "p_month": string
+        }
+        Returns: Json
+      }
+      "app_history": {
+        Args: {
+          "p_user_id": string
+          "p_period"?: string
+          "p_before"?: string
+          "p_before_id"?: string
+          "p_limit"?: number
+        }
+        Returns: Json
+      }
+      "app_mutate": {
+        Args: {
+          "p_user_id": string
+          "p_operation": string
+          "p_key": string
+          "p_payload": Json
+        }
+        Returns: Json
+      }
+      "app_snapshot": {
+        Args: {
+          "p_user_id": string
+        }
+        Returns: Json
+      }
+      "ingest_route_points": {
+        Args: {
+          "p_user_id": string
+          "p_session_id": string
+          "p_revision": number
+          "p_points": Json
+          "p_gap"?: boolean
+        }
+        Returns: Json
+      }
+      "my_app_calendar": {
+        Args: {
+          "p_month": string
+        }
+        Returns: Json
+      }
+      "my_app_history": {
+        Args: {
+          "p_period": string
+          "p_before": string
+          "p_before_id": string
+          "p_limit": number
+        }
+        Returns: Json
+      }
+      "my_app_mutate": {
+        Args: {
+          "p_operation": string
+          "p_key": string
+          "p_payload": Json
+        }
+        Returns: Json
+      }
+      "my_app_snapshot": {
+        Args: never
+        Returns: Json
+      }
+      "my_ingest_route_points": {
+        Args: {
+          "p_session_id": string
+          "p_revision": number
+          "p_points": Json
+          "p_gap": boolean
+        }
+        Returns: Json
+      }
+      "my_read_session_route": {
+        Args: {
+          "p_session_id": string
+        }
+        Returns: Json
+      }
+      "read_session_route": {
+        Args: {
+          "p_user_id": string
+          "p_session_id": string
+        }
+        Returns: Json
+      }
     }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    Enums: { [_ in never]: never }
+    CompositeTypes: { [_ in never]: never }
   }
 }
 
