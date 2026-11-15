@@ -17,10 +17,47 @@ void setup() {
     gpio_set_level(directionPins[i], 0);
     gpio_set_direction(directionPins[i], GPIO_MODE_OUTPUT);
   }
+  pinMode(0, INPUT_PULLUP);  // BOOT button on the classic ESP32 DevKit.
   Serial.begin(115200);
 }
 
+void jog(int index) {
+  Serial.printf("OK jog %d\n", index + 1);
+  gpio_set_level(enablePin, 0);
+  delay(2);
+  for (unsigned pulse = 0; pulse < pulseCount; ++pulse) {
+    gpio_set_level(stepPins[index], 1);
+    delayMicroseconds(10);
+    gpio_set_level(stepPins[index], 0);
+    delayMicroseconds(2000);
+  }
+  gpio_set_level(enablePin, 1);
+  Serial.printf("DONE jog %d pulses=%u\n", index + 1, pulseCount);
+}
+
+// Require an idle button followed by a debounced press and release.
+bool releasedAfterPress(bool pressed, unsigned long now) {
+  static bool lastSample = false;
+  static bool armed = false;
+  static bool sawPress = false;
+  static unsigned long changedAt = 0;
+  if (pressed != lastSample) {
+    changedAt = now;
+    lastSample = pressed;
+  }
+  if (now - changedAt < 40) return false;
+  if (pressed) {
+    sawPress = armed;
+    return false;
+  }
+  armed = true;
+  bool trigger = sawPress;
+  sawPress = false;
+  return trigger;
+}
+
 void loop() {
+  if (releasedAfterPress(digitalRead(0) == LOW, millis())) jog(0);
   if (!Serial.available()) return;
   String line = Serial.readStringUntil('\n');
   line.trim();
@@ -33,16 +70,5 @@ void loop() {
     Serial.println("ERR expected status or jog 1/2/3");
     return;
   }
-  const int index = line[4] - '1';
-  Serial.printf("OK jog %d\n", index + 1);
-  gpio_set_level(enablePin, 0);
-  delay(2);
-  for (unsigned pulse = 0; pulse < pulseCount; ++pulse) {
-    gpio_set_level(stepPins[index], 1);
-    delayMicroseconds(10);
-    gpio_set_level(stepPins[index], 0);
-    delayMicroseconds(2000);
-  }
-  gpio_set_level(enablePin, 1);
-  Serial.printf("DONE jog %d pulses=%u\n", index + 1, pulseCount);
+  jog(line[4] - '1');
 }
