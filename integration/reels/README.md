@@ -35,7 +35,7 @@ This provides at-most-once dispatch per roll within one shared ledger. A crash c
 
 ## Files and verification
 
-Four additions under `integration/reels/` on local branch `integration/reel-delivery-simulator`, based on PR #11. All existing application and firmware files are untouched.
+Four additions under `integration/reels/` on local branch `integration/esp32-reel-control`, based on PR #11. All existing application and firmware files are untouched.
 
 | File | Purpose |
 | --- | --- |
@@ -62,3 +62,11 @@ python integration/reels/usb_demo.py --port COM3 --db ../slotty-usb-demo.sqlite
 ```
 
 Observed on the user's ESP32: slot 3 produced target 2, SIM DONE home preceded spin 2, SIM DONE spin completed the event, and replay sent no second spin. This used the example GET response. Live backend delivery and physical motion remain to be tested.
+
+## Manual motor identification on the WROOM-32
+
+Open `SlottyBenchJog/SlottyBenchJog.ino` in Arduino IDE. With motor power disconnected, select ESP32 Dev Module, verify and upload, then send `status` at 115200 baud with Newline. Expect `READY BENCH JOG`. The sketch starts with the shared driver enable disabled. The documented STEP/DIR pairs are 25/26, 27/14 and 32/33; GPIO13 enables all drivers together. Confirm the actual power path, common ground, driver supply decoupling and motor current settings before applying motor power. In particular, establish whether the regulator already feeds ESP32 VIN before combining a motor supply with USB.
+
+Secure all motors. With the bench power configuration verified, send `jog 1` once. Only channel 1 receives 200 step pulses. All three drivers may energize during the burst because they share enable. The firmware disables them after the burst. Observe which shaft turns, then label its housing. `DONE jog 1 pulses=200` confirms pulse generation only. The sketch has no home sensor, absolute positioning, website delivery, or drawer commands. For later web integration, keep delivery IDs and the stored outcome upstream; treat manual jog as a bench operation.
+
+The 12 Python regression tests passed. The local Windows toolchain failed to launch its Xtensa compiler because of a DLL relocation error. Arduino IDE verification and the powered motion check are pending.
