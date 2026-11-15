@@ -107,6 +107,7 @@ def test_calibration_contract_does_not_require_reference_header(service):
     data = response.json()
     assert data["usable"] is True and data["yaw"] == 0 and data["pitch"] == 0
     assert data["phase"] == "book"
+    assert data["diagnostics"] == {"faceCount": 1, "bodyPresent": False, "orientationAvailable": True, "imageUsable": True, "reasons": []}
     assert "landmarks" not in response.text
 
 
@@ -125,7 +126,21 @@ def test_dark_frame_and_unusable_calibration_never_qualify(service):
     metadata["X-Calibration-Phase"] = "screen"
     data = client.post(CALIBRATE, headers=metadata, content=jpeg(dark=True)).json()
     assert data["usable"] is False
+    assert "image_too_dark" in data["diagnostics"]["reasons"]
+    assert data["diagnostics"]["imageUsable"] is False
     assert "yaw" not in data and "pitch" not in data
+
+
+def test_calibration_reports_missing_face_instead_of_generic_unusable(service):
+    client, runtime = service
+    runtime.pipeline.count = 0
+    metadata = headers()
+    metadata["X-Calibration-Phase"] = "book"
+    data = client.post(CALIBRATE, headers=metadata, content=jpeg()).json()
+    assert data["usable"] is False
+    assert data["diagnostics"]["faceCount"] == 0
+    assert data["diagnostics"]["orientationAvailable"] is False
+    assert data["diagnostics"]["reasons"] == ["face_not_detected"]
 
 
 def test_authentication_precedes_body_consumption(service):

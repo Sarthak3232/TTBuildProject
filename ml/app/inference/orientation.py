@@ -67,6 +67,7 @@ class Observation:
     orientation: Orientation | None = None
     body_present: bool = False
     ambiguous: bool = False
+    rejection_reasons: tuple[str, ...] = ()
 
     def __post_init__(self):
         if type(self.face_count) is not int or self.face_count < 0:
@@ -172,11 +173,15 @@ def observation_from_results(face, pose, *, image_usable: bool) -> Observation:
     faces = face.face_landmarks
     bodies = pose.pose_landmarks
     body_present = False
+    reasons = []
     ambiguous = len(bodies) > 1
+    if ambiguous:
+        reasons.append("multiple_bodies")
     if bodies:
         body = bodies[0]
         if len(body) != 33:
             ambiguous = True
+            reasons.append("invalid_body_landmarks")
         else:
             def reliable(point):
                 return _finite_landmark(point) and all(
@@ -186,14 +191,50 @@ def observation_from_results(face, pose, *, image_usable: bool) -> Observation:
                 )
             body_present = all(reliable(body[index]) for index in (11, 12))
             ambiguous = ambiguous or not body_present
+            if not body_present:
+                reasons.append("shoulders_unreliable")
     orientation = None
+    if not faces:
+        reasons.append("face_not_detected")
+    elif len(faces) > 1:
+        reasons.append("multiple_faces")
     if len(faces) == 1:
         matrices = face.facial_transformation_matrixes
         if len(faces[0]) != 478 or not all(_finite_landmark(point) for point in faces[0]) or len(matrices) != 1:
             ambiguous = True
+            if len(faces[0]) != 478:
+                reasons.append("incomplete_face_landmarks")
+            elif not all(_finite_landmark(point) for point in faces[0]):
+                reasons.append("invalid_face_landmarks")
+            if len(matrices) != 1:
+                reasons.append("face_transform_missing")
         else:
             try:
                 orientation = orientation_from_matrix(matrices[0])
             except ValueError:
                 ambiguous = True
-    return Observation(image_usable, len(faces), orientation, body_present, ambiguous)
+                reasons.append("face_orientation_unreliable")
+    return Observation(image_usable, len(faces), orientation, body_present, ambiguous, tuple(reasons))
+
+
+def calibration_diagnostics(observation: Observation) -> dict:
+    """Aggregate rejection reasons only; no images or landmark coordinates."""
+    reasons = list(observation.rejection_reasons)
+    if not observation.image_usable and not reasons:
+        reasons.append("image_unusable")
+    if observation.image_usable:
+        if observation.face_count == 0 and "face_not_detected" not in reasons:
+            reasons.append("face_not_detected")
+        elif observation.face_count > 1 and "multiple_faces" not in reasons:
+            reasons.append("multiple_faces")
+        elif observation.face_count == 1 and observation.orientation is None and not reasons:
+            reasons.append("face_orientation_unreliable")
+        if observation.ambiguous and not reasons:
+            reasons.append("ambiguous_observation")
+    return {
+        "faceCount": observation.face_count,
+        "bodyPresent": observation.body_present,
+        "orientationAvailable": observation.orientation is not None,
+        "imageUsable": observation.image_usable,
+        "reasons": reasons,
+    }

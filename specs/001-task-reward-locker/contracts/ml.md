@@ -12,6 +12,8 @@ Private FastAPI service; Next is the authenticated public entry point. Bind loca
 
 Response fields: `sessionId`, `sequence`, `observedAt`, `state` compatible/away/unknown, `reason`, `modelVersion`, `ruleVersion`, `processingMs`. Calibrating responses may additionally return aggregate orientation parameters for trusted calibration storage, without full landmarks. Do not return raw imagery. Classification scores, if included, are model confidence rather than probability of actually studying.
 
+Calibration-observation responses also include aggregate `diagnostics`: `faceCount`, `bodyPresent`, `orientationAvailable`, `imageUsable`, and `reasons` (short rejection codes). These distinguish missing face detection, invalid/missing head orientation, unreliable shoulders/body landmarks, multiple people, and image-quality failures. No raw landmark coordinates or image content are included. This instrumentation does not change acceptance thresholds or make a rejected frame usable.
+
 ## Bounded processing defaults
 
 One JPEG per second initially; one outstanding frame per session; maximum encoded body 256 KiB and decoded image 640×480 pixels. Reject corrupt, oversized, wrong-format, replayed/out-of-order frames. Enforce byte limits during streaming and before expensive decoding. Drop stale work instead of accumulating a queue. The service times out at three seconds; Next marks that interval unknown. Limit each user to two requests per second and cap global inference concurrency to two initially; return 429/503 instead of unbounded queuing.

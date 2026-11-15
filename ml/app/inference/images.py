@@ -22,7 +22,7 @@ class FrameInputError(ValueError):
         self.status_code = status_code
 
 
-def decode_jpeg(payload: bytes):
+def decode_jpeg(payload: bytes, *, diagnostics: dict | None = None):
     """Return RGB pixels or None for poor quality, with no model execution."""
     if not payload or len(payload) > MAX_FRAME_BYTES:
         raise FrameInputError("Invalid JPEG body size", 413 if payload else 422)
@@ -39,6 +39,17 @@ def decode_jpeg(payload: bytes):
                             stats = ImageStat.Stat(sample)
                             usable = (width >= 64 and height >= 64
                                       and 20 <= stats.mean[0] <= 235 and stats.stddev[0] >= 8)
+                            if diagnostics is not None:
+                                reasons = []
+                                if width < 64 or height < 64:
+                                    reasons.append("image_too_small")
+                                if stats.mean[0] < 20:
+                                    reasons.append("image_too_dark")
+                                if stats.mean[0] > 235:
+                                    reasons.append("image_too_bright")
+                                if stats.stddev[0] < 8:
+                                    reasons.append("image_low_contrast")
+                                diagnostics["reasons"] = reasons
                     return np.array(rgb, dtype=np.uint8) if usable else None
     except FrameInputError:
         raise
@@ -49,9 +60,10 @@ def decode_jpeg(payload: bytes):
 
 def analyze_jpeg(pipeline, payload: bytes) -> Observation:
     """Runs inside a leased inference worker; never writes images to disk."""
-    pixels = decode_jpeg(payload)
+    diagnostics = {}
+    pixels = decode_jpeg(payload, diagnostics=diagnostics)
     if pixels is None:
-        return Observation(False, 0)
+        return Observation(False, 0, rejection_reasons=tuple(diagnostics.get("reasons", [])))
     image = None
     try:
         import mediapipe as mp

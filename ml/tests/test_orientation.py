@@ -9,6 +9,7 @@ from app.inference.orientation import (
     Observation,
     Orientation,
     calibration_reference,
+    calibration_diagnostics,
     classify,
     observation_from_results,
     orientation_from_matrix,
@@ -124,3 +125,20 @@ def test_no_detection_is_not_proof_of_usable_empty_scene(calibration):
     pose = SimpleNamespace(pose_landmarks=[])
     assert classify(observation_from_results(face, pose, image_usable=False), calibration).state == "unknown"
     assert classify(observation_from_results(face, pose, image_usable=True), calibration).state == "away"
+
+
+def test_diagnostics_distinguish_shoulders_from_face_without_relaxing_rules(calibration):
+    face = SimpleNamespace(face_landmarks=[[landmark() for _ in range(478)]], facial_transformation_matrixes=[rotation(0, -45)])
+    pose = SimpleNamespace(pose_landmarks=[[landmark(0.1, 0.1) for _ in range(33)]])
+    observation = observation_from_results(face, pose, image_usable=True)
+    assert classify(observation, calibration).state == "unknown"
+    diagnostic = calibration_diagnostics(observation)
+    assert diagnostic["orientationAvailable"] is True
+    assert diagnostic["faceCount"] == 1
+    assert diagnostic["reasons"] == ["shoulders_unreliable"]
+
+
+def test_diagnostics_distinguish_missing_transform_from_missing_face():
+    face = SimpleNamespace(face_landmarks=[[landmark() for _ in range(478)]], facial_transformation_matrixes=[])
+    observation = observation_from_results(face, SimpleNamespace(pose_landmarks=[]), image_usable=True)
+    assert calibration_diagnostics(observation)["reasons"] == ["face_transform_missing"]
