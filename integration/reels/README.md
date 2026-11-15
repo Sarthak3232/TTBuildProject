@@ -52,3 +52,13 @@ Four additions under `integration/reels/` on local branch `integration/reel-deli
 2. Confirm printed symbol order, zero offset, sensor behavior, active reel count and timings on the powered bench. For three reels, complete each hardware profile and agree on a deterministic winning/losing symbol tuple. Version the mapping before field deployment.
 3. On ESP32, validate TLS certificates and provision per-device credentials. Use a separate networking task with bounded queues for validated commands and receipts. Keep stepping and completion detection in the existing nonblocking motor loop. Handle reconnects and backoff in the networking task.
 4. Persist event IDs, payloads, dispatch state and completion receipts on-device. On reconnect, replay receipts before accepting new motion. Reconcile power loss during movement explicitly. Bench-test delayed/duplicate events, lost acknowledgements, reset during motion, unavailable network and sensor faults before enabling automatic recovery.
+
+## USB demo on the WROOM-32
+
+`SlottyUsbDemo/SlottyUsbDemo.ino` is a USB-only Arduino sketch. Upload it with the motor supply disconnected, then close Serial Monitor. It answers status, home and spin with simulated motion. `usb_demo.py` uses pySerial 3.5 and the existing bridge ledger to deliver a saved roll over a real serial port. From the repository root, with pySerial installed, run:
+
+```sh
+python integration/reels/usb_demo.py --port COM3 --db ../slotty-usb-demo.sqlite
+```
+
+Observed on the user's ESP32: slot 3 produced target 2, SIM DONE home preceded spin 2, SIM DONE spin completed the event, and replay sent no second spin. This used the example GET response. Live backend delivery and physical motion remain to be tested.
