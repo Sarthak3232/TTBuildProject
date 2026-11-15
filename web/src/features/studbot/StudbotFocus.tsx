@@ -13,7 +13,7 @@ const diagnosticMessages: Record<string, string> = {
   image_too_dark: "The image is too dark. Add lighting toward your face.",
   image_too_bright: "The image is too bright or washed out.",
   image_low_contrast: "The image has too little contrast; the camera may be covered or the lighting too flat.",
-  face_not_detected: "No face was detected. Looking down may hide too much of your face from this camera angle.",
+  face_not_detected: "No face was detected. Raise or tilt your book toward the screen, or lower the camera so it can see more of your face. Keep your shoulders in view.",
   multiple_faces: "More than one face was detected. Keep a single person in view.",
   multiple_bodies: "More than one body was detected.",
   invalid_body_landmarks: "The body landmarks could not be verified.",
@@ -184,12 +184,14 @@ export function StudbotFocus() {
             setDiagnostics(data.diagnostics ?? null);
             setProgress({ samples: data.samples ?? 0, seconds: data.seconds ?? 0 });
             if (data.phase === "book" && stage === "screen") {
-              setStage("book-prompt"); setMessage("Screen calibrated. Look at your book or notebook, then select Calibrate book."); return;
+              setStage("book-prompt"); setMessage("Screen calibrated. Raise or tilt your book so your face stays visible while reading, then select Calibrate book. If you move the camera, recalibrate both positions."); return;
             }
             if (data.phase === "ready") {
               setStage("ready"); setMessage("Both positions calibrated. You can start studying."); return;
             }
-            setMessage(data.usable ? "Hold this position while usable samples are collected." : "Unable to verify this view. Improve lighting and keep one face and your shoulders visible.");
+            setMessage(data.usable ? "Hold this position while usable samples are collected."
+              : data.samples ? "Detection briefly lost. Recent valid samples are kept for up to three seconds; bring your face back into view."
+              : "Unable to verify this view. Improve lighting and keep one face and your shoulders visible.");
           }
         }
       } catch (error) {

@@ -221,8 +221,14 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
         if (data.phase !== action) throw new BridgeError(503, "Mismatched calibration phase.");
         const diagnostics = calibrationDiagnostics(data.diagnostics);
         if (data.usable !== true || !validAngles(data)) {
-          session.samples = [];
-          return json({ phase: action, usable: false, samples: 0, seconds: 0, diagnostics });
+          // A brief face-detection dropout is common while looking down. Keep
+          // recent verified samples, but never add an unusable frame or advance
+          // calibration on it. Longer gaps still require a fresh stable pose.
+          if (session.samples.length && now() - session.samples.at(-1)!.at > 3000) session.samples = [];
+          const seconds = session.samples.length > 1
+            ? (session.samples.at(-1)!.at - session.samples[0].at) / 1000 : 0;
+          return json({ phase: action, usable: false, samples: session.samples.length,
+            seconds: Math.min(5, seconds), diagnostics });
         }
         const at = now();
         if (session.samples.length && at - session.samples.at(-1)!.at > 3000) session.samples = [];

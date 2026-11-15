@@ -107,7 +107,7 @@ test("oversized streamed body never reaches inference", async () => {
   assert.equal(f.calls.length, count);
 });
 
-test("unusable observations reset the calibration sample window", async () => {
+test("brief detection gaps preserve valid samples without accepting unusable frames", async () => {
   const f = fixture();
   await f.send("open");
   await f.send("screen", f.image());
@@ -119,11 +119,35 @@ test("unusable observations reset the calibration sample window", async () => {
       reasons: ["shoulders_unreliable", "private-arbitrary-detail"], landmarks: [1, 2, 3] },
   }); });
   const data = await (await f.send("screen", f.image())).json();
-  assert.equal(data.samples, 0);
+  assert.equal(data.samples, 1);
+  assert.equal(data.seconds, 0);
   assert.equal(data.phase, "screen");
   assert.deepEqual(data.diagnostics.reasons, ["shoulders_unreliable"]);
   assert.equal(data.diagnostics.orientationAvailable, true);
   assert.equal("landmarks" in data.diagnostics, false);
+  f.advance(3001);
+  const expired = await (await f.send("screen", f.image())).json();
+  assert.equal(expired.samples, 0);
+  assert.equal(expired.seconds, 0);
+  assert.equal(expired.phase, "screen");
+});
+
+test("book calibration tolerates a brief dropout but still needs four valid samples spanning five seconds", async () => {
+  const f = fixture();
+  await f.send("open");
+  for (let i = 0; i < 6; i++) { f.advance(1000); await f.send("screen", f.image()); }
+  for (const [offset, usable] of [[1000, true], [1000, true], [1000, false], [1000, true], [2000, true]]) {
+    f.advance(offset);
+    f.respond((url, init) => {
+      const headers = new Headers(init.headers);
+      return Response.json({ sessionId: headers.get("X-Study-Session"), sequence: Number(headers.get("X-Frame-Sequence")),
+        modelVersion: "test-model", ruleVersion: "test-rule", phase: "book", usable,
+        ...(usable ? { yaw: 0, pitch: -45 } : {}) });
+    });
+    const result = await (await f.send("book", f.image())).json();
+    assert.equal(result.phase, offset === 2000 ? "ready" : "book");
+    if (!usable) { assert.equal(result.samples, 2); assert.equal(result.seconds, 1); }
+  }
 });
 
 test("a late frame cannot restore calibration after reset", async () => {

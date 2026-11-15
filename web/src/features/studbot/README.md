@@ -39,6 +39,13 @@ positions. Each position needs at least four usable samples spanning five second
 Keep one face and your shoulders visible. Pause, close, navigation, and hidden-tab
 events stop camera capture. No microphone access is requested.
 
+For book calibration, raise or tilt the book toward the screen so your face stays
+visible while reading. If you lower or move the camera, restart both calibration
+positions. A brief detection gap preserves recent valid samples for up to three
+seconds. Missing-face frames never contribute samples or finish calibration;
+longer gaps reset progress. Calibration still requires four valid observations
+spanning five seconds. A fully hidden face remains unverifiable during live study.
+
 ## Deployment
 
 Use a persistent Node.js server running `npm run build` then `npm run start`, with
