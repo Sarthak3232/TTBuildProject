@@ -54,6 +54,7 @@ export type Database = {
           "eligible_ms": number
           "revision": number
           "policy_version": string
+          "reward_interval_ms": number
         }
         Insert: {
           "id"?: string
@@ -68,6 +69,7 @@ export type Database = {
           "eligible_ms"?: number
           "revision"?: number
           "policy_version"?: string
+          "reward_interval_ms"?: number
         }
         Update: {
           "id"?: string
@@ -82,6 +84,7 @@ export type Database = {
           "eligible_ms"?: number
           "revision"?: number
           "policy_version"?: string
+          "reward_interval_ms"?: number
         }
         Relationships: [
           {
@@ -113,6 +116,7 @@ export type Database = {
           "eligible_ms": number
           "distance_m": number | null
           "token_award": number
+          "reward_interval_ms": number
         }
         Insert: {
           "id"?: string
@@ -126,6 +130,7 @@ export type Database = {
           "eligible_ms": number
           "distance_m"?: number | null
           "token_award": number
+          "reward_interval_ms"?: number
         }
         Update: {
           "id"?: string
@@ -139,6 +144,7 @@ export type Database = {
           "eligible_ms"?: number
           "distance_m"?: number | null
           "token_award"?: number
+          "reward_interval_ms"?: number
         }
         Relationships: [
           {
@@ -681,6 +687,19 @@ export type Database = {
         Args: {
           "p_user_id": string
           "p_session_id": string
+        }
+        Returns: Json
+      }
+      "studbot_command": {
+        Args: {
+          "p_user_id": string
+          "p_action": string
+          "p_session_id"?: string
+          "p_window_id"?: string
+          "p_sequence"?: number
+          "p_observation"?: string
+          "p_key"?: string
+          "p_test_mode"?: boolean
         }
         Returns: Json
       }

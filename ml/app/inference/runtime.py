@@ -29,7 +29,7 @@ class VisionPipeline:
                     vision.FaceLandmarkerOptions(
                         base_options=python.BaseOptions(model_asset_path=str(model_dir / "face_landmarker.task")),
                         running_mode=vision.RunningMode.IMAGE,
-                        num_faces=2,
+                        num_faces=4,
                         min_face_detection_confidence=0.5,
                         min_face_presence_confidence=0.5,
                         output_facial_transformation_matrixes=True,
@@ -42,6 +42,7 @@ class VisionPipeline:
                     vision.PoseLandmarkerOptions(
                         base_options=python.BaseOptions(model_asset_path=str(model_dir / "pose_landmarker_lite.task")),
                         running_mode=vision.RunningMode.IMAGE,
+                        num_poses=3,
                         min_pose_detection_confidence=0.5,
                         min_pose_presence_confidence=0.5,
                         output_segmentation_masks=False,

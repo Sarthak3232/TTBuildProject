@@ -107,6 +107,20 @@ try:
                   + literal(user_b) + ",true); select count(*) from public.rolls; rollback;")
     assert visible.splitlines()[-1] == "0", visible
     assert sql("select has_function_privilege('authenticated','public.app_mutate(uuid,text,uuid,jsonb)','execute');") == "f"
-    print("PASS: simultaneous starts, duplicate completion, concurrent spend, wallet/ledger integrity and account isolation")
+    study = json.loads(sql("select public.studbot_command(" + literal(user_a) + "::uuid,'start',p_window_id=>" + literal(uuid.uuid4()) + "::uuid);"))
+    study_id = study["activity"]["id"]
+    sql("update public.activity_sessions set accumulated_ms=1800000,eligible_ms=1800000 where id=" + literal(study_id) + "::uuid;")
+    study_key = str(uuid.uuid4())
+
+    def finish_study():
+        return json.loads(sql("select public.studbot_command(" + literal(user_a) + "::uuid,'complete',"
+                              + literal(study_id) + "::uuid,p_key=>" + literal(study_key) + "::uuid);"))
+
+    credits, study_errors = together([finish_study, finish_study])
+    assert not study_errors and len(credits) == 2 and credits[0] == credits[1], (credits, study_errors)
+    assert credits[0]["completion"]["tokenAward"] == 1
+    assert sql('select balance from public."tokenBalance" where user_id=' + literal(user_a) + '::uuid;') == "1"
+    assert sql("select count(*) from public.token_entries where completion_id=" + literal(credits[0]["completion"]["id"]) + "::uuid;") == "1"
+    print("PASS: simultaneous starts, duplicate manual/study completion, concurrent spend, wallet/ledger integrity and account isolation")
 finally:
     sql("delete from auth.users where id in(" + literal(user_a) + "::uuid," + literal(user_b) + "::uuid);")

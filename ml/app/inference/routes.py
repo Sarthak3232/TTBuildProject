@@ -20,7 +20,7 @@ from starlette.requests import ClientDisconnect
 
 from app.auth import require_internal_token
 from app.inference.images import MAX_FRAME_BYTES, FrameInputError, analyze_jpeg
-from app.inference.orientation import Calibration, Orientation, RULE_VERSION, classify
+from app.inference.orientation import Calibration, Orientation, RULE_VERSION, calibration_diagnostics, classify
 from app.inference.runtime import RuntimeBusy
 
 router = APIRouter(prefix="/v1/focus", dependencies=[Depends(require_internal_token)])
@@ -141,9 +141,10 @@ async def handle_frame(request: Request, *, calibrating: bool):
                 "processingMs": round((time.monotonic() - started) * 1000, 3),
             }
             if calibrating:
-                usable = (observation.image_usable and observation.face_count == 1
+                usable = (observation.image_usable
                           and observation.orientation is not None and not observation.ambiguous)
-                result = {**common, "usable": usable, "phase": phase}
+                result = {**common, "usable": usable, "phase": phase,
+                          "diagnostics": calibration_diagnostics(observation)}
                 if usable:
                     result.update(yaw=observation.orientation.yaw, pitch=observation.orientation.pitch)
                 return result

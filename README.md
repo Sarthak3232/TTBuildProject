@@ -18,9 +18,14 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result now; winning delivery remains pending physical hardware. ML/Studbot integration is excluded and cannot award unverified study time. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
+> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result now; winning delivery remains pending physical hardware. Studbot includes authenticated camera capture, calibration, and live classification; saved study sessions, history, and one token per full 30 minutes on completion are implemented with the Studbot migration and a server-only Supabase key. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
 
 ## Run the app
+
+Studbot now includes an authenticated camera/calibration page and a server-side
+connection to the Python classifier. See the [Studbot setup and deployment guide](web/src/features/studbot/README.md).
+Apply the Studbot rewards migration and configure its server-only Supabase key to enable saved study time and token credit. Deployment currently requires
+a single persistent Next.js process; serverless or multiple replicas need shared session storage.
 
 Use Node.js 22.20+ and npm 10.9.3+ (`nvm use` if installed).
 

@@ -89,7 +89,7 @@ def test_classify_contract_and_no_raw_features(service):
     assert response.status_code == 200
     data = response.json()
     assert data["state"] == "compatible"
-    assert data["reason"] == "calibrated_screen"
+    assert data["reason"] == "looking_forward"
     assert data["sessionId"] == "test-session" and data["sequence"] == 1
     assert data["modelVersion"] == "test-model-v1" and data["ruleVersion"]
     assert data["processingMs"] >= 0 and data["observedAt"].endswith("Z")
@@ -107,10 +107,11 @@ def test_calibration_contract_does_not_require_reference_header(service):
     data = response.json()
     assert data["usable"] is True and data["yaw"] == 0 and data["pitch"] == 0
     assert data["phase"] == "book"
+    assert data["diagnostics"] == {"faceCount": 1, "bodyPresent": False, "orientationAvailable": True, "imageUsable": True, "reasons": []}
     assert "landmarks" not in response.text
 
 
-@pytest.mark.parametrize("count,expected", [(0, "away"), (2, "unknown")])
+@pytest.mark.parametrize("count,expected", [(0, "away"), (2, "compatible")])
 def test_empty_and_multiple_faces(service, count, expected):
     client, runtime = service
     runtime.pipeline.count = count
@@ -125,7 +126,21 @@ def test_dark_frame_and_unusable_calibration_never_qualify(service):
     metadata["X-Calibration-Phase"] = "screen"
     data = client.post(CALIBRATE, headers=metadata, content=jpeg(dark=True)).json()
     assert data["usable"] is False
+    assert "image_too_dark" in data["diagnostics"]["reasons"]
+    assert data["diagnostics"]["imageUsable"] is False
     assert "yaw" not in data and "pitch" not in data
+
+
+def test_calibration_reports_missing_face_instead_of_generic_unusable(service):
+    client, runtime = service
+    runtime.pipeline.count = 0
+    metadata = headers()
+    metadata["X-Calibration-Phase"] = "book"
+    data = client.post(CALIBRATE, headers=metadata, content=jpeg()).json()
+    assert data["usable"] is False
+    assert data["diagnostics"]["faceCount"] == 0
+    assert data["diagnostics"]["orientationAvailable"] is False
+    assert data["diagnostics"]["reasons"] == ["face_not_detected"]
 
 
 def test_authentication_precedes_body_consumption(service):

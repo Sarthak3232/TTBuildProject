@@ -9,6 +9,7 @@ from app.inference.orientation import (
     Observation,
     Orientation,
     calibration_reference,
+    calibration_diagnostics,
     classify,
     observation_from_results,
     orientation_from_matrix,
@@ -47,7 +48,7 @@ def calibration():
     return Calibration(screen=Orientation(0, 0), book=Orientation(0, -45))
 
 
-@pytest.mark.parametrize("yaw,pitch,expected", [(0, 0, "compatible"), (0, -45, "compatible"), (25, 25, "compatible"), (25.01, 0, "away"), (60, 0, "away"), (0, 40, "away")])
+@pytest.mark.parametrize("yaw,pitch,expected", [(0, 0, "compatible"), (0, -45, "compatible"), (0, -85, "compatible"), (35, 25, "compatible"), (35.01, 0, "away"), (60, 0, "away"), (0, 40, "away")])
 def test_screen_book_and_inclusive_threshold(calibration, yaw, pitch, expected):
     result = classify(Observation(True, 1, Orientation(yaw, pitch)), calibration)
     assert result.state == expected
@@ -63,7 +64,7 @@ def test_yaw_difference_wraps_at_180():
     (Observation(True, 0), "away"),
     (Observation(True, 0, body_present=True), "unknown"),
     (Observation(True, 1), "unknown"),
-    (Observation(True, 2, Orientation(0, 0)), "unknown"),
+    (Observation(True, 2, Orientation(0, 0)), "compatible"),
     (Observation(True, 0, ambiguous=True), "unknown"),
 ])
 def test_unverifiable_views_never_qualify(calibration, observation, expected):
@@ -124,3 +125,61 @@ def test_no_detection_is_not_proof_of_usable_empty_scene(calibration):
     pose = SimpleNamespace(pose_landmarks=[])
     assert classify(observation_from_results(face, pose, image_usable=False), calibration).state == "unknown"
     assert classify(observation_from_results(face, pose, image_usable=True), calibration).state == "away"
+
+
+def test_diagnostics_distinguish_shoulders_from_face_without_relaxing_rules(calibration):
+    face = SimpleNamespace(face_landmarks=[[landmark() for _ in range(478)]], facial_transformation_matrixes=[rotation(0, -45)])
+    pose = SimpleNamespace(pose_landmarks=[[landmark(0.1, 0.1) for _ in range(33)]])
+    observation = observation_from_results(face, pose, image_usable=True)
+    assert classify(observation, calibration).state == "unknown"
+    diagnostic = calibration_diagnostics(observation)
+    assert diagnostic["orientationAvailable"] is True
+    assert diagnostic["faceCount"] == 1
+    assert diagnostic["reasons"] == ["shoulders_unreliable"]
+
+
+def test_diagnostics_distinguish_missing_transform_from_missing_face():
+    face = SimpleNamespace(face_landmarks=[[landmark() for _ in range(478)]], facial_transformation_matrixes=[])
+    observation = observation_from_results(face, SimpleNamespace(pose_landmarks=[]), image_usable=True)
+    assert calibration_diagnostics(observation)["reasons"] == ["face_transform_missing"]
+
+
+def reading_body(*, center=0.5, width=0.4, nose_visible=False, sideways=False):
+    body = [landmark(0, 0) for _ in range(33)]
+    for index, x, y, z in [(11, center - width / 2, 0.65, 0), (12, center + width / 2, 0.65, 0),
+                            (7, center - width / 5, 0.5, 0.2 if sideways else 0),
+                            (8, center + width / 5, 0.5, -0.2 if sideways else 0)]:
+        body[index] = SimpleNamespace(x=x, y=y, z=z, presence=1, visibility=1)
+    if nose_visible:
+        body[0] = SimpleNamespace(x=center, y=0.56, z=-0.1, presence=1, visibility=1)
+    return body
+
+
+def pose_observation(*bodies):
+    return observation_from_results(SimpleNamespace(face_landmarks=[], facial_transformation_matrixes=[]),
+                                    SimpleNamespace(pose_landmarks=list(bodies)), image_usable=True)
+
+
+@pytest.mark.parametrize("nose_visible", [False, True])
+def test_looking_down_can_qualify_without_face_mesh(calibration, nose_visible):
+    observation = pose_observation(reading_body(nose_visible=nose_visible))
+    assert observation.face_count == 0
+    assert observation.orientation is not None
+    assert classify(observation, calibration).state == "compatible"
+
+
+def test_multiple_people_do_not_pause_the_person_at_the_desk(calibration):
+    foreground = reading_body()
+    background = reading_body(center=0.85, width=0.15, sideways=True)
+    for bodies in [(foreground, background), (background, foreground)]:
+        assert classify(pose_observation(*bodies), calibration).state == "compatible"
+    # The centered subject left; an off-center bystander cannot keep it running.
+    assert classify(pose_observation(background), calibration).state != "compatible"
+
+
+def test_sideways_pose_and_shoulders_without_head_do_not_qualify(calibration):
+    assert classify(pose_observation(reading_body(sideways=True)), calibration).state == "away"
+    body = reading_body()
+    body[7].visibility = body[8].visibility = 0
+    assert classify(pose_observation(body), calibration).state == "unknown"
+    assert classify(pose_observation(), calibration).state == "away"
