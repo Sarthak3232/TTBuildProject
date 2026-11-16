@@ -22,3 +22,7 @@ blob-report/
 
 /integration/reels/slotty-bench.sqlite*
 /integration/reels/__pycache__/
+
+/integration/reels/slotty-physical.sqlite*
+
+/integration/reels/slotty-mock-http.sqlite*

@@ -6,7 +6,7 @@ export async function notifyReelBench(committed: unknown) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(committed),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(120000),
     });
     if (!response.ok) throw new Error(`bridge HTTP ${response.status}`);
     console.info("Slotty reel receipt", await response.json());
