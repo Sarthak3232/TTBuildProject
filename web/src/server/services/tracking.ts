@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { RouteIngestion, SavedRoute } from "@/domain/time/route";
 import { ROUTE_LIMITS } from "@/domain/time/route";
-import { createServiceClient } from "@/server/supabase/clients";
+import type { ServerSupabaseClient } from "@/server/supabase/clients";
 import { ApiError } from "@/server/api";
 import { getSession } from "@/server/services/sessions";
 
@@ -18,15 +18,14 @@ export const routeBatchSchema = z.object({
   }).strict()).max(ROUTE_LIMITS.batchSize),
 }).strict();
 
-export async function getRoute(userId: string, sessionId: string): Promise<SavedRoute> {
-  const session = await getSession(userId, sessionId);
+export async function getRoute(supabase: ServerSupabaseClient, userId: string, sessionId: string): Promise<SavedRoute> {
+  const session = await getSession(supabase, userId, sessionId);
   if (session.task.kind !== "run" && session.task.kind !== "walk") throw new ApiError(404, "not_found", "Run or walk not found");
-  const db = createServiceClient();
-  const { data, error } = await db.rpc("read_session_route", {
-    p_user_id: userId, p_session_id: sessionId,
+  const { data, error } = await supabase.rpc("my_read_session_route", {
+    p_session_id: sessionId,
   });
   if (error) throw error;
-  const { data: completion, error: completionError } = await db.from("completions").select("*").eq("user_id", userId).eq("session_id", sessionId).maybeSingle();
+  const { data: completion, error: completionError } = await supabase.from("completions").select("*").eq("user_id", userId).eq("session_id", sessionId).maybeSingle();
   if (completionError) throw completionError;
   return { ...(data as SavedRoute), completion: completion ? {
     id: completion.id, sessionId: completion.session_id, task: session.task,
@@ -36,9 +35,9 @@ export async function getRoute(userId: string, sessionId: string): Promise<Saved
   } : null };
 }
 
-export async function ingestRoute(userId: string, sessionId: string, batch: z.infer<typeof routeBatchSchema>): Promise<RouteIngestion> {
-  const { data, error } = await createServiceClient().rpc("ingest_route_points", {
-    p_user_id: userId, p_session_id: sessionId, p_revision: batch.revision,
+export async function ingestRoute(supabase: ServerSupabaseClient, sessionId: string, batch: z.infer<typeof routeBatchSchema>): Promise<RouteIngestion> {
+  const { data, error } = await supabase.rpc("my_ingest_route_points", {
+    p_session_id: sessionId, p_revision: batch.revision,
     p_points: batch.points, p_gap: batch.gap,
   });
   if (error) throw error;

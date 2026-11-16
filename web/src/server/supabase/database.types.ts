@@ -54,6 +54,7 @@ export type Database = {
           "eligible_ms": number
           "revision": number
           "policy_version": string
+          "reward_interval_ms": number
         }
         Insert: {
           "id"?: string
@@ -68,6 +69,7 @@ export type Database = {
           "eligible_ms"?: number
           "revision"?: number
           "policy_version"?: string
+          "reward_interval_ms"?: number
         }
         Update: {
           "id"?: string
@@ -82,6 +84,7 @@ export type Database = {
           "eligible_ms"?: number
           "revision"?: number
           "policy_version"?: string
+          "reward_interval_ms"?: number
         }
         Relationships: [
           {
@@ -113,6 +116,7 @@ export type Database = {
           "eligible_ms": number
           "distance_m": number | null
           "token_award": number
+          "reward_interval_ms": number
         }
         Insert: {
           "id"?: string
@@ -126,6 +130,7 @@ export type Database = {
           "eligible_ms": number
           "distance_m"?: number | null
           "token_award": number
+          "reward_interval_ms"?: number
         }
         Update: {
           "id"?: string
@@ -139,6 +144,7 @@ export type Database = {
           "eligible_ms"?: number
           "distance_m"?: number | null
           "token_award"?: number
+          "reward_interval_ms"?: number
         }
         Relationships: [
           {
@@ -635,10 +641,65 @@ export type Database = {
         }
         Returns: Json
       }
+      "my_app_calendar": {
+        Args: {
+          "p_month": string
+        }
+        Returns: Json
+      }
+      "my_app_history": {
+        Args: {
+          "p_period": string
+          "p_before": string
+          "p_before_id": string
+          "p_limit": number
+        }
+        Returns: Json
+      }
+      "my_app_mutate": {
+        Args: {
+          "p_operation": string
+          "p_key": string
+          "p_payload": Json
+        }
+        Returns: Json
+      }
+      "my_app_snapshot": {
+        Args: never
+        Returns: Json
+      }
+      "my_ingest_route_points": {
+        Args: {
+          "p_session_id": string
+          "p_revision": number
+          "p_points": Json
+          "p_gap": boolean
+        }
+        Returns: Json
+      }
+      "my_read_session_route": {
+        Args: {
+          "p_session_id": string
+        }
+        Returns: Json
+      }
       "read_session_route": {
         Args: {
           "p_user_id": string
           "p_session_id": string
+        }
+        Returns: Json
+      }
+      "studbot_command": {
+        Args: {
+          "p_user_id": string
+          "p_action": string
+          "p_session_id"?: string
+          "p_window_id"?: string
+          "p_sequence"?: number
+          "p_observation"?: string
+          "p_key"?: string
+          "p_test_mode"?: boolean
         }
         Returns: Json
       }

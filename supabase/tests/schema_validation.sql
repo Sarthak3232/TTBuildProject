@@ -32,7 +32,11 @@ begin
     select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private') and p.prosecdef
       and (has_function_privilege('anon', p.oid, 'EXECUTE')
-        or has_function_privilege('authenticated', p.oid, 'EXECUTE'))
+        or (has_function_privilege('authenticated', p.oid, 'EXECUTE') and not (
+          n.nspname = 'private' and p.proname in (
+            'my_app_mutate', 'my_app_snapshot', 'my_app_history', 'my_app_calendar',
+            'my_ingest_route_points', 'my_read_session_route')
+        )))
   ), 'Browser roles can execute a privileged database helper';
 
   insert into auth.users(id, email, aud, role, raw_user_meta_data) values

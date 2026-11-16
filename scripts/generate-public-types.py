@@ -107,7 +107,11 @@ for table in sorted({c["table_name"] for c in columns}):
     lines.extend(["        ]", "      }"])
 lines.extend(["    }", "    Views: { [_ in never]: never }", "    Functions: {"])
 for function in functions:
-    lines.extend([f"      {json.dumps(function['name'])}: {{", "        Args: {"])
+    lines.append(f"      {json.dumps(function['name'])}: {{")
+    if not function["args"]:
+        lines.extend(["        Args: never", f"        Returns: {ts_type(function['returns'])}", "      }"])
+        continue
+    lines.append("        Args: {")
     for index, arg in enumerate(function["args"]):
         optional = index >= len(function["args"]) - function["defaults"]
         lines.append(f"          {json.dumps(arg['name'])}{'?' if optional else ''}: {ts_type(arg['type'])}")

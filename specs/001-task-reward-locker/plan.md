@@ -107,7 +107,7 @@ supabase/
 - Studbot uses ML landmarks plus calibrated orientation rules, not a nonexistent pretrained attention classifier. Five-second screen/book calibration, two-second reacquisition, five-second pending-away grace and unknown-state exclusion are specified in the ML and data contracts.
 - Keep one unfinished session per user to prevent simultaneous earning. Completion credits floor(milliseconds / 1,800,000); canceled sessions earn nothing. Distinct completed sessions may earn again from new time.
 - Daily goals sum matching intervals per local date, separately from token rounding. Active progress is provisional; canceled activity is excluded. Schedule changes apply to future occurrences and preserve history.
-- Generate secure roll random values only on the server, version/store the applied quantized curve, validate allocations/balance atomically, and recover each immutable virtual result by idempotency key or roll id. Physical receipt delivery remains deferred.
+- Generate secure roll random values in Postgres, version/store the applied quantized curve, validate allocations/balance atomically, and recover each immutable virtual result by idempotency key or roll id. Physical receipt delivery remains deferred.
 - One own-locker simulator includes normal/offline/fail-before-apply/drop-ack modes. Collection/reload follows acknowledged unlock; new items receive new revisions.
 
 ## Delivery Sequence

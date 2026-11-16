@@ -24,7 +24,6 @@ export default defineConfig({
       env: {
         NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "isolated-browser-test-key",
-        SUPABASE_SECRET_KEY: "isolated-browser-test-secret",
       },
     },
     ...(existsSync(`${__dirname}/tests/e2e/tracking-harness/server.mjs`)

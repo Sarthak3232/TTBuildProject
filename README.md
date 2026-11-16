@@ -18,9 +18,14 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result now; winning delivery remains pending physical hardware. ML/Studbot integration is excluded and cannot award unverified study time. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
+> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result now; winning delivery remains pending physical hardware. Studbot includes authenticated camera capture, calibration, and live classification; saved study sessions, history, and one token per full 30 minutes on completion are implemented with the Studbot migration and a server-only Supabase key. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
 
 ## Run the app
+
+Studbot now includes an authenticated camera/calibration page and a server-side
+connection to the Python classifier. See the [Studbot setup and deployment guide](web/src/features/studbot/README.md).
+Apply the Studbot rewards migration and configure its server-only Supabase key to enable saved study time and token credit. Deployment currently requires
+a single persistent Next.js process; serverless or multiple replicas need shared session storage.
 
 Use Node.js 22.20+ and npm 10.9.3+ (`nvm use` if installed).
 
@@ -29,9 +34,9 @@ npm ci
 cp web/.env.example web/.env.local
 ```
 
-Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, server-only `SUPABASE_SECRET_KEY` and `APP_URL` in the ignored `web/.env.local`. Legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted for the server credential. Never prefix the secret key with `NEXT_PUBLIC_` or commit a populated environment file.
+Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `APP_URL` in the ignored `web/.env.local`. App requests use the publishable key with the signed-in user’s session. Database access follows Row Level Security and owner-scoped RPCs.
 
-Apply every committed migration in order to the intended Supabase project. The first four foundation migrations were already applied to the hosted [TTBuildProject database](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/editor); do not rerun their creation SQL there. Apply only the new application and GPS migrations after verifying migration history. No app flow resets a hosted database. Configure Auth's site URL and callback redirect allowlist for `APP_URL` (locally `http://localhost:3000` and `/auth/callback`, including recovery redirects). Email/password confirmation and recovery use Supabase email delivery.
+Apply every committed migration in order to the intended Supabase project. For the hosted [TTBuildProject database](https://supabase.com/dashboard/project/yruyulqwyalxmtseaoml/database/migrations), verify migration history and apply only pending versions. The `authenticated_app_sessions` migration is required for publishable-key app access. Configure Auth's site URL and callback redirect allowlist for `APP_URL` (locally `http://localhost:3000` and `/auth/callback`, including recovery redirects). Email/password confirmation and recovery use Supabase email delivery.
 
 ```sh
 npm run dev

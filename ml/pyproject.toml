@@ -1,0 +1,27 @@
+[project]
+name = "slotty-ml"
+version = "0.1.0"
+description = "Private Studbot inference service for SLOTTY."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi",
+    "mediapipe==1.2.0",
+    "numpy==2.4.6",
+    "pillow==13.0.0",
+    "uvicorn",
+]
+
+[dependency-groups]
+dev = [
+    "httpx",
+    "opencv-contrib-python==5.0.0.93",
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-m 'not model_smoke'"
+markers = [
+    "model_smoke: real MediaPipe inference; requires explicitly fetched model assets",
+]

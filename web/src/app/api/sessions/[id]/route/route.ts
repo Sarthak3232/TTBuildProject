@@ -10,17 +10,17 @@ function sessionId(value: string) {
 
 export async function GET(request: Request, context: Context) {
   try {
-    const { user } = await requireUser(request);
+    const { user, supabase } = await requireUser(request);
     const id = sessionId((await context.params).id);
-    return noStore(await getRoute(user.id, id));
+    return noStore(await getRoute(supabase, user.id, id));
   } catch (error) { return jsonError(error); }
 }
 
 export async function POST(request: Request, context: Context) {
   try {
-    const { user } = await requireUser(request, true);
+    const { supabase } = await requireUser(request, true);
     const id = sessionId((await context.params).id);
     const input = await readBody(request, routeBatchSchema);
-    return noStore(await ingestRoute(user.id, id, input));
+    return noStore(await ingestRoute(supabase, id, input));
   } catch (error) { return jsonError(error); }
 }

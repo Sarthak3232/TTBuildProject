@@ -1,0 +1,1 @@
+"""Studbot inference service."""
