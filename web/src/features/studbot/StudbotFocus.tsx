@@ -30,6 +30,13 @@ class FocusError extends Error {
   constructor(status: number, message: string) { super(message); this.status = status; }
 }
 
+function mobileDevice() {
+  // Include iPadOS browsers that advertise a desktop Mac user agent. A small
+  // window alone must not change desktop behavior while studying in split view.
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+}
+
 function friendlyError(error: unknown) {
   if (error instanceof DOMException && error.name === "NotAllowedError") return "Camera permission was denied. Allow camera access and open focus mode again.";
   if (error instanceof DOMException && error.name === "NotFoundError") return "No camera was found on this device.";
@@ -102,9 +109,17 @@ export function StudbotFocus() {
   }, [open]);
 
   useEffect(() => {
-    const hidden = () => { if (document.hidden) close("Focus mode closed because the page was hidden. Reopen it to recalibrate."); };
+    const hidden = () => {
+      if (document.hidden && mobileDevice()) close("Focus mode closed because the mobile app was hidden. Reopen it to recalibrate.");
+    };
+    const leaving = () => close("Focus mode closed because you left the page.");
     document.addEventListener("visibilitychange", hidden);
-    return () => { document.removeEventListener("visibilitychange", hidden); release(); stopSession(); };
+    window.addEventListener("pagehide", leaving);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", leaving);
+      release(); stopSession();
+    };
   }, [close, release, stopSession]);
 
   async function api(action: string, signal: AbortSignal, body?: Blob): Promise<Reply> {
@@ -118,7 +133,7 @@ export function StudbotFocus() {
   async function camera(ticket: number) {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera access needs localhost or HTTPS and a supported browser.");
     const captured = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } });
-    if (ticket !== generation.current || document.hidden) { captured.getTracks().forEach(track => track.stop()); return false; }
+    if (ticket !== generation.current || (document.hidden && mobileDevice())) { captured.getTracks().forEach(track => track.stop()); return false; }
     stream.current = captured;
     captured.getVideoTracks().forEach(track => track.addEventListener("ended", () => close("The camera disconnected. Reopen focus mode to try again."), { once: true }));
     if (video.current) { video.current.srcObject = captured; await video.current.play(); }
@@ -281,7 +296,8 @@ export function StudbotFocus() {
         <button type="button" onClick={() => close()}>End focus mode</button>
       </div>
       <p className={styles.description}>Keep the camera fixed. Forward or downward posture counts; other people do not automatically pause the timer. Turning away or leaving pauses after five seconds; two seconds of valid posture resumes. Missing results stop counting after three seconds.</p>
-      <p className={styles.description}>Closing this window, leaving the page, or hiding the tab stops the camera and timer. Reopening starts a new session. This estimates posture, not attention, and cannot distinguish another person taking your seat.</p>
+      <p className={styles.description}>On desktop, you can switch tabs while the camera and timer keep running. On phones and tablets, switching away stops focus mode. Closing focus mode or leaving this page stops the camera and timer; reopening starts a new session. If the browser suspends camera updates, the timer pauses until fresh results return.</p>
+      <p className={styles.description}>This estimates posture, not attention, and cannot distinguish another person taking your seat.</p>
     </dialog>
   </div>;
 }

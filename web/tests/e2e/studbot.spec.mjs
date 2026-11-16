@@ -81,7 +81,12 @@ test("phone layout and Escape close the focus dialog", async ({ page }) => {
   await expect(dialog).not.toBeVisible();
 });
 
-test("hiding the page releases the camera and closes focus mode", async ({ page }) => {
+test("background tabs keep desktop study running and stop mobile capture", async ({ page, isMobile }) => {
+  let observations = 0;
+  await page.route("**/api/studbot/classify", route => {
+    observations++;
+    return route.fulfill({ json: { state: "compatible", reason: "looking_forward" } });
+  });
   await page.addInitScript(() => {
     window.syntheticTracks = [];
     navigator.mediaDevices.getUserMedia = async () => {
@@ -96,13 +101,30 @@ test("hiding the page releases the camera and closes focus mode", async ({ page 
   await page.getByRole("button", { name: "Open focus mode" }).click();
   const dialog = page.getByRole("dialog", { name: "Focus mode" });
   await expect(dialog.getByRole("button", { name: "Calibrate screen" })).toBeEnabled();
+  await dialog.getByRole("button", { name: "Calibrate screen" }).click();
+  await dialog.getByRole("button", { name: "Start studying" }).click();
+  await expect(dialog.getByText("Timer running", { exact: true })).toBeVisible();
+  const before = observations;
+  const timeBefore = await dialog.getByLabel("Focus session time").textContent();
   await page.screenshot({ path: test.info().outputPath("focus-desktop.png") });
   await page.evaluate(() => {
     Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await expect(dialog).not.toBeVisible();
-  expect(await page.evaluate(() => window.syntheticTracks.every(track => track.readyState === "ended"))).toBe(true);
+  if (isMobile) {
+    await expect(dialog).not.toBeVisible();
+    expect(await page.evaluate(() => window.syntheticTracks.every(track => track.readyState === "ended"))).toBe(true);
+    await expect(page.getByText("Timer paused", { exact: true }).first()).toBeVisible();
+  } else {
+    await expect(dialog).toBeVisible();
+    expect(await page.evaluate(() => window.syntheticTracks.every(track => track.readyState === "live"))).toBe(true);
+    await expect.poll(() => observations).toBeGreaterThan(before);
+    await expect(dialog.getByLabel("Focus session time")).not.toHaveText(timeBefore);
+    await expect(dialog.getByText("Timer running", { exact: true })).toBeVisible();
+    await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+    await expect(dialog).not.toBeVisible();
+    expect(await page.evaluate(() => window.syntheticTracks.every(track => track.readyState === "ended"))).toBe(true);
+  }
 });
 
 test("calibration diagnostics show camera dimensions and specific rejection causes", async ({ page }) => {

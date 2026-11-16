@@ -36,8 +36,16 @@ uv run --directory ml --env-file .env.local uvicorn app.main:app --host 127.0.0.
 In another terminal, run `npm.cmd run dev`. Sign in, open `/tasks/studbot`, select
 **Open focus mode**, allow camera access, and calibrate while facing the screen.
 Calibration needs at least four usable samples spanning five seconds.
-Keep your head and shoulders near the center. Pause, close, navigation, and hidden-tab
-events stop camera capture. No microphone access is requested.
+Keep your head and shoulders near the center. Pause, close, and navigation stop
+camera capture. No microphone access is requested.
+
+On desktop, switching tabs leaves the camera, sampling, and session timer active.
+On mobile (including iPadOS), hiding the page closes focus mode and stops capture.
+Device detection uses the browser's mobile user agent, with a touch-capable Mac
+user-agent check for iPadOS; unusual or overridden user agents may be misclassified.
+Desktop background operation still depends on browser camera access and timer
+scheduling. If the browser suspends the tab, the three-second freshness cutoff
+stops counting; fresh observations resume it without resetting the session total.
 
 No book calibration is required. Forward and downward head positions count;
 sideways/upward positions pause. A visible-ear/shoulder posture heuristic can
