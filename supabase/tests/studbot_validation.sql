@@ -7,6 +7,8 @@ declare a uuid:=gen_random_uuid(); b uuid:=gen_random_uuid(); w uuid:=gen_random
  sid uuid; r jsonb; again jsonb; k uuid; before_balance bigint; duration bigint; expected bigint; stamp timestamptz;
 begin
  insert into auth.users(id,email,raw_user_meta_data) values(a,a||'@example.invalid','{}'),(b,b||'@example.invalid','{}');
+ perform pg_temp.study_assert((select relrowsecurity from pg_class where oid='private.study_clocks'::regclass),'study clock has RLS enabled');
+ perform pg_temp.study_assert(not has_table_privilege('authenticated','private.study_clocks','select,insert,update,delete'),'browser has no direct clock access');
  perform pg_temp.study_assert(not has_function_privilege('authenticated','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid)','execute'),'browser cannot forge observations');
  perform pg_temp.study_assert(not has_function_privilege('anon','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid)','execute'),'anonymous cannot call study service');
  perform pg_temp.study_assert(has_function_privilege('service_role','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid)','execute'),'server can save verified observations');

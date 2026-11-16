@@ -7,6 +7,8 @@ create table private.study_clocks (
  last_observed_at timestamptz, good_since timestamptz, bad_since timestamptz,
  credit_until timestamptz
 );
+alter table private.study_clocks enable row level security;
+-- No browser policies: study accounting is accessed only by the privileged RPC.
 revoke all on private.study_clocks from public, anon, authenticated;
 
 create or replace function private.session_json(s public.activity_sessions) returns jsonb
