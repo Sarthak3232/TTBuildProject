@@ -141,7 +141,7 @@ async def handle_frame(request: Request, *, calibrating: bool):
                 "processingMs": round((time.monotonic() - started) * 1000, 3),
             }
             if calibrating:
-                usable = (observation.image_usable and observation.face_count == 1
+                usable = (observation.image_usable
                           and observation.orientation is not None and not observation.ambiguous)
                 result = {**common, "usable": usable, "phase": phase,
                           "diagnostics": calibration_diagnostics(observation)}

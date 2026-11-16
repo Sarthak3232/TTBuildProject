@@ -89,7 +89,7 @@ def test_classify_contract_and_no_raw_features(service):
     assert response.status_code == 200
     data = response.json()
     assert data["state"] == "compatible"
-    assert data["reason"] == "calibrated_screen"
+    assert data["reason"] == "looking_forward"
     assert data["sessionId"] == "test-session" and data["sequence"] == 1
     assert data["modelVersion"] == "test-model-v1" and data["ruleVersion"]
     assert data["processingMs"] >= 0 and data["observedAt"].endswith("Z")
@@ -111,7 +111,7 @@ def test_calibration_contract_does_not_require_reference_header(service):
     assert "landmarks" not in response.text
 
 
-@pytest.mark.parametrize("count,expected", [(0, "away"), (2, "unknown")])
+@pytest.mark.parametrize("count,expected", [(0, "away"), (2, "compatible")])
 def test_empty_and_multiple_faces(service, count, expected):
     client, runtime = service
     runtime.pipeline.count = count

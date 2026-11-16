@@ -223,3 +223,13 @@ test("opening another window invalidates the same account's previous calibration
   await f.send("open");
   assert.equal((await f.send("classify", f.image())).status, 409);
 });
+
+test("forward calibration alone can enable forward/down study mode", async () => {
+  const f = fixture();
+  await f.send("open");
+  assert.equal((await f.send("finish")).status, 409);
+  for (let i = 0; i < 6; i++) { f.advance(1000); await f.send("screen", f.image()); }
+  assert.equal((await f.send("finish")).status, 200);
+  f.advance(1000);
+  assert.equal((await f.send("classify", f.image())).status, 200);
+});

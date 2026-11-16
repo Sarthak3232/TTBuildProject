@@ -17,7 +17,7 @@ import math
 from statistics import median
 from typing import Literal, Sequence
 
-RULE_VERSION = "orientation-v1"
+RULE_VERSION = "forward-down-v2"
 TOLERANCE_DEG = 25.0
 PRESENCE_THRESHOLD = 0.5
 
@@ -141,11 +141,9 @@ def orientation_from_matrix(matrix) -> Orientation:
 def classify(observation: Observation, calibration: Calibration | None) -> Classification:
     if not observation.image_usable:
         return Classification("unknown", "unusable_image")
-    if observation.face_count > 1:
-        return Classification("unknown", "multiple_faces")
     if observation.ambiguous:
         return Classification("unknown", "ambiguous_observation")
-    if observation.face_count == 0:
+    if observation.face_count == 0 and observation.orientation is None:
         if observation.body_present:
             return Classification("unknown", "face_unverifiable")
         return Classification("away", "no_person_detected")
@@ -153,10 +151,11 @@ def classify(observation: Observation, calibration: Calibration | None) -> Class
         return Classification("unknown", "orientation_unverifiable")
     if calibration is None:
         return Classification("unknown", "calibration_required")
-    for name, reference in (("screen", calibration.screen), ("book", calibration.book)):
-        if (abs(angular_difference(observation.orientation.yaw, reference.yaw)) <= TOLERANCE_DEG
-                and abs(observation.orientation.pitch - reference.pitch) <= TOLERANCE_DEG):
-            return Classification("compatible", f"calibrated_{name}")
+    # One continuous forward/downward range; a deeply lowered head does not
+    # have to remain close to a face-derived book calibration angle.
+    if (abs(angular_difference(observation.orientation.yaw, calibration.screen.yaw)) <= 35
+            and -90 <= observation.orientation.pitch <= calibration.screen.pitch + 25):
+        return Classification("compatible", "looking_down" if observation.orientation.pitch < calibration.screen.pitch - 15 else "looking_forward")
     return Classification("away", "outside_calibrated_positions")
 
 
@@ -164,56 +163,115 @@ def _finite_landmark(point) -> bool:
     return all(finite_number(getattr(point, axis, None)) for axis in ("x", "y", "z"))
 
 
+def _reliable(point) -> bool:
+    return _finite_landmark(point) and all(
+        finite_number(getattr(point, field, None)) and PRESENCE_THRESHOLD <= getattr(point, field) <= 1
+        for field in ("presence", "visibility")
+    )
+
+
+def _pose_orientation(body) -> Orientation | None:
+    """Coarse posture fallback, using only visible head and shoulder points.
+
+    This is a reading-posture heuristic, not a gaze or identity estimate.
+    A lowered head with visible ears can qualify without a full face mesh.
+    """
+    left, right = body[11], body[12]
+    width = abs(left.x - right.x)
+    if width < 0.12 or not all(_reliable(body[i]) for i in (7, 8)):
+        return None
+    ear_left, ear_right = body[7], body[8]
+    ear_span = abs(ear_left.x - ear_right.x)
+    if ear_span < width * 0.15:
+        return None
+    # Relative ear depth detects sideways head rotation even when the nose is
+    # hidden. Reject implausible ear/head locations relative to the shoulders.
+    yaw = math.degrees(math.atan2(ear_left.z - ear_right.z, ear_span))
+    head_x = (ear_left.x + ear_right.x) / 2
+    shoulder_x = (left.x + right.x) / 2
+    shoulder_y = (left.y + right.y) / 2
+    head_y = (ear_left.y + ear_right.y) / 2
+    if abs(head_x - shoulder_x) > width * 0.65 or not -0.2 <= (shoulder_y - head_y) / width <= 1.5:
+        return None
+    if _reliable(body[0]):
+        nose = body[0]
+        yaw = math.degrees(math.atan2(nose.x - head_x, ear_span / 2))
+        pitch = -math.degrees(math.atan2(nose.y - head_y, ear_span))
+    else:
+        # Both ears must remain visible. A head lowered toward the shoulders
+        # supplies a coarse down posture; shoulders alone never qualify.
+        if (shoulder_y - head_y) / width > 0.6:
+            return None
+        pitch = -45.0
+    return Orientation(max(-180, min(180, yaw)), max(-90, min(90, pitch)))
+
+
 def observation_from_results(face, pose, *, image_usable: bool) -> Observation:
     """Reduce MediaPipe results to transient aggregate features only.
 
-    Both shoulders must be present/visible for coarse upper-body verification.
-    Unreliable detected bodies are ambiguous, rather than an empty-chair claim.
+    Select a prominent centered subject; bystanders do not invalidate the view.
+    Both shoulders and visible head landmarks are needed for the pose fallback.
     """
     faces = face.face_landmarks
     bodies = pose.pose_landmarks
     body_present = False
     reasons = []
-    ambiguous = len(bodies) > 1
-    if ambiguous:
-        reasons.append("multiple_bodies")
-    if bodies:
-        body = bodies[0]
-        if len(body) != 33:
-            ambiguous = True
-            reasons.append("invalid_body_landmarks")
-        else:
-            def reliable(point):
-                return _finite_landmark(point) and all(
-                    finite_number(getattr(point, field, None))
-                    and PRESENCE_THRESHOLD <= getattr(point, field) <= 1
-                    for field in ("presence", "visibility")
-                )
-            body_present = all(reliable(body[index]) for index in (11, 12))
-            ambiguous = ambiguous or not body_present
-            if not body_present:
-                reasons.append("shoulders_unreliable")
+    ambiguous = False
+    # Follow the prominent person at the desk, not every bystander. This uses
+    # position/scale, not facial identity; another person taking the same seat
+    # cannot be distinguished by this prototype.
+    candidates = [body for body in bodies if len(body) == 33
+                  and all(_reliable(body[i]) for i in (11, 12))
+                  and 0.2 <= (body[11].x + body[12].x) / 2 <= 0.8
+                  and abs(body[11].x - body[12].x) >= 0.12]
+    body = max(candidates, key=lambda points: abs(points[11].x - points[12].x)
+               - 0.3 * abs((points[11].x + points[12].x) / 2 - 0.5), default=None)
+    body_present = body is not None
+    if bodies and body is None:
+        ambiguous = True
+        reasons.append("shoulders_unreliable")
     orientation = None
     if not faces:
         reasons.append("face_not_detected")
-    elif len(faces) > 1:
-        reasons.append("multiple_faces")
-    if len(faces) == 1:
+    face_candidates = []
+    for index, points in enumerate(faces):
+        if not points or not all(_finite_landmark(point) for point in points):
+            continue
+        center_x = (min(point.x for point in points) + max(point.x for point in points)) / 2
+        center_y = (min(point.y for point in points) + max(point.y for point in points)) / 2
+        if body is not None:
+            shoulder_x = (body[11].x + body[12].x) / 2
+            shoulder_y = (body[11].y + body[12].y) / 2
+            width = abs(body[11].x - body[12].x)
+            if abs(center_x - shoulder_x) > width * 0.65 or not shoulder_y - width * 1.5 <= center_y <= shoulder_y + width * 0.2:
+                continue
+        elif not 0.2 <= center_x <= 0.8:
+            continue
+        score = max(point.x for point in points) - min(point.x for point in points) - 0.3 * abs(center_x - 0.5)
+        face_candidates.append((score, index))
+    if face_candidates:
+        _, index = max(face_candidates)
+        points = faces[index]
         matrices = face.facial_transformation_matrixes
-        if len(faces[0]) != 478 or not all(_finite_landmark(point) for point in faces[0]) or len(matrices) != 1:
+        if len(points) != 478 or index >= len(matrices):
             ambiguous = True
-            if len(faces[0]) != 478:
+            if len(points) != 478:
                 reasons.append("incomplete_face_landmarks")
-            elif not all(_finite_landmark(point) for point in faces[0]):
-                reasons.append("invalid_face_landmarks")
-            if len(matrices) != 1:
+            if index >= len(matrices):
                 reasons.append("face_transform_missing")
         else:
             try:
-                orientation = orientation_from_matrix(matrices[0])
+                orientation = orientation_from_matrix(matrices[index])
             except ValueError:
                 ambiguous = True
                 reasons.append("face_orientation_unreliable")
+    if orientation is None and body is not None:
+        orientation = _pose_orientation(body)
+        if orientation is not None:
+            ambiguous = False
+            reasons = []
+    if orientation is not None and body_present:
+        ambiguous = False
     return Observation(image_usable, len(faces), orientation, body_present, ambiguous, tuple(reasons))
 
 
@@ -223,10 +281,8 @@ def calibration_diagnostics(observation: Observation) -> dict:
     if not observation.image_usable and not reasons:
         reasons.append("image_unusable")
     if observation.image_usable:
-        if observation.face_count == 0 and "face_not_detected" not in reasons:
+        if observation.face_count == 0 and observation.orientation is None and "face_not_detected" not in reasons:
             reasons.append("face_not_detected")
-        elif observation.face_count > 1 and "multiple_faces" not in reasons:
-            reasons.append("multiple_faces")
         elif observation.face_count == 1 and observation.orientation is None and not reasons:
             reasons.append("face_orientation_unreliable")
         if observation.ambiguous and not reasons:

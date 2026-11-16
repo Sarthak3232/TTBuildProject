@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/studbot/**", route => {
     const action = new URL(route.request().url()).pathname.split("/").at(-1);
     const reply = action === "classify" ? { state: "compatible", reason: "calibrated_book" }
-      : { phase: action === "screen" ? "book" : action === "book" ? "ready" : "screen", samples: 6, seconds: 5 };
+      : { phase: action === "screen" ? "book" : ["book", "finish"].includes(action) ? "ready" : "screen", samples: 6, seconds: 5 };
     return route.fulfill({ json: reply });
   });
 });
@@ -19,7 +19,7 @@ async function enter(page) {
   await expect(page.getByRole("button", { name: "Open focus mode" })).toBeVisible();
 }
 
-test("camera, both calibration phases, live classification, pause/resume, close", async ({ page }) => {
+test("camera, forward calibration, live timer, pause/resume, close", async ({ page }) => {
   await page.addInitScript(() => {
     window.syntheticTracks = [];
     navigator.mediaDevices.getUserMedia = async constraints => {
@@ -35,11 +35,13 @@ test("camera, both calibration phases, live classification, pause/resume, close"
   await page.getByRole("button", { name: "Open focus mode" }).click();
   const dialog = page.getByRole("dialog", { name: "Focus mode" });
   await dialog.getByRole("button", { name: "Calibrate screen" }).click();
-  await dialog.getByRole("button", { name: "Calibrate book" }).click({ timeout: 15000 });
   await dialog.getByRole("button", { name: "Start studying" }).click({ timeout: 15000 });
   await expect(dialog.getByText("compatible", { exact: true })).toBeVisible();
   await expect(dialog.getByText("calibrated book", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Timer running", { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel("Focus session time")).not.toHaveText("00:00:00");
   await dialog.getByRole("button", { name: "Pause camera" }).click();
+  await expect(dialog.getByText("Timer paused", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.syntheticTracks.every(track => track.readyState === "ended"))).toBe(true);
   await dialog.getByRole("button", { name: "Resume studying" }).click();
   await expect(dialog.getByText("compatible", { exact: true })).toBeVisible();

@@ -1,13 +1,13 @@
 # Studbot website integration
 
-The signed-in `/tasks/studbot` page captures small JPEG samples, calibrates screen
-and book positions, and displays live `compatible`, `away`, or `unknown` feedback.
+The signed-in `/tasks/studbot` page captures small JPEG samples, calibrates once
+facing forward, and displays live `compatible`, `away`, or `unknown` feedback.
 The browser sends frames to same-origin Next.js routes. Next.js verifies the
 Supabase user on every request and forwards frames to the private Python service.
 The internal service token and calibration angles stay on the server. Frames are
 processed transiently and are never saved by the bridge.
 
-This version does not save study time, history, or award tokens. Feedback describes
+This version has a local session timer but does not save study time, history, or award tokens. Feedback describes
 observable head position, not proof of attention or learning.
 
 ## Development
@@ -34,17 +34,29 @@ uv run --directory ml --env-file .env.local uvicorn app.main:app --host 127.0.0.
 ```
 
 In another terminal, run `npm.cmd run dev`. Sign in, open `/tasks/studbot`, select
-**Open focus mode**, allow camera access, and calibrate your screen and reading
-positions. Each position needs at least four usable samples spanning five seconds.
-Keep one face and your shoulders visible. Pause, close, navigation, and hidden-tab
+**Open focus mode**, allow camera access, and calibrate while facing the screen.
+Calibration needs at least four usable samples spanning five seconds.
+Keep your head and shoulders near the center. Pause, close, navigation, and hidden-tab
 events stop camera capture. No microphone access is requested.
 
-For book calibration, raise or tilt the book toward the screen so your face stays
-visible while reading. If you lower or move the camera, restart both calibration
-positions. A brief detection gap preserves recent valid samples for up to three
-seconds. Missing-face frames never contribute samples or finish calibration;
-longer gaps reset progress. Calibration still requires four valid observations
-spanning five seconds. A fully hidden face remains unverifiable during live study.
+No book calibration is required. Forward and downward head positions count;
+sideways/upward positions pause. A visible-ear/shoulder posture heuristic can
+recognize looking down without a full face mesh. Shoulders alone cannot qualify.
+These heuristics need real-camera evaluation; they cannot prove attention or
+distinguish books from phones.
+
+Extra faces/bodies do not cause rejection. The prominent centered person is
+selected by location and size (up to four faces/three poses). Keep the main user
+near the center; there is no identity recognition or persistent person tracking.
+Another person occupying the same central position can be mistaken for the user.
+
+The local timer starts/resumes after two seconds of valid observations, pauses
+after five seconds of away/unknown observations, and stops accruing after three
+seconds without fresh results. Grace seconds are included in this display timer;
+it is not reward accounting. Manual pause and close stop it immediately. Closing
+preserves the last displayed total; reopening starts a new session. Camera moves
+require recalibration. Brief calibration dropouts retain valid samples for up to
+three seconds; missing samples never advance calibration.
 
 ## Deployment
 

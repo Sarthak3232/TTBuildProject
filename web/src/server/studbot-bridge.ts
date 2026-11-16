@@ -183,6 +183,12 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
         session.phase = "screen"; session.samples = []; session.screen = undefined; session.book = undefined;
         return json({ phase: "screen", samples: 0, seconds: 0 });
       }
+      if (action === "finish") {
+        if (session.phase !== "book" || !session.screen) throw new BridgeError(409, "Calibrate facing the screen first.");
+        session.book = { yaw: session.screen.yaw, pitch: Math.max(-90, session.screen.pitch - 45) };
+        session.phase = "ready";
+        return json({ phase: "ready" });
+      }
       if (!["screen", "book", "classify"].includes(action)) throw new BridgeError(404, "Unknown focus action.");
       if ((action === "classify" && session.phase !== "ready") || (action !== "classify" && action !== session.phase)) {
         throw new BridgeError(409, "Complete screen and book calibration in order.");
