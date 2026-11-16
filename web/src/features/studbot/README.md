@@ -7,8 +7,12 @@ Supabase user on every request and forwards frames to the private Python service
 The internal service token and calibration angles stay on the server. Frames are
 processed transiently and are never saved by the bridge.
 
-This version has a local session timer but does not save study time, history, or award tokens. Feedback describes
-observable head position, not proof of attention or learning.
+Study progress is saved to the signed-in account. **Finish & save** writes a
+completion to History and awards one token per full 30 minutes of credited time.
+Rounding applies per completed session; unused minutes do not carry over. Close,
+manual pause, navigation, and mobile backgrounding preserve the unfinished session
+for resumption after recalibration. Discarding awards nothing. Posture feedback
+does not establish attention or learning.
 
 ## Development
 
@@ -18,11 +22,20 @@ Keep the existing Supabase settings in `web/.env.local`. Add:
 APP_URL=http://localhost:3000
 ML_SERVICE_URL=http://127.0.0.1:8000
 ML_INTERNAL_TOKEN=<random ASCII secret of at least 32 characters>
+SUPABASE_SECRET_KEY=<server-only Supabase secret key>
 ```
 
 Put the same `ML_INTERNAL_TOKEN` in the ignored `ml/.env.local`. Generate a token
 with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
 Never put it in a `NEXT_PUBLIC_` variable or commit it.
+
+Apply the pending migration `supabase/migrations/20261115000100_studbot_rewards.sql`
+to the intended Supabase project after confirming its migration history. Keep the
+Supabase secret key only in `web/.env.local` or server environment settings. It is
+used solely by the website server after verifying the signed-in user. The browser
+cannot call the privileged `studbot_command` RPC or submit duration or token awards.
+Without this migration/key, the UI reports that progress cannot be saved; it does
+not silently fall back to an unsaved timer or award pretend tokens.
 
 From the repository root:
 
@@ -40,12 +53,12 @@ Keep your head and shoulders near the center. Pause, close, and navigation stop
 camera capture. No microphone access is requested.
 
 On desktop, switching tabs leaves the camera, sampling, and session timer active.
-On mobile (including iPadOS), hiding the page closes focus mode and stops capture.
+On mobile (including iPadOS), hiding the page pauses the saved session and stops capture.
 Device detection uses the browser's mobile user agent, with a touch-capable Mac
 user-agent check for iPadOS; unusual or overridden user agents may be misclassified.
 Desktop background operation still depends on browser camera access and timer
-scheduling. If the browser suspends the tab, the three-second freshness cutoff
-stops counting; fresh observations resume it without resetting the session total.
+scheduling. If the browser suspends the tab, the five-second credited grace
+expires and counting stops; fresh observations resume the same saved session.
 
 No book calibration is required. Forward and downward head positions count;
 sideways/upward positions pause. A visible-ear/shoulder posture heuristic can
@@ -58,19 +71,28 @@ selected by location and size (up to four faces/three poses). Keep the main user
 near the center; there is no identity recognition or persistent person tracking.
 Another person occupying the same central position can be mistaken for the user.
 
-The local timer starts/resumes after two seconds of valid observations, pauses
-after five seconds of away/unknown observations, and stops accruing after three
-seconds without fresh results. Grace seconds are included in this display timer;
-it is not reward accounting. Manual pause and close stop it immediately. Closing
-preserves the last displayed total; reopening starts a new session. Camera moves
-require recalibration. Brief calibration dropouts retain valid samples for up to
-three seconds; missing samples never advance calibration.
+The database starts/resumes counting after two seconds of compatible observations.
+Away or uncertain observations receive five seconds of credited grace, and only
+then pause. Missing results likewise receive at most five seconds after the last
+saved observation. Each observation settles progress using database time; the
+browser only displays that total plus the bounded lease. Manual pause and close
+settle immediately. If an abrupt exit prevents the pause request from arriving,
+the lease expires without continuing to accrue unattended time. Reopening
+recovers the saved session; the camera must be recalibrated, but time is retained.
+Brief calibration dropouts retain valid samples for up to three seconds.
+
+Completions, wallet credits, and token-ledger entries are written together in a
+single transaction under the same owner lock as other activities. Retry keys and
+the unique completion constraint prevent duplicate awards. Late observations or
+close requests from an older focus window cannot credit or pause its replacement.
 
 ## Deployment
 
 Use a persistent Node.js server running `npm run build` then `npm run start`, with
 exactly one Next.js process. Calibration, per-user session ownership, and request
 ordering are kept in bounded process memory. Restarts require recalibration.
+Credited time, observation sequencing, grace limits, and unfinished sessions are
+stored in Supabase and survive website/ML restarts.
 There are at most 16 active focus windows, with one per account and a 24-hour TTL.
 Multiple replicas, autoscaling, and serverless hosting such as Vercel need a shared
 session store with atomic request coordination before this bridge can be deployed
@@ -84,6 +106,7 @@ Set these variables on the website server:
 - `ML_SERVICE_URL`: the private classifier's HTTPS origin, e.g. `https://ml.example`.
   Loopback HTTP is supported if Python runs on the same server.
 - `ML_INTERNAL_TOKEN`: the same secret configured on the Python service.
+- `SUPABASE_SECRET_KEY`: a server-only Supabase key for verified study writes.
 
 Configure Supabase's site URL and callback allowlist for the website origin.
 HTTPS is needed for camera access outside localhost. The browser never connects
@@ -109,7 +132,10 @@ uv run --directory ml pytest
 ```
 
 Tests cover calibrated forwarding, account isolation, production HTTPS settings,
-origin checks, bounded uploads, stale results, version changes, and route auth.
+origin checks, bounded uploads, stale results, version changes, route auth,
+saved progress, token rounding, and idempotent completion. The repository's
+PostgreSQL test runner also executes `supabase/tests/studbot_validation.sql` and
+real concurrent duplicate study completions against an isolated local database.
 They do not establish real-camera accuracy or hosted infrastructure readiness.
 Browser checks use synthetic camera streams and mocked replies in a test-only
 component host, on desktop and phone viewports. Install Playwright Chromium first,

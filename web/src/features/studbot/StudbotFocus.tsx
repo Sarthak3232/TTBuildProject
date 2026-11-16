@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./studbot.module.css";
-import { StudyClock, formatStudyTime } from "./study-clock";
+import { formatStudyTime, savedStudyTiming } from "./study-clock";
+import { mutation } from "@/features/app/client";
+import type { StudyProgress } from "@/server/services/studbot";
 
 type Stage = "preview" | "screen" | "ready" | "studying" | "paused";
 type Diagnostics = { faceCount: number; bodyPresent: boolean; orientationAvailable: boolean; imageUsable: boolean; reasons: string[] };
 type Reply = { phase?: string; usable?: boolean; samples?: number; seconds?: number;
-  state?: "compatible" | "away" | "unknown"; reason?: string; error?: string; diagnostics?: Diagnostics };
+  state?: "compatible" | "away" | "unknown"; reason?: string; error?: string; diagnostics?: Diagnostics; progress?: StudyProgress };
 const diagnosticMessages: Record<string, string> = {
   image_unusable: "Image quality checks failed.",
   image_too_small: "The image is too small to verify reliably.",
@@ -64,7 +66,9 @@ async function frameBlob(video: HTMLVideoElement): Promise<{ blob: Blob; width: 
 
 export function StudbotFocus() {
   const [open, setOpen] = useState(false);
-  const clock = useRef(new StudyClock());
+  const progressRef = useRef<{ progress: StudyProgress; receivedAt: number } | null>(null);
+  const [saved, setSaved] = useState<StudyProgress | null>(null);
+  const [saving, setSaving] = useState(false);
   const [timing, setTiming] = useState({ elapsedMs: 0, running: false });
   const [starting, setStarting] = useState(false);
   const [stage, setStage] = useState<Stage>("preview");
@@ -83,8 +87,34 @@ export function StudbotFocus() {
   const lastResult = useRef(0);
   const stopping = useRef<Promise<unknown>>(Promise.resolve());
 
+  const updateProgress = useCallback((progress: StudyProgress | undefined) => {
+    if (!progress) return;
+    const old = progressRef.current?.progress;
+    const stamp = progress.serverTime ?? progress.activity?.serverTime;
+    const previousStamp = old?.serverTime ?? old?.activity?.serverTime;
+    if (stamp && previousStamp && Date.parse(stamp) < Date.parse(previousStamp)) return;
+    progressRef.current = { progress, receivedAt: performance.now() };
+    setSaved(progress);
+    setTiming(savedStudyTiming(progress.activity, 0));
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/studbot/session", { cache: "no-store" });
+        const value = await response.json();
+        if (!response.ok) throw new Error(value.error?.message ?? "Saved study progress could not be loaded.");
+        if (!disposed) updateProgress(value);
+      } catch (error) { if (!disposed) setMessage(friendlyError(error)); }
+    };
+    void load();
+    const poll = !open ? setInterval(() => void load(), 15000) : undefined;
+    return () => { disposed = true; clearInterval(poll); };
+  }, [open, updateProgress]);
+
   const release = useCallback(() => {
-    clock.current.pause(performance.now());
+    setTiming(previous => ({ ...previous, running: false }));
     generation.current++;
     abort.current?.abort();
     stream.current?.getTracks().forEach(track => track.stop());
@@ -93,12 +123,16 @@ export function StudbotFocus() {
   }, []);
 
   const stopSession = useCallback(() => {
-    stopping.current = fetch("/api/studbot/stop", { method: "POST", keepalive: true }).catch(() => {});
-  }, []);
+    stopping.current = fetch("/api/studbot/stop", { method: "POST", keepalive: true }).then(async response => {
+      const value: Reply = await response.json();
+      if (!response.ok) throw new Error(value.error ?? "Pause could not be confirmed.");
+      updateProgress(value.progress);
+    }).catch(() => { setMessage("Pause could not be confirmed. Saved progress is retained; counting stops after at most five seconds without new results."); });
+    return stopping.current;
+  }, [updateProgress]);
 
   const close = useCallback((notice = "Focus mode closed. Camera and uploads stopped.") => {
     release(); stopSession();
-    setTiming(clock.current.snapshot(performance.now()));
     setOpen(false); setStarting(false); setCameraOn(false); setResult(null); setStage("preview"); setMessage(notice);
     setDiagnostics(null); setCameraInfo(null); setSentSize(null);
     dialog.current?.close();
@@ -122,13 +156,14 @@ export function StudbotFocus() {
     };
   }, [close, release, stopSession]);
 
-  async function api(action: string, signal: AbortSignal, body?: Blob): Promise<Reply> {
+  const api = useCallback(async (action: string, signal: AbortSignal, body?: Blob): Promise<Reply> => {
     const response = await fetch(`/api/studbot/${action}`, { method: "POST", signal,
       ...(body ? { headers: { "Content-Type": "image/jpeg" }, body } : {}) });
     const data: Reply = await response.json();
     if (!response.ok) throw new FocusError(response.status, data.error ?? "Classifier request failed.");
+    if (!signal.aborted) updateProgress(data.progress);
     return data;
-  }
+  }, [updateProgress]);
 
   async function camera(ticket: number) {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera access needs localhost or HTTPS and a supported browser.");
@@ -146,8 +181,6 @@ export function StudbotFocus() {
   }
 
   async function begin() {
-    clock.current = new StudyClock();
-    setTiming({ elapsedMs: 0, running: false });
     setStarting(true); setOpen(true); setStage("preview"); setProgress({ samples: 0, seconds: 0 }); setResult(null);
     setDiagnostics(null); setCameraInfo(null); setSentSize(null);
     setMessage("Connecting to the classifier…");
@@ -164,8 +197,7 @@ export function StudbotFocus() {
   }
 
   async function reset() {
-    clock.current.pause(performance.now());
-    setTiming(clock.current.snapshot(performance.now()));
+    setTiming(previous => ({ ...previous, running: false }));
     generation.current++; abort.current?.abort(); setStage("preview"); setResult(null); setProgress({ samples: 0, seconds: 0 });
     setDiagnostics(null);
     const controller = new AbortController(); abort.current = controller;
@@ -173,16 +205,48 @@ export function StudbotFocus() {
     catch (error) { if (!controller.signal.aborted) setMessage(friendlyError(error)); }
   }
 
-  function pause() {
+  async function pause() {
     release(); setCameraOn(false); setStage("paused"); setResult(null); setMessage("Paused. Camera and uploads are stopped.");
-    setTiming(clock.current.snapshot(performance.now()));
     setCameraInfo(null); setSentSize(null);
+    setStarting(true);
+    try { await api("pause", new AbortController().signal); }
+    catch (error) { setMessage(friendlyError(error)); }
+    finally { setStarting(false); }
+  }
+
+  async function startStudying() {
+    const controller = new AbortController(); abort.current = controller;
+    setStarting(true);
+    try {
+      await api("start", controller.signal);
+      if (!controller.signal.aborted) { setResult(null); setStage("studying"); return true; }
+      return false;
+    } catch (error) { if (!controller.signal.aborted) setMessage(friendlyError(error)); return false; }
+    finally { setStarting(false); }
+  }
+
+  async function finishSession(action: "complete" | "cancel") {
+    const id = progressRef.current?.progress.activity?.id;
+    if (!id || saving) return;
+    setSaving(true);
+    close("Saving your study session…");
+    try {
+      await stopping.current;
+      const progress = await mutation<StudyProgress>("/api/studbot/session", { action, sessionId: id });
+      updateProgress(progress);
+      window.dispatchEvent(new Event("slotty:activity-updated"));
+      setMessage(action === "complete" ? `Study session saved. Earned ${progress.completion?.tokenAward ?? 0} tokens.` : "Study session discarded. No tokens awarded.");
+    } catch (error) { setMessage(friendlyError(error)); }
+    finally { setSaving(false); }
   }
 
   async function resume() {
     const ticket = ++generation.current;
     setStarting(true);
-    try { if (await camera(ticket)) { setStage("studying"); setMessage("Studying. Waiting for a fresh classification."); } }
+    try { if (await camera(ticket)) {
+      if (await startStudying()) setMessage("Studying. Waiting for a fresh classification.");
+      else { release(); setCameraOn(false); }
+    } }
     catch (error) { if (ticket === generation.current) setMessage(friendlyError(error)); }
     finally { if (ticket === generation.current) setStarting(false); }
   }
@@ -204,7 +268,6 @@ export function StudbotFocus() {
           if (cancelled || ticket !== generation.current) return;
           if (stage === "studying") {
             lastResult.current = Date.now();
-            setTiming(clock.current.observe(data.state ?? "unknown", performance.now()));
             setResult({ state: data.state ?? "unknown", reason: data.reason?.replaceAll("_", " ") ?? "Unable to verify" });
           } else {
             setDiagnostics(data.diagnostics ?? null);
@@ -225,10 +288,9 @@ export function StudbotFocus() {
       } catch (error) {
         if (cancelled || ticket !== generation.current) return;
         setResult({ state: "unknown", reason: "No verified result" });
-        if (stage === "studying") setTiming(clock.current.observe("unknown", performance.now()));
         setMessage(friendlyError(error));
         if (error instanceof FocusError && error.status === 409) {
-          clock.current.pause(performance.now()); setTiming(clock.current.snapshot(performance.now()));
+          setTiming(previous => ({ ...previous, running: false }));
           setStage("preview"); return;
         }
       }
@@ -236,12 +298,13 @@ export function StudbotFocus() {
     }
     timer = setTimeout(tick, 0);
     return () => { cancelled = true; clearTimeout(timer); controller?.abort(); };
-  }, [open, stage]);
+  }, [open, stage, api]);
 
   useEffect(() => {
     if (stage !== "studying") return;
     const interval = setInterval(() => {
-      setTiming(clock.current.snapshot(performance.now()));
+      const anchor = progressRef.current;
+      if (anchor) setTiming(savedStudyTiming(anchor.progress.activity, performance.now() - anchor.receivedAt));
       if (Date.now() - lastResult.current > 3000) setResult({ state: "unknown", reason: "Waiting for a fresh result" });
     }, 250);
     return () => clearInterval(interval);
@@ -253,11 +316,16 @@ export function StudbotFocus() {
       <h2>Your space to focus</h2>
       <p className={styles.description}>Calibrate once facing the screen. Your timer runs while you face forward or look down, and pauses when you turn away or leave.</p>
       <p className={styles.description}>Sampled images are sent securely to the classifier for analysis and discarded. Your microphone is never requested.</p>
-      <button type="button" className={styles.focusButton} onClick={begin} disabled={starting || open}>Open focus mode</button>
+      <button type="button" className={styles.focusButton} onClick={begin} disabled={starting || open || saving}>Open focus mode</button>
       <p role="status" className={styles.description}>{message}</p>
       <p className={styles.description}>Other people may be in view. Keep yourself near the center with your head and shoulders visible.</p>
       <div className={styles.timer}><strong aria-label="Study time">{formatStudyTime(timing.elapsedMs)}</strong><span>{timing.running ? "Timer running" : "Timer paused"}</span></div>
-      <p className={styles.description}>The timer is for this focus session only. History and token credit are not saved.</p>
+      <p className={styles.description}>Progress is saved to your account. Finish and save to earn one token per full 30 minutes. Leftover minutes do not carry between completed sessions.</p>
+      {saved?.activity && ["running", "paused"].includes(saved.activity.state) && <div className={styles.focusControls}>
+        <button type="button" disabled={saving} onClick={() => void finishSession("complete")}>Finish &amp; save</button>
+        <button type="button" disabled={saving} onClick={() => void finishSession("cancel")}>Discard study session</button>
+        <p>{Math.floor(timing.elapsedMs / 1800000)} tokens on completion. Close focus mode to pause and resume later.</p>
+      </div>}
     </section>
     <dialog ref={dialog} className={styles.focusDialog} aria-labelledby="focus-title" onCancel={event => { event.preventDefault(); close(); }}>
       <div className={styles.dialogHeader}><h2 id="focus-title">Focus mode</h2><button type="button" onClick={() => close()} aria-label="Close focus mode">Close</button></div>
@@ -289,14 +357,15 @@ export function StudbotFocus() {
       </section>}
       <div className={styles.focusControls}>
         {stage === "preview" && <button type="button" disabled={!cameraOn || starting} onClick={() => { setProgress({ samples: 0, seconds: 0 }); setStage("screen"); }}>Calibrate screen</button>}
-        {stage === "ready" && <button type="button" onClick={() => { setResult(null); setStage("studying"); }}>Start studying</button>}
-        {stage === "studying" && <button type="button" onClick={pause}>Pause camera</button>}
+        {stage === "ready" && <button type="button" disabled={starting} onClick={() => void startStudying()}>Start studying</button>}
+        {stage === "studying" && <button type="button" onClick={() => void pause()}>Pause camera</button>}
         {stage === "paused" && <button type="button" disabled={starting} onClick={resume}>Resume studying</button>}
         {cameraOn && stage !== "preview" && <button type="button" onClick={reset}>Recalibrate</button>}
         <button type="button" onClick={() => close()}>End focus mode</button>
+        {saved?.activity && ["running", "paused"].includes(saved.activity.state) && <button type="button" disabled={saving} onClick={() => void finishSession("complete")}>Finish &amp; save</button>}
       </div>
-      <p className={styles.description}>Keep the camera fixed. Forward or downward posture counts; other people do not automatically pause the timer. Turning away or leaving pauses after five seconds; two seconds of valid posture resumes. Missing results stop counting after three seconds.</p>
-      <p className={styles.description}>On desktop, you can switch tabs while the camera and timer keep running. On phones and tablets, switching away stops focus mode. Closing focus mode or leaving this page stops the camera and timer; reopening starts a new session. If the browser suspends camera updates, the timer pauses until fresh results return.</p>
+      <p className={styles.description}>Forward or downward posture counts. Looking away or uncertain results gets five seconds of credited grace, then pauses; two seconds of valid posture resumes. Lost camera updates also receive at most five seconds of grace.</p>
+      <p className={styles.description}>Desktop tab switching keeps focus mode running. On mobile, switching away pauses and saves your progress. Closing focus mode or leaving this page also preserves your session; reopen and recalibrate to resume it.</p>
       <p className={styles.description}>This estimates posture, not attention, and cannot distinguish another person taking your seat.</p>
     </dialog>
   </div>;

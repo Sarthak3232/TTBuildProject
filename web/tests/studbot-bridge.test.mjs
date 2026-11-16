@@ -4,7 +4,7 @@ import { createStudbotBridge } from "../src/server/studbot-bridge.ts";
 
 const TOKEN = "test-only-bridge-secret-0123456789";
 
-function fixture(overrides = {}) {
+function fixture(overrides = {}, persistence) {
   let clock = 0;
   let cookie = "";
   let userId = "user-a";
@@ -18,7 +18,7 @@ function fixture(overrides = {}) {
       phase: headers.get("X-Calibration-Phase"), yaw: 0, pitch: headers.get("X-Calibration-Phase") === "book" ? -45 : 0 });
     return Response.json({ ...common, state: "compatible", reason: "calibrated_book" });
   };
-  const bridge = createStudbotBridge({ config: () => settings, authorize: async () => userId, now: () => clock,
+  const bridge = createStudbotBridge({ config: () => settings, authorize: async () => userId, persistence, now: () => clock,
     fetcher: async (url, init) => { calls.push({ url, init }); return responder(url, init); } });
   async function send(action, options = {}) {
     const { headers: extra, ...rest } = options;
@@ -232,4 +232,34 @@ test("forward calibration alone can enable forward/down study mode", async () =>
   assert.equal((await f.send("finish")).status, 200);
   f.advance(1000);
   assert.equal((await f.send("classify", f.image())).status, 200);
+});
+
+test("only validated ML responses are persisted, never client time or labels", async () => {
+  const writes = [];
+  const progress = { activity: { id: "persisted-study-id" }, balance: 0 };
+  const store = { start: async (...args) => { writes.push(["start", ...args]); return progress; },
+    observe: async (...args) => { writes.push(["observe", ...args]); return progress; },
+    pause: async (...args) => { writes.push(["pause", ...args]); return progress; } };
+  const f = fixture({}, store);
+  await f.calibrate(); f.advance(1000);
+  assert.equal((await f.send("classify", f.image())).status, 409);
+  assert.equal((await f.send("start", { body: JSON.stringify({ elapsedMs: 999999999 }) })).status, 200);
+  assert.equal((await f.send("classify", f.image())).status, 200);
+  const observation = writes.find(write => write[0] === "observe");
+  assert.equal(observation[1], "user-a");
+  assert.equal(observation[2], "persisted-study-id");
+  assert.equal(observation.at(-1), "compatible");
+  assert.equal(observation.includes(999999999), false);
+  // Pause still persists when the classifier's environment is broken.
+  f.settings.token = "";
+  assert.equal((await f.send("stop")).status, 200);
+  assert.equal(writes.at(-1)[0], "pause");
+});
+
+test("saving failures do not return success or invent study progress", async () => {
+  const f = fixture({}, { start: async () => { throw Object.assign(new Error("Study saving unavailable"), { status: 503 }); } });
+  await f.calibrate();
+  const response = await f.send("start");
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error, "Study saving unavailable");
 });

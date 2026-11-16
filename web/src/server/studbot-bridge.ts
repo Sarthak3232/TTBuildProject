@@ -2,6 +2,7 @@
  * Calibration and identifiers stay server-side; request images are never stored.
  */
 import { randomBytes, randomUUID } from "node:crypto";
+import type { StudyProgress } from "./services/studbot";
 
 const COOKIE = "slotty_studbot";
 const MAX_BYTES = 256 * 1024;
@@ -13,9 +14,15 @@ type Session = {
   model: string; rule: string; phase: "screen" | "book" | "ready";
   screen?: Angles; book?: Angles; samples: Sample[]; sequence: number;
   pending: boolean; lastFrame: number;
+  studyId?: string; started?: boolean;
 };
 type Config = { mode: string; serviceUrl: string; token: string; appUrl?: string };
-type Options = { config: () => Config; authorize: (request: Request) => Promise<string | null>; fetcher?: typeof fetch; now?: () => number };
+type Persistence = {
+  start: (userId: string, windowId: string) => Promise<StudyProgress>;
+  observe: (userId: string, studyId: string, windowId: string, sequence: number, state: "compatible" | "away" | "unknown") => Promise<StudyProgress>;
+  pause: (userId: string, studyId: string, windowId: string) => Promise<StudyProgress>;
+};
+type Options = { config: () => Config; authorize: (request: Request) => Promise<string | null>; persistence?: Persistence; fetcher?: typeof fetch; now?: () => number };
 
 function calibrationDiagnostics(value: unknown) {
   if (!value || typeof value !== "object") return undefined;
@@ -97,7 +104,7 @@ async function readImage(request: Request): Promise<Uint8Array> {
   }
 }
 
-export function createStudbotBridge({ config, authorize, fetcher = fetch, now = Date.now }: Options) {
+export function createStudbotBridge({ config, authorize, persistence, fetcher = fetch, now = Date.now }: Options) {
   const sessions = new Map<string, Session>();
 
   return async function handle(request: Request, action: string): Promise<Response> {
@@ -119,6 +126,19 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
       }
       const userId = await authorize(request);
       if (!userId) throw new BridgeError(401, "Your session has expired. Sign in again.");
+      const cookie = request.headers.get("cookie")?.split(";").map(v => v.trim()).find(v => v.startsWith(`${COOKIE}=`))?.slice(COOKIE.length + 1);
+      const cookieText = (value: string, age: number) => `${COOKIE}=${value}; HttpOnly; SameSite=Strict; Path=/api/studbot; Max-Age=${age}${browserOrigin.protocol === "https:" ? "; Secure" : ""}`;
+      // Saving a pause must work even if ML is offline or its configuration changed.
+      if (action === "stop" && request.method === "POST") {
+        const previous = cookie ? sessions.get(cookie) : undefined;
+        let progress: StudyProgress | undefined;
+        if (previous?.userId === userId) {
+          previous.revision++;
+          sessions.delete(cookie!);
+          if (previous.studyId) progress = await persistence?.pause(userId, previous.studyId, previous.id);
+        }
+        return json({ stopped: true, progress }, 200, cookieText("", 0));
+      }
       if (!/^[\x21-\x7e]{32,}$/.test(settings.token) || settings.token === "replace-with-a-generated-secret") {
         throw new BridgeError(503, "Set the same ML_INTERNAL_TOKEN for Next.js and FastAPI, then restart both servers.");
       }
@@ -157,18 +177,14 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
         return json({ ready: true, ...versions(data) });
       }
       if (request.method !== "POST") throw new BridgeError(405, "Use POST for focus controls.");
-      const cookie = request.headers.get("cookie")?.split(";").map(v => v.trim()).find(v => v.startsWith(`${COOKIE}=`))?.slice(COOKIE.length + 1);
-      const cookieText = (value: string, age: number) => `${COOKIE}=${value}; HttpOnly; SameSite=Strict; Path=/api/studbot; Max-Age=${age}${browserOrigin.protocol === "https:" ? "; Secure" : ""}`;
-
-      if (action === "stop") {
-        if (cookie && sessions.get(cookie)?.userId === userId) sessions.delete(cookie);
-        return json({ stopped: true }, 200, cookieText("", 0));
-      }
       if (action === "open") {
         const data = await call("/health/ready");
         if (data.ready !== true) throw new BridgeError(503, "The classifier is not ready.");
-        if (cookie && sessions.get(cookie)?.userId === userId) sessions.delete(cookie);
-        for (const [key, previous] of sessions) if (previous.userId === userId) sessions.delete(key);
+        for (const [key, previous] of sessions) if (previous.userId === userId) {
+          previous.revision++;
+          sessions.delete(key);
+          if (previous.studyId) await persistence?.pause(userId, previous.studyId, previous.id);
+        }
         if (sessions.size >= 16) throw new BridgeError(503, "Focus mode is busy. Please try again later.");
         const key = randomBytes(32).toString("hex");
         sessions.set(key, { id: randomUUID(), userId, calibrationId: randomUUID(), createdAt: now(), revision: 0,
@@ -179,6 +195,8 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
       if (!session || session.userId !== userId) throw new BridgeError(409, "Focus mode expired. Close and reopen it to recalibrate.");
       if (action === "reset") {
         session.revision++;
+        if (session.studyId) await persistence?.pause(userId, session.studyId, session.id);
+        session.started = false;
         session.calibrationId = randomUUID();
         session.phase = "screen"; session.samples = []; session.screen = undefined; session.book = undefined;
         return json({ phase: "screen", samples: 0, seconds: 0 });
@@ -189,10 +207,24 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
         session.phase = "ready";
         return json({ phase: "ready" });
       }
+      if (action === "start" || action === "pause") {
+        if (session.phase !== "ready") throw new BridgeError(409, "Calibrate facing the screen first.");
+        if (session.pending && action === "start") throw new BridgeError(429, "Wait for the previous frame.");
+        if (action === "pause") { session.revision++; session.started = false; }
+        session.pending = true;
+        try {
+          const progress = action === "start" ? await persistence?.start(userId, session.id)
+            : session.studyId ? await persistence?.pause(userId, session.studyId, session.id) : undefined;
+          session.studyId = progress?.activity?.id ?? session.studyId;
+          session.started = action === "start";
+          return json({ progress });
+        } finally { session.pending = false; }
+      }
       if (!["screen", "book", "classify"].includes(action)) throw new BridgeError(404, "Unknown focus action.");
       if ((action === "classify" && session.phase !== "ready") || (action !== "classify" && action !== session.phase)) {
         throw new BridgeError(409, "Complete screen and book calibration in order.");
       }
+      if (action === "classify" && persistence && !session.started) throw new BridgeError(409, "Start or resume your saved study session first.");
       if (session.pending || now() - session.lastFrame < 500) throw new BridgeError(429, "Wait for the previous frame.");
       session.pending = true;
       session.lastFrame = now();
@@ -222,7 +254,9 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
         if (!calibrating) {
           if (!["compatible", "away", "unknown"].includes(String(data.state)) || typeof data.reason !== "string"
               || !/^[a-z_]{1,80}$/.test(data.reason)) throw new BridgeError(503, "Invalid classification response.");
-          return json({ state: data.state, reason: data.reason, modelVersion: session.model, ruleVersion: session.rule });
+          const progress = session.studyId ? await persistence?.observe(userId, session.studyId, session.id, sequence,
+            data.state as "compatible" | "away" | "unknown") : undefined;
+          return json({ state: data.state, reason: data.reason, modelVersion: session.model, ruleVersion: session.rule, progress });
         }
         if (data.phase !== action) throw new BridgeError(503, "Mismatched calibration phase.");
         const diagnostics = calibrationDiagnostics(data.diagnostics);
@@ -251,6 +285,7 @@ export function createStudbotBridge({ config, authorize, fetcher = fetch, now = 
       } finally { session.pending = false; }
     } catch (error) {
       if (error instanceof BridgeError) return json({ error: error.message }, error.status);
+      if (error instanceof Error && "status" in error && typeof error.status === "number") return json({ error: error.message }, error.status);
       return json({ error: "The classifier is unavailable. Please try again later." }, 503);
     }
   };

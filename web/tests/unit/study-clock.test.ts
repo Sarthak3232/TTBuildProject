@@ -1,49 +1,28 @@
 import { expect, it } from "vitest";
-import { StudyClock, formatStudyTime } from "../../src/features/studbot/study-clock";
+import { savedStudyTiming, formatStudyTime } from "../../src/features/studbot/study-clock";
+import { activeMilliseconds, type Activity } from "../../src/domain/activity";
 
-function started() {
-  const clock = new StudyClock();
-  for (const now of [0, 1000, 2000]) clock.observe("compatible", now);
-  return clock;
-}
+const activity: Activity = { id: "study", taskId: "task", task: { id: "task", name: "Study", kind: "study",
+  description: "", minimumMs: null, reflectionQuestion: null, archivedAt: null }, state: "running", revision: 0,
+  accumulatedMs: 1798000, eligibleMs: 1798000, activeSince: "2026-11-15T12:00:00Z",
+  startedAt: "2026-11-15T11:30:00Z", serverTime: "2026-11-15T12:00:00Z", studyCreditUntil: "2026-11-15T12:00:05Z" };
 
-it("starts after two seconds of compatible posture and counts actual elapsed time", () => {
-  const clock = started();
-  expect(clock.snapshot(2500)).toEqual({ running: true, elapsedMs: 500 });
-  expect(clock.observe("compatible", 3000)).toEqual({ running: true, elapsedMs: 1000 });
+it("includes every second of the five-second credited grace", () => {
+  expect(savedStudyTiming(activity, 4000)).toEqual({ running: true, elapsedMs: 1802000 });
+  expect(savedStudyTiming(activity, 5000)).toEqual({ running: false, elapsedMs: 1803000 });
 });
 
-it("pauses after five seconds away and resumes without clearing the total", () => {
-  const clock = started();
-  for (let now = 3000; now <= 8000; now += 1000) clock.observe("away", now);
-  expect(clock.snapshot(8500)).toEqual({ running: false, elapsedMs: 6000 });
-  clock.observe("compatible", 9000);
-  clock.observe("compatible", 10000);
-  expect(clock.observe("compatible", 11000).running).toBe(true);
-  expect(clock.snapshot(11500).elapsedMs).toBe(6500);
+it("cannot invent time after a connection gap or suspended tab", () => {
+  expect(savedStudyTiming(activity, 600000)).toEqual({ running: false, elapsedMs: 1803000 });
 });
 
-it("short glances do not pause, but unknown views pause after the grace period", () => {
-  const clock = started();
-  clock.observe("away", 3000);
-  clock.observe("compatible", 4000);
-  expect(clock.running).toBe(true);
-  for (let now = 5000; now <= 10000; now += 1000) clock.observe("unknown", now);
-  expect(clock.running).toBe(false);
+it("restores saved paused progress without counting wall-clock time away", () => {
+  expect(savedStudyTiming({ ...activity, state: "paused", activeSince: null }, 86400000))
+    .toEqual({ running: false, elapsedMs: 1798000 });
 });
 
-it("stale results and tab suspension cannot accrue unbounded time", () => {
-  const clock = started();
-  expect(clock.snapshot(60000)).toEqual({ running: false, elapsedMs: 3000 });
-  expect(clock.observe("compatible", 60000).running).toBe(false);
-  clock.observe("compatible", 61000);
-  expect(clock.observe("compatible", 62000).running).toBe(true);
-});
-
-it("manual pause stops counting immediately and requires reacquisition", () => {
-  const clock = started();
-  clock.pause(2500);
-  expect(clock.snapshot(5000)).toEqual({ running: false, elapsedMs: 500 });
-  expect(clock.observe("compatible", 6000).running).toBe(false);
+it("never extrapolates unleased study time, while ordinary manual timers still run", () => {
+  expect(savedStudyTiming({ ...activity, studyCreditUntil: null }, 5000).elapsedMs).toBe(1798000);
+  expect(activeMilliseconds({ ...activity, task: { ...activity.task, kind: "run" } }, Date.parse(activity.serverTime) + 5000)).toBe(1803000);
   expect(formatStudyTime(3661000)).toBe("01:01:01");
 });

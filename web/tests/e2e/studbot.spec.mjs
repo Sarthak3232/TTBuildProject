@@ -2,14 +2,45 @@ import { test, expect } from "@playwright/test";
 
 // Component-only browser checks. Real auth/calibration boundaries are tested
 // separately; this fixture never adds a production auth bypass or opens a camera.
-test.beforeEach(async ({ page }) => {
-  await page.route("**/api/studbot/**", route => {
+async function installStudyApi(page, initialMs = 0) {
+  const makeActivity = ms => ({
+    id: "11111111-1111-4111-8111-111111111111", taskId: "22222222-2222-4222-8222-222222222222",
+    task: { id: "22222222-2222-4222-8222-222222222222", kind: "study", name: "Study", description: "", minimumMs: null, reflectionQuestion: null, archivedAt: null },
+    state: "paused", activeSince: null, studyCreditUntil: null,
+    accumulatedMs: ms, eligibleMs: ms, revision: 0, startedAt: new Date().toISOString(), serverTime: new Date().toISOString(),
+  });
+  let activity = initialMs ? makeActivity(initialMs) : null;
+  let balance = 0;
+  let stamp = Date.now();
+  await page.route("**/api/studbot/**", async route => {
     const action = new URL(route.request().url()).pathname.split("/").at(-1);
+    const now = Date.now();
+    if (activity?.state === "running") activity.accumulatedMs += Math.min(5000, now - stamp);
+    stamp = now;
+    if (activity) { activity.eligibleMs = activity.accumulatedMs; activity.serverTime = new Date(now).toISOString(); }
+    if (action === "start") {
+      if (!activity || ["completed", "cancelled"].includes(activity.state)) activity = makeActivity(0);
+      activity.state = "running";
+    }
+    if (["pause", "stop"].includes(action) && activity && !["completed", "cancelled"].includes(activity.state)) activity.state = "paused";
+    let completion = null;
+    if (action === "session" && route.request().method() === "POST") {
+      const input = route.request().postDataJSON();
+      activity.state = input.action === "complete" ? "completed" : "cancelled";
+      if (input.action === "complete") { completion = { tokenAward: Math.floor(activity.eligibleMs / 1800000) }; balance += completion.tokenAward; }
+    }
+    if (activity) {
+      activity.activeSince = activity.state === "running" ? new Date(now).toISOString() : null;
+      activity.studyCreditUntil = activity.state === "running" ? new Date(now + 5000).toISOString() : null;
+    }
+    const progress = { activity, balance, completion, serverTime: new Date(now).toISOString() };
+    if (action === "session") return route.fulfill({ json: progress });
     const reply = action === "classify" ? { state: "compatible", reason: "calibrated_book" }
       : { phase: action === "screen" ? "book" : ["book", "finish"].includes(action) ? "ready" : "screen", samples: 6, seconds: 5 };
-    return route.fulfill({ json: reply });
+    return route.fulfill({ json: { ...reply, progress } });
   });
-});
+}
+test.beforeEach(async ({ page }) => installStudyApi(page));
 
 async function enter(page) {
   await page.goto("http://127.0.0.1:3101/tasks/studbot");
@@ -18,6 +49,35 @@ async function enter(page) {
   if (await login.isVisible()) await login.click();
   await expect(page.getByRole("button", { name: "Open focus mode" })).toBeVisible();
 }
+
+test("saved progress resumes after closing and reload, then Finish saves the token award", async ({ page }) => {
+  await installStudyApi(page, 1800000);
+  await page.addInitScript(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const canvas = document.createElement("canvas"); canvas.width = 320; canvas.height = 240;
+      canvas.getContext("2d").fillRect(0, 0, 320, 240);
+      return canvas.captureStream(5);
+    };
+  });
+  await enter(page);
+  await expect(page.getByLabel("Study time")).toHaveText("00:30:00");
+  await page.getByRole("button", { name: "Open focus mode" }).click();
+  const dialog = page.getByRole("dialog", { name: "Focus mode" });
+  await dialog.getByRole("button", { name: "Calibrate screen" }).click();
+  await dialog.getByRole("button", { name: "Start studying" }).click();
+  await expect(dialog.getByText("Timer running", { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel("Focus session time")).not.toHaveText("00:30:00");
+  await Promise.all([
+    page.waitForResponse(response => response.url().endsWith("/api/studbot/stop")),
+    dialog.getByRole("button", { name: "Close focus mode" }).click(),
+  ]);
+  await expect(page.getByText("Timer paused", { exact: true }).first()).toBeVisible();
+  const total = await page.getByLabel("Study time").textContent();
+  await page.reload();
+  await expect(page.getByLabel("Study time")).toHaveText(total);
+  await page.getByRole("button", { name: "Finish & save", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Study session saved. Earned 1 tokens." })).toBeVisible();
+});
 
 test("camera, forward calibration, live timer, pause/resume, close", async ({ page }) => {
   await page.addInitScript(() => {
@@ -85,7 +145,7 @@ test("background tabs keep desktop study running and stop mobile capture", async
   let observations = 0;
   await page.route("**/api/studbot/classify", route => {
     observations++;
-    return route.fulfill({ json: { state: "compatible", reason: "looking_forward" } });
+    return route.fallback();
   });
   await page.addInitScript(() => {
     window.syntheticTracks = [];

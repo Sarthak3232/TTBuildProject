@@ -1,46 +1,11 @@
-/** Local session display only; never used to award tokens. */
-export class StudyClock {
-  elapsedMs = 0;
-  running = false;
-  private goodSince: number | null = null;
-  private badSince: number | null = null;
-  private lastObservation = -Infinity;
-  private updatedAt = 0;
+import { activeMilliseconds, type Activity } from "@/domain/activity";
 
-  snapshot(now: number) {
-    const end = Math.min(now, this.lastObservation + 3000,
-      this.badSince === null ? Infinity : this.badSince + 5000);
-    if (this.running) this.elapsedMs += Math.max(0, end - this.updatedAt);
-    if (now - this.lastObservation > 3000 || (this.badSince !== null && now - this.badSince >= 5000)) {
-      this.running = false;
-      this.goodSince = null;
-    }
-    this.updatedAt = now;
-    return { elapsedMs: this.elapsedMs, running: this.running };
-  }
-
-  observe(state: "compatible" | "away" | "unknown", now: number) {
-    this.snapshot(now);
-    if (state === "compatible") {
-      this.badSince = null;
-      this.goodSince ??= now;
-      if (now - this.goodSince >= 2000) this.running = true;
-    } else {
-      this.goodSince = null;
-      this.badSince ??= now;
-      if (now - this.badSince >= 5000) this.running = false;
-    }
-    this.lastObservation = now;
-    return { elapsedMs: this.elapsedMs, running: this.running };
-  }
-
-  pause(now: number) {
-    this.snapshot(now);
-    this.running = false;
-    this.goodSince = null;
-    this.badSince = null;
-    this.lastObservation = -Infinity;
-  }
+/** Display the server total plus its bounded grace lease; never submit time. */
+export function savedStudyTiming(activity: Activity | null, sinceResponseMs: number) {
+  if (!activity) return { elapsedMs: 0, running: false };
+  const now = Date.parse(activity.serverTime) + Math.max(0, sinceResponseMs);
+  return { elapsedMs: activeMilliseconds(activity, now), running: activity.state === "running"
+    && Boolean(activity.studyCreditUntil) && now < Date.parse(activity.studyCreditUntil!) };
 }
 
 export function formatStudyTime(ms: number) {
