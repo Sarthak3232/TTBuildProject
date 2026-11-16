@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 
 // Component-only browser checks. Real auth/calibration boundaries are tested
 // separately; this fixture never adds a production auth bypass or opens a camera.
-async function installStudyApi(page, initialMs = 0) {
+async function installStudyApi(page, initialMs = 0, rewardIntervalMs = 1800000) {
   const makeActivity = ms => ({
     id: "11111111-1111-4111-8111-111111111111", taskId: "22222222-2222-4222-8222-222222222222",
     task: { id: "22222222-2222-4222-8222-222222222222", kind: "study", name: "Study", description: "", minimumMs: null, reflectionQuestion: null, archivedAt: null },
-    state: "paused", activeSince: null, studyCreditUntil: null,
+    state: "paused", activeSince: null, studyCreditUntil: null, rewardIntervalMs,
     accumulatedMs: ms, eligibleMs: ms, revision: 0, startedAt: new Date().toISOString(), serverTime: new Date().toISOString(),
   });
   let activity = initialMs ? makeActivity(initialMs) : null;
@@ -27,13 +27,13 @@ async function installStudyApi(page, initialMs = 0) {
     if (action === "session" && route.request().method() === "POST") {
       const input = route.request().postDataJSON();
       activity.state = input.action === "complete" ? "completed" : "cancelled";
-      if (input.action === "complete") { completion = { tokenAward: Math.floor(activity.eligibleMs / 1800000) }; balance += completion.tokenAward; }
+      if (input.action === "complete") { completion = { tokenAward: Math.floor(activity.eligibleMs / activity.rewardIntervalMs) }; balance += completion.tokenAward; }
     }
     if (activity) {
       activity.activeSince = activity.state === "running" ? new Date(now).toISOString() : null;
       activity.studyCreditUntil = activity.state === "running" ? new Date(now + 5000).toISOString() : null;
     }
-    const progress = { activity, balance, completion, serverTime: new Date(now).toISOString() };
+    const progress = { activity, balance, completion, serverTime: new Date(now).toISOString(), testRewards: rewardIntervalMs === 15000 };
     if (action === "session") return route.fulfill({ json: progress });
     const reply = action === "classify" ? { state: "compatible", reason: "calibrated_book" }
       : { phase: action === "screen" ? "book" : ["book", "finish"].includes(action) ? "ready" : "screen", samples: 6, seconds: 5 };
@@ -41,6 +41,16 @@ async function installStudyApi(page, initialMs = 0) {
   });
 }
 test.beforeEach(async ({ page }) => installStudyApi(page));
+
+test("15-second test sessions show the captured reward rate and credit on finish", async ({ page }) => {
+  await installStudyApi(page, 15000, 15000);
+  await page.goto("http://127.0.0.1:3101/tasks/studbot");
+  await expect(page.getByLabel("Study time")).toHaveText("00:00:15");
+  await expect(page.getByRole("status").filter({ hasText: "Test rewards enabled" })).toBeVisible();
+  await expect(page.getByText(/1 tokens on completion/)).toBeVisible();
+  await page.getByRole("button", { name: "Finish & save", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Study session saved. Earned 1 tokens." })).toBeVisible();
+});
 
 async function enter(page) {
   await page.goto("http://127.0.0.1:3101/tasks/studbot");

@@ -9,9 +9,9 @@ begin
  insert into auth.users(id,email,raw_user_meta_data) values(a,a||'@example.invalid','{}'),(b,b||'@example.invalid','{}');
  perform pg_temp.study_assert((select relrowsecurity from pg_class where oid='private.study_clocks'::regclass),'study clock has RLS enabled');
  perform pg_temp.study_assert(not has_table_privilege('authenticated','private.study_clocks','select,insert,update,delete'),'browser has no direct clock access');
- perform pg_temp.study_assert(not has_function_privilege('authenticated','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid)','execute'),'browser cannot forge observations');
- perform pg_temp.study_assert(not has_function_privilege('anon','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid)','execute'),'anonymous cannot call study service');
- perform pg_temp.study_assert(has_function_privilege('service_role','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid)','execute'),'server can save verified observations');
+ perform pg_temp.study_assert(not has_function_privilege('authenticated','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid,boolean)','execute'),'browser cannot forge observations');
+ perform pg_temp.study_assert(not has_function_privilege('anon','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid,boolean)','execute'),'anonymous cannot call study service');
+ perform pg_temp.study_assert(has_function_privilege('service_role','public.studbot_command(uuid,text,uuid,uuid,bigint,text,uuid,boolean)','execute'),'server can save verified observations');
  r:=public.studbot_command(a,'start',p_window_id=>w);sid:=(r->'activity'->>'id')::uuid;
  perform pg_temp.study_assert(r->'activity'->>'state'='paused','start waits for valid posture');
  r:=public.studbot_command(a,'observe',sid,w,1,'compatible');

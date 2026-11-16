@@ -88,6 +88,21 @@ close requests from an older focus window cannot credit or pause its replacement
 
 ## Deployment
 
+### Temporary 15-second reward test
+
+Apply `supabase/migrations/20261115000200_studbot_test_rewards.sql` after the
+original Studbot migration. Set `STUDBOT_TEST_REWARDS=true` in `web/.env.local`
+and restart the development server. New study sessions then earn one token per
+full 15 seconds when finished; other activities retain their 30-minute rate.
+Production mode ignores this local test switch. The page labels test rewards.
+
+The rate is captured when a session is created. Finish or discard any existing
+30-minute-rate study session before creating a test session. Restoring
+`STUDBOT_TEST_REWARDS=false` and restarting restores 30 minutes for new sessions;
+already-created test sessions retain their rate until completed or discarded.
+History records the rate and a test note. Test rewards are actual wallet credits;
+turning off the flag does not remove tokens already earned.
+
 Use a persistent Node.js server running `npm run build` then `npm run start`, with
 exactly one Next.js process. Calibration, per-user session ownership, and request
 ordering are kept in bounded process memory. Restarts require recalibration.

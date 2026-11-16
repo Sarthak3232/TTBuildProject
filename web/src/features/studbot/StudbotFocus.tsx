@@ -310,6 +310,7 @@ export function StudbotFocus() {
     return () => clearInterval(interval);
   }, [stage]);
 
+  const rewardIntervalMs = saved?.activity ? saved.activity.rewardIntervalMs ?? 1800000 : saved?.testRewards ? 15000 : 1800000;
   return <div className={styles.page}>
     <header className={styles.header}><div><h1>STUD BOT</h1><span className={styles.badge}>LIVE CLASSIFIER</span></div><p>SLOTTY / FOCUS</p></header>
     <section className={styles.session}>
@@ -320,11 +321,12 @@ export function StudbotFocus() {
       <p role="status" className={styles.description}>{message}</p>
       <p className={styles.description}>Other people may be in view. Keep yourself near the center with your head and shoulders visible.</p>
       <div className={styles.timer}><strong aria-label="Study time">{formatStudyTime(timing.elapsedMs)}</strong><span>{timing.running ? "Timer running" : "Timer paused"}</span></div>
-      <p className={styles.description}>Progress is saved to your account. Finish and save to earn one token per full 30 minutes. Leftover minutes do not carry between completed sessions.</p>
+      <p className={styles.description}>Progress is saved to your account. Finish and save to earn one token per full {rewardIntervalMs === 15000 ? "15 seconds (test rate)" : "30 minutes"}. Leftover time does not carry between completed sessions.</p>
+      {saved?.testRewards && <p role="status" className={styles.description}>Test rewards enabled: new Studbot sessions earn one token per 15 seconds. These credits affect your actual token balance. Existing sessions keep the rate they started with.</p>}
       {saved?.activity && ["running", "paused"].includes(saved.activity.state) && <div className={styles.focusControls}>
         <button type="button" disabled={saving} onClick={() => void finishSession("complete")}>Finish &amp; save</button>
         <button type="button" disabled={saving} onClick={() => void finishSession("cancel")}>Discard study session</button>
-        <p>{Math.floor(timing.elapsedMs / 1800000)} tokens on completion. Close focus mode to pause and resume later.</p>
+        <p>{Math.floor(timing.elapsedMs / rewardIntervalMs)} tokens on completion. Close focus mode to pause and resume later.</p>
       </div>}
     </section>
     <dialog ref={dialog} className={styles.focusDialog} aria-labelledby="focus-title" onCancel={event => { event.preventDefault(); close(); }}>
