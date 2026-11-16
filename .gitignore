@@ -19,3 +19,6 @@ next-env.d.ts
 test-results/
 playwright-report/
 blob-report/
+
+/integration/reels/slotty-bench.sqlite*
+/integration/reels/__pycache__/

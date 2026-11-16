@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Slotty reel bench</title>
+<style>body{font:18px system-ui;max-width:38rem;margin:8vh auto;padding:1rem}button{font:inherit;padding:.6rem;margin:.3rem 0}pre{white-space:pre-wrap}</style>
+<h1>Slotty reel bench</h1><p>Local test wallet · fixed slot 3 win · one token per roll</p>
+<p id="state"></p><button id="roll" disabled>Roll &amp; spend 1 test token</button>
+<button id="repeat" disabled>Check same roll</button><pre id="receipt" role="status"></pre>
+<script>
+const roll=document.querySelector('#roll'), repeat=document.querySelector('#repeat');
+async function state(){
+ const s=await (await fetch('/state')).json();
+ document.querySelector('#state').textContent=s.mode+' | Test balance: '+s.balance;
+ roll.disabled=!!sessionStorage.pending || s.balance<1;
+ repeat.disabled=!sessionStorage.last;
+}
+async function run(id){
+ roll.disabled=repeat.disabled=true;
+ sessionStorage.last=sessionStorage.pending=id;
+ try {
+  const response=await fetch('/rehearse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  const result=await response.json();
+  document.querySelector('#receipt').textContent=JSON.stringify(result,null,2);
+  if(response.ok) delete sessionStorage.pending;
+ } catch(e){document.querySelector('#receipt').textContent=String(e);}
+ finally {await state();}
+}
+roll.onclick=()=>run(crypto.randomUUID()); repeat.onclick=()=>run(sessionStorage.last); state();
+</script></html>
