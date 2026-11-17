@@ -7,6 +7,7 @@ import webbrowser
 from contextlib import closing
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import UUID
 
@@ -37,22 +38,29 @@ def rehearse(db, key):
             db.execute("INSERT INTO rehearsal VALUES (?,?)", (key, balance))
         else:
             balance, = row
-    return {"roll": {"id": key, "won": True, "slot": 3, "deliveryState": "hardware_pending"},
+    return {"roll": {"id": key, "won": True, "slot": 1, "deliveryState": "hardware_pending"},
             "balanceAfterRoll": balance}
 
 
-def wifi_jog(host, key):
+def wifi_jog(host, key, target):
+    deadline = time.monotonic() + 110
     def request(path, post=False):
         req = Request(f"http://{host}{path}", method="POST" if post else "GET",
                       headers={"X-Slotty-Bench": "1"})
-        with urlopen(req, timeout=6) as response:
-            return response.read(128).decode()
-    if request("/identity") != "SLOTTY BENCH JOG V1":
+        try:
+            with urlopen(req, timeout=min(90, max(0.01, deadline - time.monotonic()))) as response:
+                return response.read(128).decode()
+        except HTTPError as error:
+            error.close()
+            raise
+    if request("/identity") != "SLOTTY WIFI REELS V4":
         raise ValueError("Unexpected device identity")
-    request("/jog?id=" + key, True)
-    for _ in range(12):
+    request(f"/spin?id={key}&target={target}", True)
+    while time.monotonic() < deadline:
         detail = request("/receipt?id=" + key)
-        if detail == "pulses finished" or detail.startswith("driver error on channel "):
+        if detail == "pulses finished":
+            return "Unconfirmed: legacy receipt covers reel pulses only"
+        if detail == "sequence finished" or detail == "reels finished; drawer unavailable" or detail.startswith("failed") or detail == "unconfirmed":
             return detail
         time.sleep(0.2)
     raise TimeoutError("No terminal pulse receipt")
@@ -69,7 +77,7 @@ def dispatch(db, doc, send):
                 raise ValueError("Conflicting target for saved event")
             return {"event": event, "target": target, "detail": detail, "replay": True}
     try:
-        detail = send(str(UUID(doc["roll"]["id"])))
+        detail = send(str(UUID(doc["roll"]["id"])), target)
     except (OSError, ValueError) as exc:
         detail = f"Unconfirmed: {exc}"
     with db:
@@ -120,15 +128,21 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--esp", help="Wi-Fi address of SlottyWifiJog, e.g. 192.168.4.1")
-    parser.add_argument("--db", type=Path, default=HERE / "slotty-bench.sqlite")
+    transport = parser.add_mutually_exclusive_group()
+    transport.add_argument("--mock-esp", action="store_true", help="Use explicitly mocked HTTP receiver on localhost:8766")
+    transport.add_argument("--esp", help="Wi-Fi address of SlottyWifiJog V4, e.g. 192.168.4.1")
+    parser.add_argument("--db", type=Path, default=None)
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
+    if args.mock_esp:
+        args.esp = "127.0.0.1:8766"
+    if args.db is None:
+        args.db = HERE / ("slotty-mock-http.sqlite" if args.mock_esp else "slotty-physical.sqlite" if args.esp else "slotty-bench.sqlite")
     with closing(sqlite3.connect(args.db)) as db, HTTPServer(("127.0.0.1", 8765), Handler) as server:
         initialize(db)
         server.db = db
-        server.mode = "ESP32 Wi-Fi jog" if args.esp else "Simulated shafts"
-        server.send_jog = (lambda key: wifi_jog(args.esp, key)) if args.esp else (lambda key: "Simulated three jogs")
+        server.mode = "MOCK ESP32 HTTP; no hardware" if args.mock_esp else "ESP32 Wi-Fi symbol positioning" if args.esp else "Simulated shafts"
+        server.send_jog = (lambda key, target: wifi_jog(args.esp, key, target)) if args.esp else (lambda key, target: f"Simulated labels {([1, 2, 4] if target == 4 else [target + 1] * 3)}")
         print(ORIGIN, server.mode, args.db, flush=True)
         if not args.no_browser:
             webbrowser.open(ORIGIN)

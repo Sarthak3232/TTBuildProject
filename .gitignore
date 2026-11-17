@@ -20,5 +20,5 @@ test-results/
 playwright-report/
 blob-report/
 
-/integration/reels/slotty-bench.sqlite*
+/integration/reels/*.sqlite*
 /integration/reels/__pycache__/
