@@ -1,3 +1,5 @@
+For the current three-reel, two-board setup, follow [README.md](README.md). The instructions below describe the earlier bench prototype.
+
 # Reel bench for the MVP
 
 ## Rehearse today
