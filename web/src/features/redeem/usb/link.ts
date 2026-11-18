@@ -11,7 +11,7 @@ export type BoardState = {
   drawers: { phase: number; calibrated: boolean }[];
 };
 export type BoardEvent = { kind: "state"; state: BoardState } | { kind: "line"; line: string } | { kind: "fault"; reason: string };
-type Command = "PING" | "ALIGNED 1" | "DMARK 4 closed" | "STOP" | `SPIN ${number} ${number} ${number}` | `DOPEN ${number}`;
+type Command = "PING" | "ALIGNED 1" | `DMARK ${number} closed` | "STOP" | `SPIN ${number} ${number} ${number}` | `DOPEN ${number}`;
 
 export function parseState(line: string): BoardState | null {
   const w = line.trim().split(/\s+/);
@@ -64,12 +64,28 @@ export class UsbReelLink {
       if (!port.readable || !port.writable) throw new Error("This port has no serial streams.");
       this.reader = port.readable.getReader(); this.writer = port.writable.getWriter();
       this.readTask = this.readLoop(this.reader);
+      // Clear a partial line left by a previous serial client. ReelMotor ignores empty lines.
+      await this.writer.write(new TextEncoder().encode("\n"));
       const heartbeat = this.waitFor(event => event.kind === "state", 5000);
       try {
-        const reply = await this.send("PING");
-        if (!reply.ok || reply.text !== "pong") throw new Error("Select the ReelMotor ESP32 running reel-engine firmware.");
+        // Some USB adapters lose the first probe while the board starts up.
+        // Only the read-only handshake is retried, never motion commands.
+        let reply: { ok: boolean; text: string } | undefined;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try { reply = await this.send("PING"); break; }
+          catch (error) { if (attempt === 1) throw error; }
+        }
+        if (!reply?.ok || reply.text !== "pong") throw new Error("Select the ReelMotor ESP32 running reel-engine firmware.");
         await heartbeat.promise;
       } finally { heartbeat.cancel(); }
+      // Operator preference: trust saved reel positions on each new USB session.
+      // ALIGNED records that assumption; it does not home or move the reels.
+      const alignment = this.waitFor(event => event.kind === "state" && event.state.aligned, 3000);
+      try {
+        const reply = await this.send("ALIGNED 1");
+        if (!reply.ok) throw new Error(reply.text);
+        await alignment.promise;
+      } finally { alignment.cancel(); }
       this.timer = setInterval(() => {
         if (!this.fresh) { this.fault("USB heartbeat lost. Inspect the machine before continuing."); return; }
         void this.send("PING").catch(() => this.fault("USB keepalive failed."));

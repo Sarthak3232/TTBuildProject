@@ -14,29 +14,32 @@ changes or uploads are required for a board already running that ReelMotor build
 2. Connect the **motor ESP32** by USB. Close Arduino Serial Monitor, `control.html`,
    and other serial clients. Disable any other controller of this machine,
    including a WiFi board issuing UART commands. Only one page should control it.
-3. Click **Connect USB** and select the motor board. Connection sends only `PING`
-   at 115200 baud; it does not energise, home, spin, or open anything. It requires a
-   valid 26-field ReelMotor heartbeat and `pong` handshake.
-4. Check the eight-sector order against the physical reels and your calibration
-   page. The default is `hammer,garnet,rose,tong,hammer,garnet,rose,tong`, but it is
-   editable. `rose` means website `jacqueminot`; `tong` means `tongs`. The same order
-   applies to all three reels, matching the supplied control page. The control
-   page's `file://` storage is separate from the website's storage: copy a custom
-   order explicitly. The website remembers its order in `slottyOrder`.
-5. Inspect that each reel physically matches the displayed board position and
-   that all four drawers are closed. Check the confirmation box and click
-   **Confirm saved calibration & closed drawers**. This sends `ALIGNED 1`, then
-   `DMARK 4 closed`, and waits for a fresh ready heartbeat. These commands record
-   your inspection; they do not move or recalibrate the mechanism. Existing
-   steps/turn, home, direction, speeds and drawer timings are retained.
+3. Click **Connect USB** and select the motor board. At 115200 baud the app sends
+   `PING`, requires a valid heartbeat and matching reply, then automatically sends
+   `ALIGNED 1` and verifies the board reports alignment confirmed. Per the operator's
+   instruction, every connection trusts the saved reel position. This does not
+   home, recalibrate, energise or move the reels.
+4. Check the eight-sector order against your calibration page. The default is
+   `hammer,garnet,rose,tong,hammer,garnet,rose,tong`; rose means jacqueminot and tong
+   means tongs. The same order applies to all three reels. The file control page
+   and website have separate storage, so copy a custom order explicitly. If you
+   edit the order, check its confirmation box and click **Confirm sector order**.
+5. Only drawers with saved, confirmed calibration accept token allocations. A
+   machine reporting calibration `1001` supports slots 1 and 4 while slots 2 and 3
+   remain disabled. Unused, uncalibrated drawers do not block a spin. At least one
+   calibrated drawer and all three responding motor drivers are required.
 6. Allocate tokens and click **Spin now**. This click authorizes the paid roll,
-   reel motion, and opening the selected drawer if won. All three drivers must
-   answer, all four drawers must be calibrated and closed, and nothing may be
-   moving before a new payment is requested.
-7. Collect a winning reward and **close the drawer by hand**. Inspect and confirm
-   the closed drawers again before another roll. No `DCLOSE` is sent. Keep the
-   page open during delivery; **Stop machine** sends `STOP` if needed. The board's
-   BOOT stop and serial watchdog remain available.
+   reel motion, and opening the selected drawer if won. Nothing may be moving
+   before a new payment is requested. Viewing results or connecting never spins.
+7. Per operator instruction, **assume the selected drawer is closed before every
+   opening**: immediately before `DOPEN d`, send `DMARK d closed` and require its
+   acknowledgement. `DMARK` only updates the board's phase; it does not drive the
+   servo. Collect your reward and close it by hand. The app never sends `DCLOSE`.
+   Unknown/open phases therefore do not block setup; calibration and motion checks
+   still apply. These are operator assumptions, not sensor measurements.
+8. Keep the page open during delivery. **Stop machine** sends `STOP` if needed.
+   The board's BOOT stop and serial watchdog remain available. Live spins and servo
+   tests by the coding agent still require explicit approval first.
 
 ## Commands and outcome mapping
 
@@ -46,7 +49,7 @@ degree: `k * 4500 + 2250`. It sends one `SPIN a0 a1 a2`.
 
 An accepted command is not completion. The client requires `E LANDED s0 s1 s2`
 matching all requested sectors, followed by an idle, aligned heartbeat reporting
-those sectors. A win then sends **one** `DOPEN` and waits for that drawer's open
+those sectors. A win then marks only its selected drawer closed and sends **one** `DOPEN` and waits for that drawer's open
 phase. A loss sends no drawer command.
 
 | Saved winning slot | Servo channel/command |
@@ -64,7 +67,7 @@ The old `notifyReelBench` call was removed from `POST /api/rolls`; leaving
 
 - A lost API response uses **Recover roll** with the same idempotency key, so it
   cannot create another charge. If USB was not ready after the result was saved,
-  connect/confirm and use **Send saved result to machine** without paying again.
+  connect and use **Send saved result to machine** without paying again.
   Viewing history, rendering a saved result and reconnecting never dispatch motion.
 - Before USB motion, the client synchronously saves a receipt in this website
   origin's `slotty-usb-deliveries-v1` localStorage journal. Storage failure blocks
@@ -89,9 +92,9 @@ The old `notifyReelBench` call was removed from `POST /api/rolls`; leaving
 
 `npm test`, `npm run check`, and `npm run test:e2e` exercise a simulated serial
 board only. Tests cover all four channels, exact saved-symbol mapping, losses,
-setup/readiness gating, independent drawer selection, duplicate suppression,
+automatic alignment, partial drawer calibration, assumed-closed marking, readiness gating, independent drawer selection, duplicate suppression,
 lost acknowledgements, incorrect landings, reset/stop/disconnect interruptions,
 storage failures, saved-roll recovery, and desktop/mobile rendering. Mobile
 browser tests inject the simulator; they do not establish mobile Web Serial
 support. Real serial, reel accuracy and drawer movement require separate operator
-permission and observation. No hardware commands were sent during implementation.
+permission and observation. No spin or servo-drive commands were sent during implementation. A separately authorized USB check sent `PING` and the nonmoving `ALIGNED 1` command.

@@ -1,6 +1,6 @@
 import type { SerialPortLike } from "../../src/features/redeem/usb/link";
 
-export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?: boolean; dropDrawerReply?: boolean; refuseSpin?: boolean; drivers?: number; calibrated?: boolean } = {}) {
+export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?: boolean; dropDrawerReply?: boolean; refuseSpin?: boolean; drivers?: number; calibrated?: boolean; drawerCalibration?: string } = {}) {
   const commands: string[] = [];
   let controller: ReadableStreamDefaultController<Uint8Array>;
   let interval: ReturnType<typeof setInterval>;
@@ -8,16 +8,17 @@ export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?:
   let sectors = [0, 0, 0]; let phases = [0, 0, 0, 0];
   let active = true;
   const emit = (line: string) => { if (active) controller.enqueue(new TextEncoder().encode(`${line}\r\n`)); };
-  const heartbeat = () => emit(`S 1 ${options.drivers ?? 7} ${Number(aligned)} ${Number(spinning)} ${sectors.map(s => `${s * 200 + 100} ${s * 4500 + 2250} ${s} ${Number(spinning)} 1600 0`).join(" ")} 1 ${phases.join("")} 1111`);
+  const heartbeat = () => emit(`S 1 ${options.drivers ?? 7} ${Number(aligned)} ${Number(spinning)} ${sectors.map(s => `${s * 200 + 100} ${s * 4500 + 2250} ${s} ${Number(spinning)} 1600 0`).join(" ")} 1 ${phases.join("")} ${options.drawerCalibration ?? "1111"}`);
   const port: SerialPortLike = {
     readable: new ReadableStream<Uint8Array>({ start(c) { controller = c; }, cancel() { active = false; clearInterval(interval); } }),
     writable: new WritableStream<Uint8Array>({ write(value) {
+      if (!new TextDecoder().decode(value).trim()) return;
       const [seq, verb, ...args] = new TextDecoder().decode(value).trim().split(" ");
       const command = [verb, ...args].join(" "); commands.push(command);
       const reply = (ok = true, text = "ok") => emit(`R ${seq} ${Number(ok)} ${text}`);
       if (verb === "PING") { reply(true, "pong"); heartbeat(); }
       else if (verb === "ALIGNED") { aligned = true; reply(); heartbeat(); }
-      else if (verb === "DMARK") { phases = [1, 1, 1, 1]; reply(); heartbeat(); }
+      else if (verb === "DMARK") { const drawer = Number(args[0]); phases = phases.map((p, i) => drawer === 4 || drawer === i ? 1 : p); reply(); heartbeat(); }
       else if (verb === "STOP") { spinning = false; aligned = false; reply(); emit("E STOPPED"); heartbeat(); }
       else if (verb === "SPIN") {
         if (options.refuseSpin) { reply(false, "busy"); return; }

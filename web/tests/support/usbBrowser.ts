@@ -13,7 +13,7 @@ export async function installFakeUsb(page: Page, options: Parameters<typeof fake
 export async function connectMachine(page: Page) {
   await page.getByRole("button", { name: "Connect USB", exact: true }).click();
   await page.getByLabel("I checked the sector order", { exact: false }).check();
-  await page.getByRole("button", { name: "Confirm saved calibration & closed drawers" }).click();
+  await page.getByRole("button", { name: "Confirm sector order" }).click();
   await page.getByRole("status").filter({ hasText: "Machine ready." }).waitFor();
 }
 export function motorCommands(page: Page) {

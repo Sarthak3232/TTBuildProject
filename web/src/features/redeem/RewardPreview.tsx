@@ -53,7 +53,7 @@ export function RewardPreview() {
     try {
       // Readiness is checked before accepting a new charge. Recovery only reads
       // the original idempotent result, even if the USB board is now disconnected.
-      if (!pending) machine.preflight();
+      if (!pending) machine.preflight(allocations);
       const request = pending ?? { key: crypto.randomUUID(), allocations };
       sessionStorage.setItem(storageKey, JSON.stringify(request));
       setPending(request); recoveryNeeded = true;
@@ -85,8 +85,8 @@ export function RewardPreview() {
       <h3>Slot {index + 1}</h3><div className={styles.controls}>
         <button aria-label={`Remove one token from slot ${index + 1}`} disabled={value === 0 || locked} onClick={() => change(index, -1)}>−</button>
         <output aria-label={`Slot ${index + 1} allocation`}>{value}</output><span>{value === 1 ? "token" : "tokens"}</span>
-        <button aria-label={`Add one token to slot ${index + 1}`} disabled={total >= balance || value >= 1000000 || locked} onClick={() => change(index, 1)}>+</button>
-      </div><p>A win opens this drawer after the reels land</p>
+        <button aria-label={`Add one token to slot ${index + 1}`} disabled={total >= balance || value >= 1000000 || locked || !machine.availableSlots.includes(index + 1)} onClick={() => change(index, 1)}>+</button>
+      </div><p>{machine.availableSlots.includes(index + 1) ? "A win opens this drawer after the reels land" : "Unavailable until drawer calibration is confirmed"}</p>
     </section>)}</div>
     <section className={styles.summary}>
       <h2>Your allocation</h2><dl>

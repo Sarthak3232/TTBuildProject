@@ -39,20 +39,22 @@ export function resolveInspection(storage: ReceiptStorage) {
   const record = unresolvedReceipt(storage);
   if (record) save(storage, { ...record, phase: "inspected", message: "Operator inspected and resolved this delivery. It will not be replayed." });
 }
-export function readiness(state: BoardState | null, fresh: boolean, requireAlignment = true): string | null {
+export function availableSlots(state: BoardState | null): number[] {
+  return state?.servoBoard ? state.drawers.flatMap((drawer, index) => drawer.calibrated ? [index + 1] : []) : [];
+}
+export function readiness(state: BoardState | null, fresh: boolean, requireAlignment = true, slots?: number[]): string | null {
   if (!state || !fresh) return "Connect the USB motor board and wait for a fresh heartbeat.";
   if (state.spinning || state.reels.some(r => r.moving) || state.drawers.some(d => [2, 4, 5].includes(d.phase))) return "Wait for all motion to stop.";
   if (state.drivers !== 7) return "All three motor drivers must respond. Check the 24 V supply.";
-  if (!state.servoBoard || state.drawers.some(d => !d.calibrated)) return "All four drawers must have saved, confirmed calibration. Use control.html to finish setup.";
-  if (requireAlignment && (!state.aligned || state.drawers.some(d => d.phase !== 1))) return "Check reel alignment and physically close the drawers, then confirm setup.";
+  const selected = slots ?? availableSlots(state);
+  if (!state.servoBoard || !selected.length) return "At least one drawer needs saved, confirmed calibration.";
+  if (selected.some(slot => !Number.isInteger(slot) || slot < 1 || slot > 4 || !state.drawers[slot - 1].calibrated)) return "Allocate tokens only to calibrated drawers.";
+  if (requireAlignment && !state.aligned) return "Reconnect USB to confirm the saved reel alignment.";
   return null;
 }
 export async function confirmSetup(link: UsbReelLink) {
   const problem = readiness(link.state, link.fresh, false); if (problem) throw new Error(problem);
-  // These statements confirm what the operator inspected; they do not home or move anything.
-  for (const command of ["ALIGNED 1", "DMARK 4 closed"] as const) {
-    const reply = await link.send(command); if (!reply.ok) throw new Error(reply.text);
-  }
+  const reply = await link.send("ALIGNED 1"); if (!reply.ok) throw new Error(reply.text);
   const next = link.waitFor(event => event.kind === "state" && readiness(event.state, link.fresh) === null, 3000);
   try { await next.promise; } finally { next.cancel(); }
 }
@@ -71,7 +73,7 @@ export async function deliverSavedRoll(link: UsbReelLink, roll: Roll, order: Whe
     throw new Error("This delivery needs inspection. It will not be spun or opened again automatically.");
   }
   if (unresolvedReceipt(storage)) throw new Error("Resolve the interrupted USB delivery before starting another roll.");
-  const problem = readiness(link.state, link.fresh); if (problem) throw new Error(problem);
+  const problem = readiness(link.state, link.fresh, true, command.winningSlot === null ? undefined : [command.winningSlot]); if (problem) throw new Error(problem);
   // Either occurrence of a duplicated symbol is valid. Keep the resolved sectors in the receipt.
   const random = new Uint32Array(3); crypto.getRandomValues(random);
   const targets = command.wheels.map((name, i) => order.map((n, k) => n === name ? k : -1).filter(k => k >= 0)[random[i] % 2]);
@@ -92,8 +94,12 @@ export async function deliverSavedRoll(link: UsbReelLink, roll: Roll, order: Whe
     update("landed", "Board reported the saved reel positions.");
     if (command.winningSlot !== null) {
       const drawer = command.winningSlot - 1;
-      if (!link.state.servoBoard || !link.state.drawers[drawer].calibrated || link.state.drawers[drawer].phase !== 1) throw new Error("Winning drawer is no longer calibrated and closed. Inspect before opening.");
+      if (!link.state.servoBoard || !link.state.drawers[drawer].calibrated || [2, 4, 5].includes(link.state.drawers[drawer].phase)) throw new Error("Winning drawer is uncalibrated or still moving.");
       update("opening", `Opening drawer ${command.winningSlot}…`);
+      // Operator policy: each opening starts from an assumed manually closed drawer.
+      // This changes only the board's phase; it never drives the servo closed.
+      const marked = await link.send(`DMARK ${drawer} closed`);
+      if (!marked.ok) throw new Error(marked.text);
       const opened = link.waitFor(e => e.kind === "state" && e.state.drawers[drawer].phase === 3, 35_000);
       try {
         const reply = await link.send(`DOPEN ${drawer}`); if (!reply.ok) throw new Error(reply.text);

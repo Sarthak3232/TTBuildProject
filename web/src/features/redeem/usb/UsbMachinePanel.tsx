@@ -18,9 +18,10 @@ export function UsbMachinePanel({ machine }: { machine: UsbMachine }) {
     <input id="reel-order" value={machine.order} onChange={event => machine.changeOrder(event.target.value)} disabled={machine.working} spellCheck={false}/>
     <p>Rose = jacqueminot; tong = tongs. Saved slot 1 opens servo 0, slot 2 opens servo 1, slot 3 opens servo 2, and slot 4 opens servo 3.</p>
     {machine.state && <p>Board positions: {machine.state.reels.map((reel, i) => `reel ${i + 1}: ${names[reel.sector] ?? "?"} (sector ${reel.sector})`).join(" · ")}</p>}
-    <label className={styles.check}><input type="checkbox" checked={machine.checked} onChange={event => machine.setChecked(event.target.checked)} disabled={machine.working}/><span>I checked the sector order, the reels match the board positions above, all drawers are physically closed, and only this page controls the machine.</span></label>
-    <button onClick={machine.confirm} disabled={!machine.connected || !machine.checked || machine.working || Boolean(machine.unresolved) || Boolean(machine.storageError)}>Confirm saved calibration &amp; closed drawers</button>
-    <p>This confirms your saved setup without moving anything. Reconfirm after closing a winning drawer by hand.</p>
+    <p>Available calibrated drawers: {machine.availableSlots.join(", ") || "none"}. Saved reel alignment is confirmed automatically on connection.</p>
+    <label className={styles.check}><input type="checkbox" checked={machine.checked} onChange={event => machine.setChecked(event.target.checked)} disabled={machine.working}/><span>I checked the sector order, and only this page controls the machine.</span></label>
+    <button onClick={machine.confirm} disabled={!machine.connected || !machine.checked || machine.working || Boolean(machine.unresolved) || Boolean(machine.storageError)}>Confirm sector order</button>
+    <p>Each drawer is assumed closed immediately before its servo opens it. Close winning drawers by hand. No close command is sent.</p>
     <p role="status">{machine.storageError || machine.message}</p>
     {machine.unresolved && !machine.working && <div role="alert">
       <p>Delivery {machine.unresolved.id} needs inspection. Check the reels and the reward drawer, and resolve delivery manually before continuing. This result will not be replayed.</p>

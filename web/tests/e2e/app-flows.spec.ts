@@ -53,15 +53,15 @@ test("reopening a saved loss preserves the three wheel outputs without a new rol
  expect(writes).toHaveLength(0);
 });
 
-test("USB readiness blocks payment and connection alone sends no motion",async({page})=>{
+test("USB readiness blocks payment and connection confirms alignment without motion",async({page})=>{
  const{writes}=await fixtures(page,4);
  await page.goto("http://127.0.0.1:3101/redeem");
- await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
  await expect(page.getByRole("button",{name:"Spin now",exact:true})).toBeDisabled();
  await page.getByRole("button",{name:"Connect USB",exact:true}).click();
+ await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
  await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("USB connected");
- expect(await motorCommands(page)).toEqual([]);
- await expect(page.getByRole("button",{name:"Spin now",exact:true})).toBeDisabled();
+ expect(await motorCommands(page)).toEqual(["ALIGNED 1"]);
+ await expect(page.getByRole("button",{name:"Spin now",exact:true})).toBeEnabled();
  expect(writes).toHaveLength(0);
 });
 
@@ -76,7 +76,23 @@ test("winning slot determines the drawer independently of the wheel symbol",asyn
  expect(commands.find(c=>c.startsWith("SPIN"))!.split(" ").slice(1).every(a=>[6750,24750].includes(Number(a)))).toBe(true);
  expect(commands.some(c=>c.startsWith("DCLOSE"))).toBe(false);
  expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);
- await expect(page.getByRole("button",{name:"Spin now",exact:true})).toBeDisabled();
+ await expect(page.getByRole("button",{name:"Confirm sector order"})).toBeDisabled();
+});
+
+test("partial calibration enables only slots 1 and 4 and marks the selected drawer closed",async({page})=>{
+ await fixtures(page,4,{won:true,slot:4,threshold:200000,wheels:["garnet","garnet","garnet"]},{drawerCalibration:"1001"});
+ await page.goto("http://127.0.0.1:3101/redeem");
+ await page.getByRole("button",{name:"Connect USB",exact:true}).click();
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("Machine ready");
+ await expect(page.getByRole("button",{name:"Add one token to slot 2",exact:true})).toBeDisabled();
+ await expect(page.getByRole("button",{name:"Add one token to slot 3",exact:true})).toBeDisabled();
+ await expect(page.getByRole("button",{name:"Add one token to slot 1",exact:true})).toBeEnabled();
+ await page.getByRole("button",{name:"Add one token to slot 4",exact:true}).click();
+ await page.getByRole("button",{name:"Spin now",exact:true}).click();
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 4 open");
+ const commands=await motorCommands(page);const marked=commands.indexOf("DMARK 3 closed");
+ expect(marked).toBeGreaterThan(-1);expect(commands[marked+1]).toBe("DOPEN 3");
+ expect(commands.some(c=>c.startsWith("DCLOSE"))).toBe(false);
 });
 
 test("an incorrect landing blocks the drawer and survives a reload without replay",async({page})=>{

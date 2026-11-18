@@ -16,12 +16,12 @@ async function connected(options: Parameters<typeof fakeReelMotor>[0] = {}) {
 afterEach(async () => { await Promise.all(links.splice(0).map(link => link.disconnect())); });
 
 describe("USB reel-engine delivery", () => {
-  it("connects read-only and confirms saved setup before motion", async () => {
+  it("automatically confirms alignment on connection without motion", async () => {
     const { link, board } = await connected();
-    expect(board.commands.every(c => c === "PING")).toBe(true);
-    expect(readiness(link.state, link.fresh)).toMatch(/confirm setup/);
+    expect(board.commands.filter(c => c !== "PING")).toEqual(["ALIGNED 1"]);
+    expect(readiness(link.state, link.fresh)).toBeNull();
     await confirmSetup(link);
-    expect(board.commands.filter(c => c !== "PING")).toEqual(["ALIGNED 1", "DMARK 4 closed"]);
+    expect(board.commands.filter(c => c !== "PING")).toEqual(["ALIGNED 1", "ALIGNED 1"]);
     expect(readiness(link.state, link.fresh)).toBeNull();
   });
   it.each([1, 2, 3, 4])("lands the exact saved symbols before opening slot %i's channel", async slot => {
@@ -39,12 +39,26 @@ describe("USB reel-engine delivery", () => {
     await deliverSavedRoll(link, roll(null), order, storage(), () => {});
     expect(board.commands.some(c => c.startsWith("DOPEN"))).toBe(false);
   });
+  it.each([1, 4])("can use calibrated slot %i while slots 2 and 3 remain uncalibrated", async slot => {
+    const { link, board } = await connected({ drawerCalibration: "1001" });
+    expect(readiness(link.state, link.fresh)).toBeNull();
+    await deliverSavedRoll(link, roll(slot), order, storage(), () => {});
+    const marked = board.commands.indexOf(`DMARK ${slot - 1} closed`);
+    expect(marked).toBeGreaterThan(-1);
+    expect(board.commands[marked + 1]).toBe(`DOPEN ${slot - 1}`);
+    expect(board.commands.some(c => c.startsWith("DCLOSE"))).toBe(false);
+  });
+  it("refuses an uncalibrated winning drawer without spinning", async () => {
+    const { link, board } = await connected({ drawerCalibration: "1001" });
+    await expect(deliverSavedRoll(link, roll(2), order, storage(), () => {})).rejects.toThrow(/only to calibrated/);
+    expect(board.commands.some(c => c.startsWith("SPIN"))).toBe(false);
+  });
   it("does not replay a completed event even after constructing a new connection", async () => {
     const first = await connected(); await confirmSetup(first.link); const store = storage();
     await deliverSavedRoll(first.link, roll(), order, store, () => {});
     const second = await connected();
     const receipt = await deliverSavedRoll(second.link, roll(), order, store, () => {});
-    expect(receipt.phase).toBe("finished"); expect(second.board.commands).toEqual(["PING"]);
+    expect(receipt.phase).toBe("finished"); expect(second.board.commands).toEqual(["PING", "ALIGNED 1"]);
   });
   it("refuses changed payloads under a completed roll ID", async () => {
     const { link, board } = await connected(); await confirmSetup(link); const store = storage();

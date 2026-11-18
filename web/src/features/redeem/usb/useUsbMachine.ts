@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Roll } from "@/domain/activity";
 import { UsbReelLink, type SerialPortLike } from "./link";
-import { confirmSetup, DEFAULT_ORDER, deliverSavedRoll, parseOrder, readiness, resolveInspection, unresolvedReceipt, type DeliveryReceipt } from "./delivery";
+import { availableSlots, confirmSetup, DEFAULT_ORDER, deliverSavedRoll, parseOrder, readiness, resolveInspection, unresolvedReceipt, type DeliveryReceipt } from "./delivery";
 
 type SerialNavigator = Navigator & { serial?: { requestPort(): Promise<SerialPortLike> } };
 export function useUsbMachine() {
@@ -55,33 +55,38 @@ export function useUsbMachine() {
     const serial = (navigator as SerialNavigator).serial;
     if (!serial || operating.current) return;
     const port = serial.requestPort();
-    void run(async () => { await link.connect(await port); setMessage("USB connected. Inspect the reels and drawers, then confirm setup."); });
+    void run(async () => {
+      await link.connect(await port); parseOrder(orderNow.current);
+      localStorage.setItem("slottyOrder", orderNow.current);
+      confirmedNow.current = true; setConfirmed(true);
+      setMessage("USB connected. Saved alignment confirmed automatically. Drawers are assumed closed before opening. Machine ready.");
+    });
   }
-  function preflight() {
+  function preflight(allocations?: number[]) {
     if (storageError) throw new Error(storageError);
     if (unresolvedReceipt(localStorage)) throw new Error("Inspect and resolve the interrupted delivery first.");
     parseOrder(orderNow.current);
-    if (!confirmedNow.current) throw new Error("Confirm the reel order, alignment and closed drawers first.");
-    const problem = readiness(link.state, link.fresh); if (problem) throw new Error(problem);
+    if (!confirmedNow.current) throw new Error("Reconnect USB or confirm the sector order first.");
+    const slots = allocations?.flatMap((amount, index) => amount > 0 ? [index + 1] : []);
+    const problem = readiness(link.state, link.fresh, true, slots); if (problem) throw new Error(problem);
   }
   async function deliver(roll: Roll) {
     if (operating.current) throw new Error("A machine operation is already running.");
     preflight();
     operating.current = true; setWorking(true);
     try {
-      const result = await deliverSavedRoll(link, roll, parseOrder(orderNow.current), localStorage, value => { setReceipt(value); setMessage(value.message); });
-      if (roll.won && result.phase === "finished") { confirmedNow.current = false; setConfirmed(false); setChecked(false); }
+      await deliverSavedRoll(link, roll, parseOrder(orderNow.current), localStorage, value => { setReceipt(value); setMessage(value.message); });
     } finally {
       operating.current = false; setWorking(false);
       setUnresolved(unresolvedReceipt(localStorage) ?? null);
     }
   }
   return {
-    supported, connected: link.attached, state: link.state, working, message, receipt, unresolved, storageError,
+    supported, connected: link.attached, state: link.state, availableSlots: availableSlots(link.state), working, message, receipt, unresolved, storageError,
     checked, setChecked, order, changeOrder, connect, deliver, preflight,
     ready: confirmed && !working && !storageError && !unresolved && readiness(link.state, link.fresh) === null,
     confirm: () => void run(async () => {
-      if (!checked) throw new Error("Inspect the physical machine and check the confirmation box first.");
+      if (!checked) throw new Error("Check the sector-order confirmation box first.");
       parseOrder(order); localStorage.setItem("slottyOrder", order);
       await confirmSetup(link); confirmedNow.current = true; setConfirmed(true); setChecked(false); setMessage("Machine ready. Spin now will move the reels and open the winning drawer.");
     }),
