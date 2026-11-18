@@ -2,8 +2,22 @@ import "server-only";
 import { z } from "zod";
 import { createServerSupabaseClient } from "./supabase/clients";
 export class ApiError extends Error { constructor(public status:number,public code:string,message:string){super(message)} }
+export function requestOrigin(request:Request) {
+ const url=new URL(request.url);
+ const host=request.headers.get("host");
+ // Next dev can normalize request.url to localhost even when the browser uses
+ // 127.0.0.1. Use the actual loopback Host, retaining the scheme and port checks.
+ if(process.env.NODE_ENV!=="production" && ["localhost","127.0.0.1","[::1]"].includes(url.hostname) && host){
+  if(!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(host))throw new ApiError(403,"origin","Use this app's own page to make changes.");
+  let browser:URL;
+  try{browser=new URL(`${url.protocol}//${host}`)}catch{throw new ApiError(403,"origin","Use this app's own page to make changes.")}
+  if(browser.port!==url.port)throw new ApiError(403,"origin","Use this app's own page to make changes.");
+  return browser.origin;
+ }
+ return url.origin;
+}
 export function assertSameOrigin(request:Request) {
- const origin=request.headers.get("origin"); const expected=new URL(request.url).origin;
+ const origin=request.headers.get("origin"); const expected=requestOrigin(request);
  if(!origin || origin!==expected || request.headers.get("sec-fetch-site")==="cross-site") throw new ApiError(403,"origin","Use this app's own page to make changes.");
 }
 export async function requireUser(request:Request,mutating=false) {
