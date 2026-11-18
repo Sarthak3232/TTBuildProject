@@ -121,23 +121,6 @@ its canonical aliases. Custom orders remain editable. The firmware controls sect
 indices; its diagnostic name strings and the separate control page may still use
 the older order, so use the confirmed physical order when testing those tools.
 
-## Temporary 100% win test mode
-
-Set server-only `SLOTTY_TEST_WINS=true` in `web/.env.local` and run the development
-server. The rewards page displays a test-mode banner and 100% win probability for
-new paid rolls. Authentication, token debits, allocation-weighted drawer choice,
-database-generated matching wheel symbols, and idempotent saved results remain
-active. Only the trusted server supplies a guaranteed winning sample to the
-existing accounting RPC; the browser cannot choose an outcome. Previously saved
-rolls, including losses recovered by their original key, remain unchanged.
-
-This mode requires the existing server-only `SUPABASE_SECRET_KEY`, is disabled
-in production, and changes no database-wide win policy. Set the flag to `false`
-and restart development to return to normal probabilities. The database's normal
-policy threshold remains in roll history; the local test-mode banner identifies
-the temporary override. Tokens and winning entitlements are real saved records,
-not a mock wallet. Tests use simulated serial streams and never actuate hardware.
-
 ## Current automatic drawer cycle
 
 The operator changed the sequence to **3 seconds opening → 3 seconds fully open
@@ -159,3 +142,10 @@ stake is spent and only one drawer can open. Existing saved results stay fixed.
 Test credits are separately labeled ledger adjustments, granted only through the
 service-role accounting function with an idempotent adjustment key. They create
 no fabricated activity or completion and remain readable only by the owner.
+
+## Forced-result overrides removed
+
+The temporary always-win implementation and its environment switch have been
+removed. Roll creation always uses the authenticated database probability policy.
+A stale `SLOTTY_TEST_WINS` flag has no effect. Only a real ten-token allocation
+to one slot activates the normal policy guarantee.

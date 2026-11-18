@@ -75,8 +75,4 @@ For a loss, `outcome` is `loss` and `winningSlot` is null. Symbol-to-sector mapp
 
 USB actuator transport is implemented as described in the [reel-engine integration contract](../../../integration/reels/USB-REEL-ENGINE.md). Physical locker loading/collection, a server delivery worker, shared device receipts and simulator delivery remain later work in the locker contract. Studbot endpoints are documented separately. There are no public clock overrides, token grants or force-win endpoints.
 
-For explicitly enabled local development tests, server-only `SLOTTY_TEST_WINS=true`
-routes authenticated new roll requests through the existing trusted accounting
-RPC with a guaranteed winning sample. `GET /app` includes `testWins` for the
-100% test banner. Production ignores this flag; POST bodies still accept only
-the key and allocations, and saved idempotent outcomes are never rewritten.
+Temporary forced-result overrides are removed. Every POST uses the authenticated database policy, including the per-slot ten-token guarantee.

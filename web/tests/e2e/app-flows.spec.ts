@@ -95,18 +95,6 @@ test("partial calibration enables only slots 1 and 4 and marks the selected draw
  expect(commands.filter(c=>c.startsWith("DCLOSE"))).toEqual(["DCLOSE 3"]);
 });
 
-test("guaranteed-win test mode shows 100 percent and delivers matching saved symbols",async({page})=>{
- const{data,writes}=await fixtures(page,4);data.testWins=true;
- await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);
- await expect(page.getByRole("status").filter({hasText:"100% win test mode"})).toBeVisible();
- await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
- await expect(page.getByText("100.0%",{exact:true})).toBeVisible();
- await page.getByRole("button",{name:"Spin now",exact:true}).click();
- await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 closed");
- await expect(page.getByLabel("Saved wheel results").getByText("garnet",{exact:true})).toHaveCount(3);
- expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);
-});
-
 test("ten tokens on one slot guarantees that slot, while a spread total of ten uses normal odds",async({page})=>{
  await fixtures(page,50);
  await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);

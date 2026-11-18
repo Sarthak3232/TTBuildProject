@@ -33,7 +33,7 @@ export function RewardPreview() {
   }, [storageKey, data?.profile.email]);
   const balance = data?.balance ?? 0;
   const total = allocations.reduce((a, b) => a + b, 0);
-  const chance = total > 0 ? data?.testWins ? 1 : rollThreshold(allocations) / 1000000 : 0;
+  const chance = total > 0 ? rollThreshold(allocations) / 1000000 : 0;
   const eligible=eligibleAllocations(allocations);
   const eligibleTotal=eligible.reduce((sum,n)=>sum+n,0);
   const roll = result ?? data?.latestRoll;
@@ -78,7 +78,6 @@ export function RewardPreview() {
       <h1>WELL EARNED.</h1><p>Spend tokens, spin the physical reels, and collect a winning reward.</p>
     </header>
     <UsbMachinePanel machine={machine}/>
-    {data?.testWins && <p role="status">100% win test mode: new rolls always win with three matching symbols. Tokens are still spent. Previously saved results stay unchanged.</p>}
     <section className={styles.balance} aria-label="Token balance">
       <div><h2>Available tokens</h2><span aria-hidden="true">◎</span></div>
       <p><strong>{data ? balance : "…"}</strong> tokens</p>
