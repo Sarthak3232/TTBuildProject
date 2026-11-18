@@ -23,6 +23,7 @@ export function RouteMap({ points }: { points: RoutePoint[] }) {
     void import("maplibre-gl").then(lib => {
       if (disposed || !container.current) return;
       try {
+        lib.setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString());
         const instance = new lib.Map({
           container: container.current,
           style: "https://tiles.openfreemap.org/styles/liberty",
@@ -35,7 +36,7 @@ export function RouteMap({ points }: { points: RoutePoint[] }) {
         instance.on("error", () => {
           if (!disposed) setError("Map tiles are unavailable. Your timer and saved GPS route still work.");
         });
-        instance.on("load", () => {
+        instance.on("style.load", () => {
           if (disposed) return;
           instance.addSource("activity-route", { type: "geojson", data: routeGeoJson(latestPoints.current) });
           instance.addLayer({ id: "activity-route", type: "line", source: "activity-route", paint: { "line-color": "#f93c72", "line-width": 5 }, layout: { "line-join": "round", "line-cap": "round" } });
@@ -59,9 +60,12 @@ export function RouteMap({ points }: { points: RoutePoint[] }) {
   }, [attempt]);
 
   useEffect(() => {
-    if (!loaded || !map.current) return;
-    const source = map.current.getSource("activity-route") as GeoJSONSource | undefined;
-    source?.setData(routeGeoJson(points));
+    if (!map.current) return;
+    // Center as soon as GPS is restored, even while base tiles are still loading.
+    if (loaded) {
+      const source = map.current.getSource("activity-route") as GeoJSONSource | undefined;
+      source?.setData(routeGeoJson(points));
+    }
     const last = points.at(-1);
     if (!last) return;
     marker.current?.setLngLat([last.lng, last.lat]).addTo(map.current);

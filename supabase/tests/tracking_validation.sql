@@ -55,10 +55,16 @@ begin
  result := public.ingest_route_points(owner_id,session_id,0,jsonb_build_array(pg_temp.fix(11,clock_timestamp()-interval '250 milliseconds',0,0.000201)),false);
  perform pg_temp.check_true((result->>'distanceM')::double precision=measured,'stationary jitter contributes no distance');
  perform pg_temp.check_true((select state='running' from public.activity_sessions where id=session_id),'GPS never auto-pauses server timer');
- -- Long coverage gaps are not joined, even within a running interval.
- update public.route_points set captured_at=clock_timestamp()-interval '25 seconds' where route_points.session_id=tracking_validation.session_id and sequence=11;
- update private.route_cursors set last_captured_at=clock_timestamp()-interval '25 seconds',last_ingested_at=null where route_cursors.session_id=tracking_validation.session_id;
+ -- Sparse, fresh fixes still count within one uninterrupted running interval.
+ update public.route_points set captured_at=clock_timestamp()-interval '90 seconds' where route_points.session_id=tracking_validation.session_id and sequence=11;
+ update private.route_cursors set last_captured_at=clock_timestamp()-interval '90 seconds',last_ingested_at=null where route_cursors.session_id=tracking_validation.session_id;
  result := public.ingest_route_points(owner_id,session_id,0,jsonb_build_array(pg_temp.fix(12,clock_timestamp()-interval '100 milliseconds',0,0.001)),false);
+ perform pg_temp.check_true((result #>> '{coverage,segmentCount}')::int=2 and (result->>'distanceM')::double precision>measured,'90 seconds between fixes still counts distance');
+ measured := (result->>'distanceM')::double precision;
+ -- An outage longer than the allowed gap starts a new segment.
+ update public.route_points set captured_at=clock_timestamp()-interval '6 minutes' where route_points.session_id=tracking_validation.session_id and sequence=12;
+ update private.route_cursors set last_captured_at=clock_timestamp()-interval '6 minutes',last_ingested_at=null where route_cursors.session_id=tracking_validation.session_id;
+ result := public.ingest_route_points(owner_id,session_id,0,jsonb_build_array(pg_temp.fix(13,clock_timestamp()-interval '100 milliseconds',0,0.0015)),false);
  perform pg_temp.check_true((result #>> '{coverage,segmentCount}')::int=3 and (result->>'distanceM')::double precision=measured,'outage creates gap with zero bridging distance');
  begin perform public.read_session_route(other_id,session_id); raise exception 'cross owner read allowed'; exception when no_data_found then null; end;
  begin perform public.ingest_route_points(other_id,session_id,0,'[]',false); raise exception 'cross owner write allowed'; exception when no_data_found then null; end;
@@ -69,19 +75,19 @@ begin
  result := public.app_mutate(owner_id,'session.control',gen_random_uuid(),jsonb_build_object('id',session_id,'revision',1,'action','resume'));
  begin perform public.ingest_route_points(owner_id,session_id,0,'[]',false); raise exception 'stale revision allowed'; exception when serialization_failure then null; end;
  update private.route_cursors set last_ingested_at=null where route_cursors.session_id=tracking_validation.session_id;
- result := public.ingest_route_points(owner_id,session_id,2,jsonb_build_array(pg_temp.fix(13,old_time),pg_temp.fix(14,clock_timestamp(),0,0.002)),false);
+ result := public.ingest_route_points(owner_id,session_id,2,jsonb_build_array(pg_temp.fix(14,old_time),pg_temp.fix(15,clock_timestamp(),0,0.002)),false);
  perform pg_temp.check_true((result->>'rejected')::int=1 and (result->>'accepted')::int=1,'pre-pause delayed fix excluded after resume');
  perform pg_temp.check_true((result #>> '{coverage,segmentCount}')::int=4 and (result->>'distanceM')::double precision=measured,'manual pause/resume never bridges paused movement');
  result := public.app_mutate(owner_id,'session.control',gen_random_uuid(),jsonb_build_object('id',session_id,'revision',2,'action','complete','description','GPS QA'));
  perform pg_temp.check_true((result #>> '{completion,tokenAward}')::int=1,'shared server timer awards one token');
  perform pg_temp.check_true((result #>> '{completion,distanceM}')::double precision=measured,'completion snapshot receives authoritative distance');
  begin perform public.ingest_route_points(owner_id,session_id,3,'[]',false); raise exception 'completed points allowed'; exception when serialization_failure then null; end;
- perform pg_temp.check_true((public.read_session_route(owner_id,session_id) #>> '{coverage,pointCount}')::int=7,'saved route remains readable');
+ perform pg_temp.check_true((public.read_session_route(owner_id,session_id) #>> '{coverage,pointCount}')::int=8,'saved route remains readable');
 end $$ language plpgsql;
 -- Browser-role writes and RPCs are denied; owner reads remain protected by RLS.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','90000000-0000-4000-8000-000000000001',true);
-select pg_temp.check_true((select count(*)=7 from public.route_points),'owner can read saved GPS');
+select pg_temp.check_true((select count(*)=8 from public.route_points),'owner can read saved GPS');
 select set_config('request.jwt.claim.sub','90000000-0000-4000-8000-000000000002',true);
 select pg_temp.check_true((select count(*)=0 from public.route_points),'other owner cannot read saved GPS');
 select pg_temp.check_true(not has_function_privilege('authenticated','public.ingest_route_points(uuid,uuid,bigint,jsonb,boolean)','execute'),'browser cannot invoke privileged GPS RPC');

@@ -45,8 +45,13 @@ describe("foreground GPS quality feedback", () => {
   expect(rejectFix(fix({ lng: 1 }), previous, now)).toBe("jump");
   expect(rejectFix(fix({ lng: 0.00001 }), previous, now)).toBeNull();
  });
- it("does not bridge a long GPS outage with a speed guess", () => {
-  const previous = fix({ sequence: 0, capturedAt: new Date(now - 30_000).toISOString() });
+ it("accepts sparse fixes while rejecting impossible jumps within five minutes", () => {
+  const previous = fix({ sequence: 0, capturedAt: new Date(now - 90_000).toISOString() });
+  expect(rejectFix(fix({ lng: 0.001 }), previous, now)).toBeNull();
+  expect(rejectFix(fix({ lng: 1 }), previous, now)).toBe("jump");
+ });
+ it("does not bridge a GPS outage longer than five minutes with a speed guess", () => {
+  const previous = fix({ sequence: 0, capturedAt: new Date(now - 360_000).toISOString() });
   expect(rejectFix(fix({ lng: 1 }), previous, now)).toBeNull();
  });
 });

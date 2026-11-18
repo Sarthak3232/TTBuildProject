@@ -6,7 +6,7 @@ export const ROUTE_LIMITS = {
   maxPoints: 25_000,
   maxAccuracyM: 50,
   maxAgeMs: 15_000,
-  maxGapMs: 15_000,
+  maxGapMs: 300_000,
   maxSpeedMps: 12,
 } as const;
 
