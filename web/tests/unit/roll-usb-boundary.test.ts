@@ -5,6 +5,7 @@ vi.mock("@/server/supabase/clients", () => ({ createServerSupabaseClient: async 
 import { POST } from "../../src/app/api/rolls/route";
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 it("saves the roll without invoking the legacy bridge, even if its old flag remains set", async () => {
+  vi.stubEnv("SLOTTY_TEST_WINS", "false");
   vi.stubEnv("SLOTTY_REEL_BENCH", "1"); const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
   mocks.getUser.mockResolvedValue({ data: { user: { id: "owner" } }, error: null });
   const saved = { roll: { id: "77777777-7777-4777-8777-777777777777", wheels: ["garnet", "garnet", "garnet"], won: true, slot: 4 } };

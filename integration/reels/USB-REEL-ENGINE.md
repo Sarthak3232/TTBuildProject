@@ -118,3 +118,20 @@ this default and migrates the previous default saved in browser storage, includi
 its canonical aliases. Custom orders remain editable. The firmware controls sector
 indices; its diagnostic name strings and the separate control page may still use
 the older order, so use the confirmed physical order when testing those tools.
+
+## Temporary 100% win test mode
+
+Set server-only `SLOTTY_TEST_WINS=true` in `web/.env.local` and run the development
+server. The rewards page displays a test-mode banner and 100% win probability for
+new paid rolls. Authentication, token debits, allocation-weighted drawer choice,
+database-generated matching wheel symbols, and idempotent saved results remain
+active. Only the trusted server supplies a guaranteed winning sample to the
+existing accounting RPC; the browser cannot choose an outcome. Previously saved
+rolls, including losses recovered by their original key, remain unchanged.
+
+This mode requires the existing server-only `SUPABASE_SECRET_KEY`, is disabled
+in production, and changes no database-wide win policy. Set the flag to `false`
+and restart development to return to normal probabilities. The database's normal
+policy threshold remains in roll history; the local test-mode banner identifies
+the temporary override. Tokens and winning entitlements are real saved records,
+not a mock wallet. Tests use simulated serial streams and never actuate hardware.
