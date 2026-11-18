@@ -111,6 +111,6 @@ export function RewardPreview() {
       <p>{new Date(roll.createdAt).toLocaleString()}</p>
     </section>}
     <WalletHistory onRoll={value => { setResult(value); window.scrollTo({ top: 0, behavior: "smooth" }); }}/>
-    <p className={styles.preview}>The machine uses the saved wheel symbols and the saved winning slot. Close winning drawers by hand; the app never sends a close command.</p>
+    <p className={styles.preview}>The machine uses the saved wheel symbols and the saved winning slot. Winning drawers open for 3 seconds, stay open for 3 seconds, then close for 3 seconds.</p>
   </div>;
 }

@@ -31,7 +31,10 @@ describe("USB reel-engine delivery", () => {
     expect(spin.split(" ").slice(1).map(a => order[Math.floor(Number(a) / 4500)])).toEqual(roll(slot).wheels);
     expect(board.commands.filter(c => c.startsWith("DOPEN"))).toEqual([`DOPEN ${slot - 1}`]);
     expect(receipt.phase).toBe("finished");
-    expect(board.commands.some(c => c.startsWith("DCLOSE"))).toBe(false);
+    expect(board.commands.filter(c => c.startsWith("DCLOSE"))).toEqual([`DCLOSE ${slot - 1}`]);
+    const openAt = board.commandTimes.find(c => c.command === `DOPEN ${slot - 1}`)!.at;
+    const closeAt = board.commandTimes.find(c => c.command === `DCLOSE ${slot - 1}`)!.at;
+    expect(closeAt - openAt).toBeGreaterThanOrEqual(3000);
     expect(roll(slot).wheels).toEqual(["jacqueminot", "jacqueminot", "jacqueminot"]);
   });
   it("never opens a drawer on a loss", async () => {
@@ -46,7 +49,7 @@ describe("USB reel-engine delivery", () => {
     const marked = board.commands.indexOf(`DMARK ${slot - 1} closed`);
     expect(marked).toBeGreaterThan(-1);
     expect(board.commands[marked + 1]).toBe(`DOPEN ${slot - 1}`);
-    expect(board.commands.some(c => c.startsWith("DCLOSE"))).toBe(false);
+    expect(board.commands.filter(c => c.startsWith("DCLOSE"))).toEqual([`DCLOSE ${slot - 1}`]);
   });
   it("refuses an uncalibrated winning drawer without spinning", async () => {
     const { link, board } = await connected({ drawerCalibration: "1001" });
@@ -113,6 +116,14 @@ describe("USB reel-engine delivery", () => {
     await expect(pending).rejects.toThrow(/connection closed|disconnected/);
     expect(unresolvedReceipt(store)?.phase).toBe("unconfirmed");
     expect(board.commands.some(c => c.startsWith("DOPEN"))).toBe(false);
+  });
+  it("does not close automatically after an interruption during the open hold", async () => {
+    const { link, board } = await connected(); const store = storage();
+    await expect(deliverSavedRoll(link, roll(), order, store, receipt => {
+      if (receipt.phase === "holding") setTimeout(() => board.emit("E STOPPED"), 5);
+    })).rejects.toThrow(/interrupted/);
+    expect(savedReceipt(store, roll().id)?.phase).toBe("unconfirmed");
+    expect(board.commands.some(c => c.startsWith("DCLOSE"))).toBe(false);
   });
   it("blocks spins with missing drivers, unconfirmed alignment or open drawers", async () => {
     const { link, board } = await connected({ drivers: 3 });

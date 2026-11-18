@@ -5,7 +5,7 @@ import { UsbReelLink, type BoardState } from "./link";
 export const DEFAULT_ORDER = "hammer,tong,garnet,rose,hammer,tong,garnet,rose";
 const OLD_DEFAULT_ORDER = "hammer,garnet,rose,tong,hammer,garnet,rose,tong";
 const JOURNAL_KEY = "slotty-usb-deliveries-v1";
-type Phase = "spinning" | "landed" | "opening" | "finished" | "refused" | "unconfirmed" | "inspected";
+type Phase = "spinning" | "landed" | "opening" | "holding" | "closing" | "finished" | "refused" | "unconfirmed" | "inspected";
 export type DeliveryReceipt = { id: string; signature: string; phase: Phase; targets: number[]; message: string };
 type Journal = Record<string, DeliveryReceipt>;
 export type ReceiptStorage = Pick<Storage, "getItem" | "setItem">;
@@ -30,13 +30,13 @@ function journal(storage: ReceiptStorage): Journal {
   const value: unknown = JSON.parse(raw);
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.entries(value).some(([id, r]) => {
     const record = r as DeliveryReceipt;
-    return !record || record.id !== id || typeof record.signature !== "string" || !["spinning", "landed", "opening", "finished", "refused", "unconfirmed", "inspected"].includes(record.phase) || !Array.isArray(record.targets) || record.targets.length !== 3 || record.targets.some(t => !Number.isInteger(t) || t < 0 || t > 7);
+    return !record || record.id !== id || typeof record.signature !== "string" || !["spinning", "landed", "opening", "holding", "closing", "finished", "refused", "unconfirmed", "inspected"].includes(record.phase) || !Array.isArray(record.targets) || record.targets.length !== 3 || record.targets.some(t => !Number.isInteger(t) || t < 0 || t > 7);
   })) throw new Error("USB delivery history is unreadable. Inspect the machine; do not clear history to retry a roll.");
   return value as Journal;
 }
 export function savedReceipt(storage: ReceiptStorage, id: string) { return journal(storage)[id]; }
 export function unresolvedReceipt(storage: ReceiptStorage) {
-  return Object.values(journal(storage)).find(r => ["spinning", "landed", "opening", "unconfirmed"].includes(r.phase));
+  return Object.values(journal(storage)).find(r => ["spinning", "landed", "opening", "holding", "closing", "unconfirmed"].includes(r.phase));
 }
 function save(storage: ReceiptStorage, record: DeliveryReceipt) {
   const value = JSON.stringify({ ...journal(storage), [record.id]: record });
@@ -65,6 +65,24 @@ export async function confirmSetup(link: UsbReelLink) {
   const reply = await link.send("ALIGNED 1"); if (!reply.ok) throw new Error(reply.text);
   const next = link.waitFor(event => event.kind === "state" && readiness(event.state, link.fresh) === null, 3000);
   try { await next.promise; } finally { next.cancel(); }
+}
+
+async function holdOpen(link: UsbReelLink, drawer: number) {
+  let unsubscribe = () => {};
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      unsubscribe = link.subscribe(event => {
+        if (event.kind === "fault") reject(new Error(event.reason));
+        else if (event.kind === "state" && (event.state.spinning || event.state.reels.some(r => r.moving) || event.state.drawers[drawer].phase !== 3))
+          reject(new Error("Machine state changed during the open hold. Inspect before continuing."));
+      });
+      timer = setTimeout(() => {
+        if (!link.fresh || link.state?.drawers[drawer].phase !== 3) reject(new Error("Drawer state was lost during the hold."));
+        else resolve();
+      }, 3000);
+    });
+  } finally { unsubscribe(); clearTimeout(timer); }
 }
 
 export async function deliverSavedRoll(link: UsbReelLink, roll: Roll, order: WheelSymbol[], storage: ReceiptStorage, progress: (receipt: DeliveryReceipt) => void) {
@@ -113,8 +131,16 @@ export async function deliverSavedRoll(link: UsbReelLink, roll: Roll, order: Whe
         const reply = await link.send(`DOPEN ${drawer}`); if (!reply.ok) throw new Error(reply.text);
         await opened.promise;
       } finally { opened.cancel(); }
+      update("holding", `Board reported drawer ${command.winningSlot} open. Holding for 3 seconds…`);
+      await holdOpen(link, drawer);
+      update("closing", `Closing drawer ${command.winningSlot}…`);
+      const closed = link.waitFor(e => e.kind === "state" && e.state.drawers[drawer].phase === 1, 35_000);
+      try {
+        const reply = await link.send(`DCLOSE ${drawer}`); if (!reply.ok) throw new Error(reply.text);
+        await closed.promise;
+      } finally { closed.cancel(); }
     }
-    update("finished", command.winningSlot === null ? "Board reported the saved reel positions. No drawer opened." : `Board reported drawer ${command.winningSlot} open. Collect your reward and close it by hand.`);
+    update("finished", command.winningSlot === null ? "Board reported the saved reel positions. No drawer opened." : `Board reported drawer ${command.winningSlot} closed after the open–hold–close cycle.`);
     return record;
   } catch (error) {
     if (record.phase !== "refused") update("unconfirmed", `${(error as Error).message} Inspect this delivery; do not roll or pay again.`);

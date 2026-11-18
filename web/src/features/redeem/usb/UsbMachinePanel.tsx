@@ -21,7 +21,7 @@ export function UsbMachinePanel({ machine }: { machine: UsbMachine }) {
     <p>Available calibrated drawers: {machine.availableSlots.join(", ") || "none"}. Saved reel alignment is confirmed automatically on connection.</p>
     <label className={styles.check}><input type="checkbox" checked={machine.checked} onChange={event => machine.setChecked(event.target.checked)} disabled={machine.working}/><span>I checked the sector order, and only this page controls the machine.</span></label>
     <button onClick={machine.confirm} disabled={!machine.connected || !machine.checked || machine.working || Boolean(machine.unresolved) || Boolean(machine.storageError)}>Confirm sector order</button>
-    <p>Each drawer is assumed closed immediately before its servo opens it. Close winning drawers by hand. No close command is sent.</p>
+    <p>Each drawer is assumed closed immediately before its servo opens it. Winning drawers open for 3 seconds, stay open for 3 seconds, then close for 3 seconds.</p>
     <p role="status">{machine.storageError || machine.message}</p>
     {machine.unresolved && !machine.working && <div role="alert">
       <p>Delivery {machine.unresolved.id} needs inspection. Check the reels and the reward drawer, and resolve delivery manually before continuing. This result will not be replayed.</p>

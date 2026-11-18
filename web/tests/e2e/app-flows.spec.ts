@@ -21,7 +21,7 @@ async function fixtures(page:Page,balance=0,rollResult?:Pick<Roll,"won"|"slot"|"
 }
 test("custom timer completion requires reflection and refreshes wallet",async({page})=>{const{writes}=await fixtures(page);await page.goto("http://127.0.0.1:3101/tasks");await page.getByRole("button",{name:"Start task",exact:true}).click();await expect(page.getByRole("button",{name:"Complete & save"})).toBeDisabled();await page.getByLabel("What did you make?").fill("A scarf");await page.getByRole("button",{name:"Pause",exact:true}).click();await expect(page.getByText("Paused · time does not count")).toBeVisible();await page.getByRole("button",{name:"Resume",exact:true}).click();await page.getByRole("button",{name:"Complete & save"}).click();await expect(page.getByText("Saved Crochet. Earned 1 tokens.",{exact:true})).toBeVisible();await expect(page.getByText("1 tokens",{exact:true})).toBeVisible();expect(writes.map(w=>w.body.action).filter(Boolean)).toEqual(["pause","resume","complete"]);expect(writes.at(-1)?.body.reflection).toBe("A scarf");expect(writes.every(w=>typeof w.body.key==="string")).toBe(true)});
 test("custom creation and weekday goals send persisted definitions",async({page})=>{const{writes}=await fixtures(page);await page.goto("http://127.0.0.1:3101/create");await page.getByRole("button",{name:"Create a custom task"}).click();await page.getByLabel("Task name").fill("Practice guitar");await page.getByLabel("Minimum duration (minutes)").fill("30");await page.getByRole("button",{name:"Save task",exact:true}).click();await expect(page.getByRole("button",{name:"Create a custom task"})).toBeVisible();await page.getByRole("combobox",{name:"Activity",exact:true}).selectOption(custom.id);await page.getByRole("combobox",{name:"Repeat",exact:true}).selectOption("weekdays");await page.getByRole("button",{name:"Save goal",exact:true}).click();await expect(page.getByRole("status")).toContainText("Goal saved");expect(writes.find(w=>w.path==="/api/tasks")?.body.minimumMs).toBe(1800000);expect(writes.find(w=>w.path==="/api/goals")?.body.weekdays).toEqual([1,2,3,4,5]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)});
-test("USB roll shows fixed outcome, debits once, and opens only the selected drawer",async({page})=>{const{writes}=await fixtures(page,5);await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();await expect(page.getByRole("button",{name:"Spin now"})).toBeEnabled();await page.getByRole("button",{name:"Spin now"}).click();await expect(page.getByRole("heading",{name:"You won slot 1!"})).toBeVisible();await expect(page.getByLabel("Saved wheel results").getByText("garnet",{exact:true})).toHaveCount(3);await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 open");expect((await motorCommands(page)).filter(c=>c.startsWith("DOPEN"))).toEqual(["DOPEN 0"]);await expect(page.getByLabel("Token balance")).toContainText("3");expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);expect(writes.find(w=>w.path==="/api/rolls")?.body.allocations).toEqual([2,0,0,0]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)});
+test("USB roll shows fixed outcome, debits once, and opens only the selected drawer",async({page})=>{const{writes}=await fixtures(page,5);await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();await expect(page.getByRole("button",{name:"Spin now"})).toBeEnabled();await page.getByRole("button",{name:"Spin now"}).click();await expect(page.getByRole("heading",{name:"You won slot 1!"})).toBeVisible();await expect(page.getByLabel("Saved wheel results").getByText("garnet",{exact:true})).toHaveCount(3);await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 closed");expect((await motorCommands(page)).filter(c=>c.startsWith("DOPEN"))).toEqual(["DOPEN 0"]);await expect(page.getByLabel("Token balance")).toContainText("3");expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);expect(writes.find(w=>w.path==="/api/rolls")?.body.allocations).toEqual([2,0,0,0]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)});
 
 test("a high-probability loss displays two matching wheels and no reward",async({page})=>{
  const{writes}=await fixtures(page,10,{won:false,slot:null,threshold:524450,wheels:["hammer","hammer","tongs"]});
@@ -70,11 +70,11 @@ test("winning slot determines the drawer independently of the wheel symbol",asyn
  await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);
  await page.getByRole("button",{name:"Add one token to slot 4",exact:true}).click();
  await page.getByRole("button",{name:"Spin now",exact:true}).click();
- await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 4 open");
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 4 closed");
  const commands=await motorCommands(page);
  expect(commands.filter(c=>c.startsWith("DOPEN"))).toEqual(["DOPEN 3"]);
  expect(commands.find(c=>c.startsWith("SPIN"))!.split(" ").slice(1).every(a=>[11250,29250].includes(Number(a)))).toBe(true);
- expect(commands.some(c=>c.startsWith("DCLOSE"))).toBe(false);
+ expect(commands.filter(c=>c.startsWith("DCLOSE"))).toEqual(["DCLOSE 3"]);
  expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);
  await expect(page.getByRole("button",{name:"Confirm sector order"})).toBeDisabled();
 });
@@ -89,10 +89,10 @@ test("partial calibration enables only slots 1 and 4 and marks the selected draw
  await expect(page.getByRole("button",{name:"Add one token to slot 1",exact:true})).toBeEnabled();
  await page.getByRole("button",{name:"Add one token to slot 4",exact:true}).click();
  await page.getByRole("button",{name:"Spin now",exact:true}).click();
- await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 4 open");
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 4 closed");
  const commands=await motorCommands(page);const marked=commands.indexOf("DMARK 3 closed");
  expect(marked).toBeGreaterThan(-1);expect(commands[marked+1]).toBe("DOPEN 3");
- expect(commands.some(c=>c.startsWith("DCLOSE"))).toBe(false);
+ expect(commands.filter(c=>c.startsWith("DCLOSE"))).toEqual(["DCLOSE 3"]);
 });
 
 test("guaranteed-win test mode shows 100 percent and delivers matching saved symbols",async({page})=>{
@@ -102,7 +102,7 @@ test("guaranteed-win test mode shows 100 percent and delivers matching saved sym
  await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
  await expect(page.getByText("100.0%",{exact:true})).toBeVisible();
  await page.getByRole("button",{name:"Spin now",exact:true}).click();
- await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 open");
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 closed");
  await expect(page.getByLabel("Saved wheel results").getByText("garnet",{exact:true})).toHaveCount(3);
  expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);
 });
@@ -143,7 +143,7 @@ test("a lost saved-roll response recovers the same result without double payment
  await expect(page.getByRole("button",{name:"Recover roll",exact:true})).toBeEnabled();
  expect((await motorCommands(page)).some(c=>c.startsWith("SPIN"))).toBe(false);
  await page.getByRole("button",{name:"Recover roll",exact:true}).click();
- await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 open");
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 closed");
  const requests=writes.filter(w=>w.path==="/api/rolls");
  expect(requests).toHaveLength(2);expect(requests[0].body.key).toBe(requests[1].body.key);
  expect(data.balance).toBe(3);expect((await motorCommands(page)).filter(c=>c.startsWith("SPIN"))).toHaveLength(1);

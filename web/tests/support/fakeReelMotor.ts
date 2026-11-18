@@ -2,6 +2,7 @@ import type { SerialPortLike } from "../../src/features/redeem/usb/link";
 
 export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?: boolean; dropDrawerReply?: boolean; refuseSpin?: boolean; drivers?: number; calibrated?: boolean; drawerCalibration?: string } = {}) {
   const commands: string[] = [];
+  const commandTimes: { command: string; at: number }[] = [];
   let controller: ReadableStreamDefaultController<Uint8Array>;
   let interval: ReturnType<typeof setInterval>;
   let aligned = options.calibrated ?? false; let spinning = false;
@@ -15,6 +16,7 @@ export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?:
       if (!new TextDecoder().decode(value).trim()) return;
       const [seq, verb, ...args] = new TextDecoder().decode(value).trim().split(" ");
       const command = [verb, ...args].join(" "); commands.push(command);
+      commandTimes.push({ command, at: Date.now() });
       const reply = (ok = true, text = "ok") => emit(`R ${seq} ${Number(ok)} ${text}`);
       if (verb === "PING") { reply(true, "pong"); heartbeat(); }
       else if (verb === "ALIGNED") { aligned = true; reply(); heartbeat(); }
@@ -33,10 +35,13 @@ export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?:
         const drawer = Number(args[0]); phases[drawer] = 2;
         if (!options.dropDrawerReply) reply(); heartbeat();
         setTimeout(() => { phases[drawer] = 3; emit(`E DRAWER ${phases.join("")}`); heartbeat(); }, 25);
+      } else if (verb === "DCLOSE") {
+        const drawer = Number(args[0]); phases[drawer] = 4; reply(); heartbeat();
+        setTimeout(() => { phases[drawer] = 1; emit(`E DRAWER ${phases.join("")}`); heartbeat(); }, 25);
       } else reply(false, "unknown command");
     } }),
     async open() { interval = setInterval(heartbeat, 25); },
     async close() { active = false; clearInterval(interval); },
   };
-  return { port, commands, emit, heartbeat, setPhases: (value: number[]) => { phases = value; heartbeat(); } };
+  return { port, commands, commandTimes, emit, heartbeat, setPhases: (value: number[]) => { phases = value; heartbeat(); } };
 }

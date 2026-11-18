@@ -34,9 +34,11 @@ changes or uploads are required for a board already running that ReelMotor build
 7. Per operator instruction, **assume the selected drawer is closed before every
    opening**: immediately before `DOPEN d`, send `DMARK d closed` and require its
    acknowledgement. `DMARK` only updates the board's phase; it does not drive the
-   servo. Collect your reward and close it by hand. The app never sends `DCLOSE`.
-   Unknown/open phases therefore do not block setup; calibration and motion checks
-   still apply. These are operator assumptions, not sensor measurements.
+   servo. The selected drawer opens for its saved 3000 ms, holds fully open for
+   3000 ms, then receives `DCLOSE d` for its saved 3000 ms closing travel. Completion
+   requires a closed-phase heartbeat. Unknown/open phases do not block initial
+   setup; calibration and motion checks still apply. These are operator assumptions,
+   not sensor measurements. Keep fingers clear before automatic closing.
 8. Keep the page open during delivery. **Stop machine** sends `STOP` if needed.
    The board's BOOT stop and serial watchdog remain available. Live spins and servo
    tests by the coding agent still require explicit approval first.
@@ -135,3 +137,14 @@ and restart development to return to normal probabilities. The database's normal
 policy threshold remains in roll history; the local test-mode banner identifies
 the temporary override. Tokens and winning entitlements are real saved records,
 not a mock wallet. Tests use simulated serial streams and never actuate hardware.
+
+## Current automatic drawer cycle
+
+The operator changed the sequence to **3 seconds opening → 3 seconds fully open
+→ 3 seconds closing**. All four drawers have 3000 ms opening/closing times saved
+and confirmed on the board. The website holds for three seconds only after the
+open report and declares delivery finished only after the selected drawer reports
+closed. Its journal records holding and closing before proceeding. A stop, reset,
+or disconnect during the hold cancels automatic closing and requires inspection;
+an uncertain sequence is not replayed. Historical bench tests above used the
+earlier manual-close behavior and remain recorded as originally executed.

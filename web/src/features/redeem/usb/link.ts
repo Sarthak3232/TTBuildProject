@@ -11,7 +11,7 @@ export type BoardState = {
   drawers: { phase: number; calibrated: boolean }[];
 };
 export type BoardEvent = { kind: "state"; state: BoardState } | { kind: "line"; line: string } | { kind: "fault"; reason: string };
-type Command = "PING" | "ALIGNED 1" | `DMARK ${number} closed` | "STOP" | `SPIN ${number} ${number} ${number}` | `DOPEN ${number}`;
+type Command = "PING" | "ALIGNED 1" | `DMARK ${number} closed` | "STOP" | `SPIN ${number} ${number} ${number}` | `DOPEN ${number}` | `DCLOSE ${number}`;
 
 export function parseState(line: string): BoardState | null {
   const w = line.trim().split(/\s+/);
