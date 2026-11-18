@@ -16,6 +16,13 @@ async function connected(options: Parameters<typeof fakeReelMotor>[0] = {}) {
 afterEach(async () => { await Promise.all(links.splice(0).map(link => link.disconnect())); });
 
 describe("USB reel-engine delivery", () => {
+  it("blocks reel power changes during drawer movement", async () => {
+    const { link, board } = await connected();
+    board.setPhases([2, 0, 0, 0]);
+    await new Promise(resolve => setTimeout(resolve, 30));
+    await expect(link.setReelPower(false)).rejects.toThrow(/finish/);
+    expect(board.commands.some(command => command.startsWith("EN "))).toBe(false);
+  });
   it("automatically confirms alignment on connection without motion", async () => {
     const { link, board } = await connected();
     expect(board.commands.filter(c => c !== "PING")).toEqual(["ALIGNED 1"]);

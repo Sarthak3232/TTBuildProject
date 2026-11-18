@@ -6,12 +6,12 @@ export interface SerialPortLike {
   close(): Promise<void>;
 }
 export type BoardState = {
-  aligned: boolean; drivers: number; spinning: boolean; servoBoard: boolean;
+  energised: boolean; aligned: boolean; drivers: number; spinning: boolean; servoBoard: boolean;
   reels: { sector: number; moving: boolean; stepsPerTurn: number }[];
   drawers: { phase: number; calibrated: boolean }[];
 };
 export type BoardEvent = { kind: "state"; state: BoardState } | { kind: "line"; line: string } | { kind: "fault"; reason: string };
-type Command = "PING" | "ALIGNED 1" | `DMARK ${number} closed` | "STOP" | `SPIN ${number} ${number} ${number}` | `DOPEN ${number}` | `DCLOSE ${number}`;
+type Command = "PING" | "EN 0" | "EN 1" | "ALIGNED 1" | `DMARK ${number} closed` | "STOP" | `SPIN ${number} ${number} ${number}` | `DOPEN ${number}` | `DCLOSE ${number}`;
 
 export function parseState(line: string): BoardState | null {
   const w = line.trim().split(/\s+/);
@@ -23,7 +23,7 @@ export function parseState(line: string): BoardState | null {
     if (Number(w[b + 2]) > 7 || Number(w[b + 1]) >= 36000 || Number(w[b + 4]) < 16 || Number(w[b]) >= Number(w[b + 4]) || !/^[01]$/.test(w[b + 3]) || !/^[01]$/.test(w[b + 5])) return null;
     reels.push({ sector: Number(w[b + 2]), moving: w[b + 3] === "1", stepsPerTurn: Number(w[b + 4]) });
   }
-  return { aligned: w[3] === "1", drivers: Number(w[2]), spinning: w[4] === "1", servoBoard: w[23] === "1", reels,
+  return { energised: w[1] === "1", aligned: w[3] === "1", drivers: Number(w[2]), spinning: w[4] === "1", servoBoard: w[23] === "1", reels,
     drawers: [...w[24]].map((phase, i) => ({ phase: Number(phase), calibrated: w[25][i] === "1" })) };
 }
 
@@ -119,6 +119,18 @@ export class UsbReelLink {
     const write = this.writer.write(new TextEncoder().encode(`${seq} ${command}\n`)).catch(error => this.pending.get(seq)?.reject(error));
     try { const result = await reply; await write; return result; }
     finally { clearTimeout(timer); this.pending.delete(seq); }
+  }
+  async setReelPower(energised: boolean) {
+    if (!this.fresh || !this.state) throw new Error("Wait for a fresh USB connection before changing reel power.");
+    if (this.state.spinning || this.state.reels.some(reel => reel.moving) || this.state.drawers.some(drawer => [2, 4, 5].includes(drawer.phase))) {
+      throw new Error("Wait for the machine to finish before changing reel power.");
+    }
+    const updated = this.waitFor(event => event.kind === "state" && event.state.energised === energised, 3000);
+    try {
+      const reply = await this.send(energised ? "EN 1" : "EN 0");
+      if (!reply.ok) throw new Error(reply.text);
+      await updated.promise;
+    } finally { updated.cancel(); }
   }
   waitFor(predicate: (event: BoardEvent) => boolean, timeoutMs = 120_000) {
     let unsubscribe = () => {}; let timer: ReturnType<typeof setTimeout> | undefined;

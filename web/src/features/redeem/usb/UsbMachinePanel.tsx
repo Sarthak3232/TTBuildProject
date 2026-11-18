@@ -12,8 +12,11 @@ export function UsbMachinePanel({ machine }: { machine: UsbMachine }) {
     <div className={styles.machineActions}>
       <button onClick={machine.connect} disabled={!machine.supported || machine.connected || machine.working}>Connect USB</button>
       <button onClick={machine.disconnect} disabled={!machine.connected || machine.working}>Disconnect USB</button>
+      <button onClick={machine.togglePower} disabled={!machine.canChangePower}>{machine.connected && machine.state?.energised ? "Depower reels" : "Power on reels"}</button>
       <button className={styles.stop} onClick={machine.stop} disabled={!machine.connected}>Stop machine</button>
     </div>
+    <p>Reel power: {machine.connected && machine.state ? (machine.state.energised ? "on · holding position" : "off · released") : "connect USB to check"}. Powering on holds the current positions. Spin now powers the reels automatically.</p>
+    <p>If you turn the released reels by hand, recalibrate their positions before spinning.</p>
     <label htmlFor="reel-order">Physical sector order (0–7, same order as your calibration page)</label>
     <input id="reel-order" value={machine.order} onChange={event => machine.changeOrder(event.target.value)} disabled={machine.working} spellCheck={false}/>
     <p>Rose = jacqueminot; tong = tongs. Saved slot 1 opens servo 0, slot 2 opens servo 1, slot 3 opens servo 2, and slot 4 opens servo 3.</p>

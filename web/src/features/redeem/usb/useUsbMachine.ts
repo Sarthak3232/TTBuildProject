@@ -87,6 +87,13 @@ export function useUsbMachine() {
   }
   return {
     supported, connected: link.attached, state: link.state, availableSlots: availableSlots(link.state), working, message, receipt, unresolved, storageError,
+    canChangePower: link.fresh && !working && Boolean(link.state) && !link.state?.spinning && !link.state?.reels.some(reel => reel.moving) && !link.state?.drawers.some(drawer => [2, 4, 5].includes(drawer.phase)),
+    togglePower: () => void run(async () => {
+      if (!link.state) throw new Error("Connect USB first.");
+      const energised = !link.state.energised;
+      await link.setReelPower(energised);
+      setMessage(energised ? "Reel power on. Reels are holding their positions." : "Reel power off. Reels are released.");
+    }),
     checked, setChecked, order, changeOrder, connect, deliver, preflight,
     ready: confirmed && !working && !storageError && !unresolved && readiness(link.state, link.fresh) === null,
     confirm: () => void run(async () => {

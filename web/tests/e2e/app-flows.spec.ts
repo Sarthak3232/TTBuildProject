@@ -53,6 +53,27 @@ test("reopening a saved loss preserves the three wheel outputs without a new rol
  expect(writes).toHaveLength(0);
 });
 
+test("reel power toggle releases and holds without spinning or opening drawers",async({page})=>{
+ const{writes}=await fixtures(page,4);
+ await page.goto("http://127.0.0.1:3101/redeem");
+ await expect(page.getByRole("button",{name:"Power on reels",exact:true})).toBeDisabled();
+ await connectMachine(page);
+ await page.getByRole("button",{name:"Depower reels",exact:true}).click();
+ await expect(page.getByText("Reel power off. Reels are released.",{exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Power on reels",exact:true})).toBeEnabled();
+ await page.screenshot({path:test.info().outputPath("reel-power-off.png"),fullPage:true});
+ await page.getByRole("button",{name:"Power on reels",exact:true}).click();
+ await expect(page.getByText("Reel power on. Reels are holding their positions.",{exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Depower reels",exact:true})).toBeEnabled();
+ expect((await motorCommands(page)).filter(c=>c!=="ALIGNED 1")).toEqual(["EN 0","EN 1"]);
+ expect(writes).toHaveLength(0);
+ await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
+ await page.getByRole("button",{name:"Spin now",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Depower reels",exact:true})).toBeDisabled();
+ await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 1 closed");
+ await expect(page.getByRole("button",{name:"Depower reels",exact:true})).toBeEnabled();
+});
+
 test("USB readiness blocks payment and connection confirms alignment without motion",async({page})=>{
  const{writes}=await fixtures(page,4);
  await page.goto("http://127.0.0.1:3101/redeem");
