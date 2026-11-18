@@ -47,6 +47,30 @@ GPS points use sequence, capturedAt, latitude/longitude and accuracy. The truste
 
 For total allocated stake n: `p = 0.60 - 0.40 * exp(-(n-1)/3)`. Store `threshold = round(p * 1_000_000)` and `policyVersion = roll-v1`. Cryptographic randomness in Postgres first chooses an integer in `[0,1_000_000)`; a win occurs below the threshold. Only a win samples a ticket in `[0,n)` to select one funded slot proportional to its allocation. The client displays both conditional and unconditional probabilities. Per-slot maximum is 1,000,000 and total maximum is 4,000,000. Zero/negative/fractional/overspend requests fail without a charge.
 
-The fixed policy and allocations are validated atomically at acceptance; the current virtual interface does not require a separate quote resource. A retry may generate discarded server samples, but the committed key always returns its original stored outcome without another debit. No browser-supplied randomness is accepted. Both wins and losses spend the entire allocation exactly once. A win stores one slot and a `hardware_pending` entitlement; a loss has no slot and `not_applicable` delivery. Hardware absence must not block virtual rolls, and no result claims a physical unlock.
+The fixed policy and allocations are validated atomically at acceptance; the current virtual interface does not require a separate quote resource. A retry may generate discarded server samples, but the committed key always returns its original stored outcome without another debit. No browser-supplied randomness is accepted. Both wins and losses spend the entire allocation exactly once. A win stores one slot and a `hardware_pending` entitlement; a loss has no slot and `not_applicable` delivery. The API commits independently of hardware. The rewards UI checks USB readiness before a new payment; USB completion is recorded locally and does not change the server entitlement or claim sensor-verified unlocking.
 
-ML calibration/frame APIs, physical locker loading/collection, delivery retry/settings, simulator receipts and actuator transport remain later work, documented in the separate ML/locker contracts. There are no public clock overrides, token grants or force-win endpoints.
+### Three-wheel output
+
+Every saved roll also returns `wheels`, an array of exactly three symbols in left-to-right wheel order. Allowed values are `jacqueminot`, `garnet`, `tongs`, and `hammer`. A separate cryptographically generated ticket is persisted atomically with the roll. Reopening history, refreshing, or retrying a paid request returns the same three symbols.
+
+- Win: all three symbols match; each of the four symbols is equally likely.
+- Loss below 50% win probability: uniformly choose among all 60 combinations except three matching symbols.
+- Loss at 50% or more: the first two symbols match and the third differs; all 12 such combinations are equally likely. Under the existing probability curve this starts at six allocated tokens.
+
+The win/loss decision happens first; display styling never changes the actual probability or creates a reward. The winning drawer is still selected from funded slots by token weight, independently of the displayed winning symbol. Use `roll.slot`, not a symbol-to-drawer guess, for drawer control.
+
+`wheelCommand(roll)` in `web/src/domain/rolls/wheels.ts` validates and prepares this transport-neutral payload for the USB ESP32 adapter:
+
+```json
+{
+  "schemaVersion": 1,
+  "eventId": "3fba37c1-1996-4216-803c-449202a445b5",
+  "outcome": "win",
+  "wheels": ["garnet", "garnet", "garnet"],
+  "winningSlot": 3
+}
+```
+
+For a loss, `outcome` is `loss` and `winningSlot` is null. Symbol-to-sector mapping depends on each physical wheel's artwork and calibration; this payload does not send motion or claim firmware compatibility. Apply `20261118173233_roll_wheel_outputs.sql` before running this version against a database. It adds wheel metadata to existing rolls and their retry snapshots without changing original outcomes or balances.
+
+USB actuator transport is implemented as described in the [reel-engine integration contract](../../../integration/reels/USB-REEL-ENGINE.md). Physical locker loading/collection, a server delivery worker, shared device receipts and simulator delivery remain later work in the locker contract. Studbot endpoints are documented separately. There are no public clock overrides, token grants or force-win endpoints.

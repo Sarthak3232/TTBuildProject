@@ -324,6 +324,8 @@ export type Database = {
           "delivery_state": string
           "created_at": string
           "resulting_balance": number
+          "wheel_ticket": number
+          "wheels": string[]
         }
         Insert: {
           "id"?: string
@@ -337,6 +339,8 @@ export type Database = {
           "delivery_state": string
           "created_at"?: string
           "resulting_balance": number
+          "wheel_ticket"?: number
+          "wheels"?: never
         }
         Update: {
           "id"?: string
@@ -350,6 +354,8 @@ export type Database = {
           "delivery_state"?: string
           "created_at"?: string
           "resulting_balance"?: number
+          "wheel_ticket"?: number
+          "wheels"?: never
         }
         Relationships: [
           {

@@ -1,5 +1,9 @@
 # Slotty reel display prototype
 
+**Current website integration:** see [USB reel-engine setup](USB-REEL-ENGINE.md).
+The rewards page now controls the supplied ReelMotor firmware directly over USB.
+The prototypes and bridges below use older protocols and are retained for reference.
+
 ## Integration gaps at the reviewed heads
 
 | Boundary | Existing behavior | Missing piece |

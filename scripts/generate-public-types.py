@@ -88,9 +88,10 @@ for table in sorted({c["table_name"] for c in columns}):
         lines.append(f"        {section}: {{")
         for c in fields:
             nullable = c["is_nullable"] == "YES"
-            optional = section == "Update" or (section == "Insert" and (nullable or c["column_default"] is not None or c["is_identity"] == "YES"))
+            generated = c["is_generated"] != "NEVER"
+            optional = section == "Update" or (section == "Insert" and (nullable or c["column_default"] is not None or c["is_identity"] == "YES" or generated))
             base = (c["udt_name"][1:] + "[]") if c["data_type"] == "ARRAY" else c["data_type"]
-            value = ts_type(base) + (" | null" if nullable else "")
+            value = "never" if generated and section != "Row" else ts_type(base) + (" | null" if nullable else "")
             lines.append(f"          {json.dumps(c['column_name'])}{'?' if optional else ''}: {value}")
         lines.append("        }")
     lines.append("        Relationships: [")

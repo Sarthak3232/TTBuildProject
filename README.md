@@ -18,7 +18,7 @@ TTBuildProject turns everyday effort into a chance to reclaim your favorite item
 
 Each roll has two stages: **do you win something?** If you do, **which drawer opens?** Spending more tokens improves your overall chance of winning, while your allocation influences which item you receive. A roll can unlock at most one drawer.
 
-> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result now; winning delivery remains pending physical hardware. Studbot includes authenticated camera capture, calibration, and live classification; saved study sessions, history, and one token per full 30 minutes on completion are implemented with the Studbot migration and a server-only Supabase key. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
+> **Current implementation:** Issues [#9](https://github.com/Sarthak3232/TTBuildProject/issues/9) and [#10](https://github.com/Sarthak3232/TTBuildProject/issues/10) connect Supabase accounts, measured custom tasks, foreground run/walk GPS, goals, history/profile, token earning and virtual rolls. A roll spends tokens and saves a fixed result; the rewards page now delivers it over USB to a calibrated ReelMotor board, with hardware validation pending. Studbot includes authenticated camera capture, calibration, and live classification; saved study sessions, history, and one token per full 30 minutes on completion are implemented with the Studbot migration and a server-only Supabase key. The app requires configured keys and the new migrations; local test results do not establish hosted configuration or real-device GPS acceptance. See [implementation evidence](specs/001-task-reward-locker/implementation-evidence.md).
 
 ## Run the app
 
@@ -129,9 +129,13 @@ Daily-goal progress can combine sessions: two 20-minute study sessions contribut
 2. Allocate whole tokens to those drawers and review the total cost and chances.
 3. Roll: the total allocation determines whether you win anything.
 4. If you win, the allocation weights determine which one funded drawer opens.
-5. Collect the item, then reload and relock the drawer when it is ready for another reward.
+5. Collect the item, close the drawer by hand, and confirm the closed drawers again before another spin.
 
-Allocated tokens are spent on both wins and losses. The starting win chance is **20% with one token**, increasing toward **60%** as more tokens are spent; the current curve gives approximately **58% at ten tokens**. If an unlock acknowledgement fails, retry delivery of the same winning result without paying or rolling again.
+Allocated tokens are spent on both wins and losses. The starting win chance is **20% with one token**, increasing toward **60%** as more tokens are spent; the current curve gives approximately **58% at ten tokens**. If a USB acknowledgement is lost, inspect and resolve the same saved delivery; do not pay, reroll, or blindly repeat motion.
+
+Each saved roll includes three wheel symbols (`jacqueminot`, `garnet`, `tongs`, or `hammer`). Wins display three matches. Losses never display three matches; at a win probability of **50% or more**, the first two wheels match and the third differs. Symbols use cryptographic randomness and stay fixed with the saved result. See the [wheel-output contract](specs/001-task-reward-locker/contracts/api.md#three-wheel-output) and apply the `roll_wheel_outputs` migration before using this version.
+
+The rewards page can now deliver that saved result directly to the calibrated ReelMotor ESP32 over USB. Connect and confirm the machine before **Spin now**; wins open the saved slot's servo channel after the board reports the correct landing. Close drawers by hand. See [USB reel-engine setup and recovery](integration/reels/USB-REEL-ENGINE.md). The browser keeps local delivery receipts; hosted entitlements remain `hardware_pending`, and real motion still needs an operator-approved hardware check.
 
 ### 5. Review your progress
 

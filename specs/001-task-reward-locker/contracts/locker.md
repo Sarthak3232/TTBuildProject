@@ -1,6 +1,8 @@
 # Locker and simulator contract
 
-**Physical delivery deferred; virtual redemption enabled 2026-11-09.** Current scope includes four virtual allocation slots, transactional token debits, fixed win/loss results and pending winning entitlements. Hardware absence must not block rolling. No current result asserts an unlock/acknowledgement or sends an actuator command. A win keeps its slot/result and `hardware_pending` state for later delivery without reroll/payment. The physical/simulator adapter design below is retained future work and must be reviewed against the hardware interface before implementation.
+**USB physical delivery added 2026-11-18.** The rewards page requires a connected, inspected ReelMotor board before requesting a new paid roll. It delivers the saved three wheel symbols over USB, checks the board's landing report, then opens only the saved winning slot (slots 1–4 map to servo channels 0–3). Drawers are closed by hand. The API still commits the fixed result and charge independently; USB failure preserves the result and winning entitlement without reroll/payment. Browser delivery receipts do not change the server's `hardware_pending` state or assert sensor-verified movement. See the [USB integration contract](../../../integration/reels/USB-REEL-ENGINE.md) for readiness, operator confirmation, local duplicate protection and inspection-only recovery after uncertainty.
+
+The persistent simulator, worker, shared event/acknowledgement ledger and item-revision lifecycle below remain future work. They describe the intended server adapter, rather than behavior implemented by the browser USB path.
 
 The retained test-adapter design is a persistent four-drawer simulator. A future hardware adapter implements the same versioned event/acknowledgement semantics; no device board, transport, wiring or actuator implementation is selected now.
 
