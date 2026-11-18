@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Roll } from "@/domain/activity";
 import { UsbReelLink, type SerialPortLike } from "./link";
-import { availableSlots, confirmSetup, DEFAULT_ORDER, deliverSavedRoll, parseOrder, readiness, resolveInspection, unresolvedReceipt, type DeliveryReceipt } from "./delivery";
+import { availableSlots, confirmSetup, DEFAULT_ORDER, deliverSavedRoll, migrateStoredOrder, parseOrder, readiness, resolveInspection, unresolvedReceipt, type DeliveryReceipt } from "./delivery";
 
 type SerialNavigator = Navigator & { serial?: { requestPort(): Promise<SerialPortLike> } };
 export function useUsbMachine() {
@@ -23,7 +23,11 @@ export function useUsbMachine() {
   useEffect(() => {
     queueMicrotask(() => {
       setSupported(Boolean((navigator as SerialNavigator).serial) && window.isSecureContext);
-      try { orderNow.current = localStorage.getItem("slottyOrder") ?? DEFAULT_ORDER; setOrder(orderNow.current); setUnresolved(unresolvedReceipt(localStorage) ?? null); }
+      try {
+        orderNow.current = migrateStoredOrder(localStorage.getItem("slottyOrder"));
+        localStorage.setItem("slottyOrder", orderNow.current);
+        setOrder(orderNow.current); setUnresolved(unresolvedReceipt(localStorage) ?? null);
+      }
       catch { setStorageError("USB history is unavailable. Enable browser storage before using the machine."); }
     });
     const unsubscribe = link.subscribe(event => {

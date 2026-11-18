@@ -73,7 +73,7 @@ test("winning slot determines the drawer independently of the wheel symbol",asyn
  await expect(page.getByLabel("USB slot machine").getByRole("status")).toContainText("drawer 4 open");
  const commands=await motorCommands(page);
  expect(commands.filter(c=>c.startsWith("DOPEN"))).toEqual(["DOPEN 3"]);
- expect(commands.find(c=>c.startsWith("SPIN"))!.split(" ").slice(1).every(a=>[6750,24750].includes(Number(a)))).toBe(true);
+ expect(commands.find(c=>c.startsWith("SPIN"))!.split(" ").slice(1).every(a=>[11250,29250].includes(Number(a)))).toBe(true);
  expect(commands.some(c=>c.startsWith("DCLOSE"))).toBe(false);
  expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);
  await expect(page.getByRole("button",{name:"Confirm sector order"})).toBeDisabled();

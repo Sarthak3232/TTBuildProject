@@ -20,7 +20,7 @@ changes or uploads are required for a board already running that ReelMotor build
    instruction, every connection trusts the saved reel position. This does not
    home, recalibrate, energise or move the reels.
 4. Check the eight-sector order against your calibration page. The default is
-   `hammer,garnet,rose,tong,hammer,garnet,rose,tong`; rose means jacqueminot and tong
+   `hammer,tong,garnet,rose,hammer,tong,garnet,rose`; rose means jacqueminot and tong
    means tongs. The same order applies to all three reels. The file control page
    and website have separate storage, so copy a custom order explicitly. If you
    edit the order, check its confirmation box and click **Confirm sector order**.
@@ -109,3 +109,12 @@ reported sector 0 at 22.50 degrees, and drawer 1 subsequently reported open
 was actuated. This confirms firmware command acceptance and completion reports;
 physical symbol alignment and actual drawer travel await the operator's visual
 confirmation. This was a serial bench test, not a real-account browser roll.
+
+## Confirmed physical artwork order
+
+The operator corrected the physical sector order on 2026-11-18: sectors 0–7 are
+**hammer, tong, garnet, rose, hammer, tong, garnet, rose**. The website now uses
+this default and migrates the previous default saved in browser storage, including
+its canonical aliases. Custom orders remain editable. The firmware controls sector
+indices; its diagnostic name strings and the separate control page may still use
+the older order, so use the confirmed physical order when testing those tools.

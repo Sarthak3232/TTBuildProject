@@ -2,7 +2,8 @@ import type { Roll } from "@/domain/activity";
 import { wheelCommand, WHEEL_SYMBOLS, type WheelSymbol } from "@/domain/rolls/wheels";
 import { UsbReelLink, type BoardState } from "./link";
 
-export const DEFAULT_ORDER = "hammer,garnet,rose,tong,hammer,garnet,rose,tong";
+export const DEFAULT_ORDER = "hammer,tong,garnet,rose,hammer,tong,garnet,rose";
+const OLD_DEFAULT_ORDER = "hammer,garnet,rose,tong,hammer,garnet,rose,tong";
 const JOURNAL_KEY = "slotty-usb-deliveries-v1";
 type Phase = "spinning" | "landed" | "opening" | "finished" | "refused" | "unconfirmed" | "inspected";
 export type DeliveryReceipt = { id: string; signature: string; phase: Phase; targets: number[]; message: string };
@@ -15,6 +16,13 @@ export function parseOrder(value: string): WheelSymbol[] {
   if (names.length !== 8 || names.some(name => !(WHEEL_SYMBOLS as readonly string[]).includes(name)) || WHEEL_SYMBOLS.some(name => names.filter(n => n === name).length !== 2))
     throw new Error("Enter eight sectors in physical order, with each of hammer, garnet, rose and tong appearing twice.");
   return names as WheelSymbol[];
+}
+export function migrateStoredOrder(value: string | null): string {
+  if (value === null) return DEFAULT_ORDER;
+  try {
+    if (parseOrder(value).join(",") === parseOrder(OLD_DEFAULT_ORDER).join(",")) return DEFAULT_ORDER;
+  } catch { /* Keep invalid custom input visible so the operator can correct it. */ }
+  return value;
 }
 function journal(storage: ReceiptStorage): Journal {
   const raw = storage.getItem(JOURNAL_KEY);

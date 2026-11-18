@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Roll } from "../../src/domain/activity";
 import { UsbReelLink, parseState } from "../../src/features/redeem/usb/link";
-import { confirmSetup, DEFAULT_ORDER, deliverSavedRoll, parseOrder, readiness, resolveInspection, savedReceipt, unresolvedReceipt } from "../../src/features/redeem/usb/delivery";
+import { confirmSetup, DEFAULT_ORDER, deliverSavedRoll, migrateStoredOrder, parseOrder, readiness, resolveInspection, savedReceipt, unresolvedReceipt } from "../../src/features/redeem/usb/delivery";
 import { fakeReelMotor } from "../support/fakeReelMotor";
 
 const order = parseOrder(DEFAULT_ORDER);
@@ -125,7 +125,15 @@ describe("USB reel-engine delivery", () => {
     expect(parseState("S 1 7 1 0 0 0 9 0 1600 0 0 0 0 0 1600 0 0 0 0 0 1600 0 1 1111 1111")).toBeNull();
   });
   it("uses the explicit sector order and aliases, rejecting incomplete maps", () => {
-    expect(order).toEqual(["hammer", "garnet", "jacqueminot", "tongs", "hammer", "garnet", "jacqueminot", "tongs"]);
+    expect(order).toEqual(["hammer", "tongs", "garnet", "jacqueminot", "hammer", "tongs", "garnet", "jacqueminot"]);
     expect(() => parseOrder("hammer,garnet,rose,tong")).toThrow();
+  });
+  it("migrates the old browser default, including its canonical aliases", () => {
+    expect(migrateStoredOrder(null)).toBe(DEFAULT_ORDER);
+    expect(migrateStoredOrder("hammer,garnet,rose,tong,hammer,garnet,rose,tong")).toBe(DEFAULT_ORDER);
+    expect(migrateStoredOrder("hammer,garnet,jacqueminot,tongs,hammer,garnet,jacqueminot,tongs")).toBe(DEFAULT_ORDER);
+    expect(migrateStoredOrder(DEFAULT_ORDER)).toBe(DEFAULT_ORDER);
+    const custom = "rose,hammer,tong,garnet,rose,hammer,tong,garnet";
+    expect(migrateStoredOrder(custom)).toBe(custom);
   });
 });
