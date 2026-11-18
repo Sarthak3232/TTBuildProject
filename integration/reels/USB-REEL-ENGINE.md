@@ -98,3 +98,14 @@ storage failures, saved-roll recovery, and desktop/mobile rendering. Mobile
 browser tests inject the simulator; they do not establish mobile Web Serial
 support. Real serial, reel accuracy and drawer movement require separate operator
 permission and observation. No spin or servo-drive commands were sent during implementation. A separately authorized USB check sent `PING` and the nonmoving `ALIGNED 1` command.
+
+## Approved USB bench test — 2026-11-18
+
+After explicit operator approval, one direct USB test sent `ALIGNED 1`, one
+`SPIN 2250 2250 2250`, then—only after `E LANDED 0 0 0` and matching idle
+heartbeat state—`DMARK 0 closed` and one `DOPEN 0`. All three `E REEL` events
+reported sector 0 at 22.50 degrees, and drawer 1 subsequently reported open
+(phase 3). The port was released and no close command was sent. No other drawer
+was actuated. This confirms firmware command acceptance and completion reports;
+physical symbol alignment and actual drawer travel await the operator's visual
+confirmation. This was a serial bench test, not a real-account browser roll.
