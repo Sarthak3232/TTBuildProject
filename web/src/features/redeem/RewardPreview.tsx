@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Roll } from "@/domain/activity";
 import { useApp } from "@/features/app/AppProvider";
 import { mutation, ClientError } from "@/features/app/client";
-import { winThreshold } from "@/domain/rolls/probability";
+import { rollThreshold, eligibleAllocations } from "@/domain/rolls/probability";
 import { WalletHistory } from "./WalletHistory";
 import { WheelResult } from "./WheelResult";
 import { useUsbMachine } from "./usb/useUsbMachine";
@@ -33,7 +33,9 @@ export function RewardPreview() {
   }, [storageKey, data?.profile.email]);
   const balance = data?.balance ?? 0;
   const total = allocations.reduce((a, b) => a + b, 0);
-  const chance = total > 0 ? data?.testWins ? 1 : winThreshold(total) / 1000000 : 0;
+  const chance = total > 0 ? data?.testWins ? 1 : rollThreshold(allocations) / 1000000 : 0;
+  const eligible=eligibleAllocations(allocations);
+  const eligibleTotal=eligible.reduce((sum,n)=>sum+n,0);
   const roll = result ?? data?.latestRoll;
   const locked = busy || machine.working || Boolean(pending);
   function change(index: number, amount: number) {
@@ -95,8 +97,8 @@ export function RewardPreview() {
         <div><dt>Remaining after roll</dt><dd>{balance - total}</dd></div>
         <div><dt>Overall win probability</dt><dd>{(chance * 100).toFixed(1)}%</dd></div>
       </dl>
-      <ul>{allocations.map((value, index) => <li key={index}>Slot {index + 1}: {total ? (value / total * 100).toFixed(1) : "0.0"}% conditional on a win · {total ? (chance * value / total * 100).toFixed(1) : "0.0"}% overall</li>)}</ul>
-      <p>First decide win or no win, then choose one funded slot by token weight. The full stake is spent on both wins and losses. Results are final and saved.</p>
+      <ul>{allocations.map((value, index) => <li key={index}>Slot {index + 1}: {total ? (eligible[index] / eligibleTotal * 100).toFixed(1) : "0.0"}% conditional on a win · {total ? (chance * eligible[index] / eligibleTotal * 100).toFixed(1) : "0.0"}% overall</li>)}</ul>
+      <p>Ten or more tokens on a single slot guarantees a win. If several slots qualify, one of those slots wins by token weight. Otherwise, normal probability applies. The full stake is spent on both wins and losses. Results are final and saved.</p>
       <button className={styles.roll} disabled={busy || machine.working || !online || !data || (!pending && (!machine.ready || total === 0 || total > balance))} onClick={() => void commit()}>
         {busy ? "Processing saved roll…" : pending ? "Recover roll" : "Spin now"}
       </button><p role="status" className="live-error">{notice}</p>

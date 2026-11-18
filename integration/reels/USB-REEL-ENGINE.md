@@ -148,3 +148,14 @@ closed. Its journal records holding and closing before proceeding. A stop, reset
 or disconnect during the hold cancels automatic closing and requires inspection;
 an uncertain sequence is not replayed. Historical bench tests above used the
 earlier manual-close behavior and remain recorded as originally executed.
+
+## Normal policy and ten-token guarantee
+
+Both forced-result modes are disabled. The database and webpage use
+`roll-v2-ten-token`: any single slot funded with ten or more tokens guarantees
+a win, selecting among qualifying slots by allocation weight when several
+qualify. Otherwise the original total-stake probability curve applies. The whole
+stake is spent and only one drawer can open. Existing saved results stay fixed.
+Test credits are separately labeled ledger adjustments, granted only through the
+service-role accounting function with an idempotent adjustment key. They create
+no fabricated activity or completion and remain readable only by the owner.

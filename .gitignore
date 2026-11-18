@@ -19,6 +19,7 @@ next-env.d.ts
 test-results/
 playwright-report/
 blob-report/
+.slotty-next-loss.json*
 
 /integration/reels/slotty-bench.sqlite*
 /integration/reels/__pycache__/

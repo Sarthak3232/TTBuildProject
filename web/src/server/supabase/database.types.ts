@@ -534,6 +534,8 @@ export type Database = {
           "resulting_balance": number
           "created_at": string
           "roll_id": string | null
+          "adjustment_key": string | null
+          "adjustment_reason": string | null
         }
         Insert: {
           "id"?: string
@@ -543,6 +545,8 @@ export type Database = {
           "resulting_balance": number
           "created_at"?: string
           "roll_id"?: string | null
+          "adjustment_key"?: string | null
+          "adjustment_reason"?: string | null
         }
         Update: {
           "id"?: string
@@ -552,6 +556,8 @@ export type Database = {
           "resulting_balance"?: number
           "created_at"?: string
           "roll_id"?: string | null
+          "adjustment_key"?: string | null
+          "adjustment_reason"?: string | null
         }
         Relationships: [
           {
@@ -634,6 +640,14 @@ export type Database = {
       "app_snapshot": {
         Args: {
           "p_user_id": string
+        }
+        Returns: Json
+      }
+      "grant_test_tokens": {
+        Args: {
+          "p_user_id": string
+          "p_key": string
+          "p_amount": number
         }
         Returns: Json
       }

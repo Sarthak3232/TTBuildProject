@@ -2,6 +2,7 @@ import "server-only";
 import { randomInt } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/database.types";
+import { eligibleAllocations } from "@/domain/rolls/probability";
 import { ApiError } from "./api";
 
 export function testWinsEnabled() {
@@ -21,7 +22,7 @@ export async function commitTestWin(userId: string, key: string, allocations: nu
   // immutable wheel outputs and retry receipt. Never rewrite a saved losing roll.
   const { data, error } = await client.rpc("app_mutate", {
     p_user_id: userId, p_operation: "roll", p_key: key,
-    p_payload: { allocations, winSample: 0, slotSample: randomInt(total) },
+    p_payload: { allocations, winSample: 0, slotSample: randomInt(eligibleAllocations(allocations).reduce((sum,n)=>sum+n,0)) },
   });
   if (error) throw error;
   return data;

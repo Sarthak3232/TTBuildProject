@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tokenAward, canComplete } from "../../src/domain/rewards/earn";
 import { activeMilliseconds } from "../../src/domain/activity";
-import { winThreshold, selectOutcome } from "../../src/domain/rolls/probability";
+import { winThreshold, rollThreshold, selectOutcome } from "../../src/domain/rolls/probability";
 describe("earning policy",()=>{
  it.each([[1_799_000,0],[1_800_000,1],[3_599_000,1],[3_600_000,2]])("rounds %i to %i",(ms,tokens)=>expect(tokenAward(ms)).toBe(tokens));
  it("requires minimum and reflection",()=>{expect(canComplete(1_799_000,1_800_000,null,"")).toBe(false);expect(canComplete(1_800_000,1_800_000,"What?"," ")).toBe(false);expect(canComplete(1_800_000,1_800_000,"What?","Done")).toBe(true)});
@@ -12,6 +12,16 @@ describe("earning policy",()=>{
 describe("roll-v1",()=>{
  it("quantizes known anchors",()=>{expect(winThreshold(1)).toBe(200000);expect(winThreshold(10)/10000).toBeCloseTo(58.0085,3);expect(winThreshold(20)/10000).toBeCloseTo(59.9289,3)});
  it("loss never selects a slot",()=>expect(selectOutcome([0,1,0,0],999999,null)).toEqual({won:false,slot:null}));
+ it("guarantees the one slot with ten tokens, while a spread total of ten uses normal odds",()=>{
+  expect(rollThreshold([0,10,9,0])).toBe(1000000);
+  expect(selectOutcome([0,10,9,0],999999,9)).toEqual({won:true,slot:2});
+  expect(rollThreshold([5,5,0,0])).toBe(winThreshold(10));
+  expect(selectOutcome([5,5,0,0],999999,null)).toEqual({won:false,slot:null});
+ });
+ it("chooses only qualifying slots if several have ten tokens",()=>{
+  expect(selectOutcome([10,1,0,10],999999,9)).toEqual({won:true,slot:1});
+  expect(selectOutcome([10,1,0,10],999999,10)).toEqual({won:true,slot:4});
+ });
  it("chooses only funded slots at exact boundaries",()=>{expect(selectOutcome([0,3,0,1],0,2)).toEqual({won:true,slot:2});expect(selectOutcome([0,3,0,1],0,3)).toEqual({won:true,slot:4})});
  it.each([[0,0,0,0],[-1,2,0,0],[0.5,1,0,0]])("rejects invalid allocations",(...a)=>expect(()=>selectOutcome(a,0,0)).toThrow());
 });

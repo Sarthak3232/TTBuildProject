@@ -107,6 +107,20 @@ test("guaranteed-win test mode shows 100 percent and delivers matching saved sym
  expect(writes.filter(w=>w.path==="/api/rolls")).toHaveLength(1);
 });
 
+test("ten tokens on one slot guarantees that slot, while a spread total of ten uses normal odds",async({page})=>{
+ await fixtures(page,50);
+ await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);
+ for(let i=0;i<5;i++){
+  await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
+  await page.getByRole("button",{name:"Add one token to slot 2",exact:true}).click();
+ }
+ await expect(page.getByText("58.0%",{exact:true})).toBeVisible();
+ for(let i=0;i<5;i++)await page.getByRole("button",{name:"Add one token to slot 1",exact:true}).click();
+ await expect(page.getByText("100.0%",{exact:true})).toBeVisible();
+ await expect(page.getByText("Slot 1: 100.0% conditional on a win · 100.0% overall",{exact:true})).toBeVisible();
+ await expect(page.getByText("Slot 2: 0.0% conditional on a win · 0.0% overall",{exact:true})).toBeVisible();
+});
+
 test("an incorrect landing blocks the drawer and survives a reload without replay",async({page})=>{
  const{writes}=await fixtures(page,4,undefined,{wrongLanding:true});
  await page.goto("http://127.0.0.1:3101/redeem");await connectMachine(page);

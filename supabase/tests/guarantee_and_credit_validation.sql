@@ -1,0 +1,31 @@
+begin;
+do $$
+declare owner_id uuid:=gen_random_uuid(); other_id uuid:=gen_random_uuid(); k uuid:=gen_random_uuid(); r jsonb; again jsonb; credit_key uuid:=gen_random_uuid(); before_balance bigint;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(owner_id,owner_id||'@example.invalid','{}'),(other_id,other_id||'@example.invalid','{}');
+ update public."tokenBalance" set balance=100 where user_id=owner_id;
+ assert private.roll_threshold(array[9,0,0,0])<1000000;
+ assert private.roll_threshold(array[5,5,0,0])<1000000;
+ assert private.roll_threshold(array[10,0,0,0])=1000000;
+ assert private.roll_eligible(array[10,9,0,20])=array[10,0,0,20];
+ r:=public.app_mutate(owner_id,'roll',k,'{"allocations":[0,10,9,0],"winSample":999999,"slotSample":9}');
+ assert r#>>'{roll,won}'='true' and r#>>'{roll,slot}'='2';
+ assert r#>>'{roll,threshold}'='1000000';
+ assert r#>>'{roll,policyVersion}'='roll-v2-ten-token';
+ assert r#>>'{roll,wheels,0}'=r#>>'{roll,wheels,1}' and r#>>'{roll,wheels,1}'=r#>>'{roll,wheels,2}';
+ again:=public.app_mutate(owner_id,'roll',k,'{"allocations":[0,10,9,0],"winSample":0,"slotSample":0}');assert again=r;
+ assert (select balance from public."tokenBalance" where user_id=owner_id)=81;
+ r:=public.app_mutate(owner_id,'roll',gen_random_uuid(),'{"allocations":[10,1,0,10],"winSample":999999,"slotSample":10}');assert r#>>'{roll,slot}'='4';
+ perform set_config('request.jwt.claim.sub',owner_id::text,true);
+ r:=public.my_app_mutate('roll',gen_random_uuid(),'{"allocations":[0,0,10,0]}');assert r#>>'{roll,slot}'='3';
+ assert not has_function_privilege('authenticated','public.grant_test_tokens(uuid,uuid,integer)','execute');
+ assert not has_function_privilege('anon','public.grant_test_tokens(uuid,uuid,integer)','execute');
+ select balance into before_balance from public."tokenBalance" where user_id=owner_id;
+ r:=public.grant_test_tokens(owner_id,credit_key,100);again:=public.grant_test_tokens(owner_id,credit_key,100);
+ assert (r->>'balance')::bigint=before_balance+100 and again->>'replay'='true';
+ assert (select count(*) from public.token_entries where adjustment_key=credit_key)=1;
+ assert (select balance from public."tokenBalance" where user_id=owner_id)=before_balance+100;
+ begin perform public.grant_test_tokens(other_id,credit_key,100);raise exception 'Credit identity conflict accepted';exception when unique_violation then null;end;
+ raise notice 'PASS guarantee policy, funded-slot filtering, immutable retry, matching wheels and audited idempotent credit';
+end;$$;
+rollback;

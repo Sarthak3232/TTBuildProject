@@ -240,3 +240,15 @@ A user signs in to their own profile, tasks, goals, history, balance, and associ
 - Project principles are established in `.specify/memory/constitution.md` v2.0.0. The user-selected stack is reflected in the completed [plan](plan.md), [research](research.md), [data model](data-model.md), and [validation guide](quickstart.md). Model calibration and lifecycle defaults are explicit; implementation must validate them.
 
 Planning defaults: custom/run/walk timers use server timestamps and manual controls; study time requires observed compatible classification with the exact five-second grace/two-second reacquisition rules in the data model. Daily progress can combine completed sessions and the current provisional session, with canceled activity excluded. Classification tolerances, GPS distance filters, quote expiry, and simulator retry rules are documented defaults rather than additional user decisions.
+
+### 2026-11-18 user policy amendment: guaranteed ten-token slot
+
+For new rolls, a single slot allocated at least ten tokens guarantees a win. If
+several slots qualify, select one of those slots by allocation weight; at most one
+drawer opens. Below ten tokens on every individual slot, retain the normal total-
+stake probability curve. Ten tokens spread across slots does not activate the
+guarantee. This supersedes the older global 60% bound for qualifying allocations.
+Save the applied `roll-v2-ten-token` policy and 1,000,000 threshold on guaranteed
+rolls, and keep existing saved results immutable. The operator also requested a
+one-time 100-token testing credit, recorded as an idempotent ledger adjustment
+rather than earned activity. Forced-win and forced-loss test modes are disabled.
