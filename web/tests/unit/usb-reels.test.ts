@@ -1,8 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Roll } from "../../src/domain/activity";
 import { UsbReelLink, parseState } from "../../src/features/redeem/usb/link";
 import { confirmSetup, DEFAULT_ORDER, deliverSavedRoll, migrateStoredOrder, parseOrder, readiness, resolveInspection, savedReceipt, unresolvedReceipt } from "../../src/features/redeem/usb/delivery";
 import { fakeReelMotor } from "../support/fakeReelMotor";
+
+vi.setConfig({ testTimeout: 10_000 });
 
 const order = parseOrder(DEFAULT_ORDER);
 const roll = (slot: number | null = 1): Roll => ({ id: "77777777-7777-4777-8777-777777777777", allocations: [1, 1, 1, 1], cost: 4, threshold: 200000,
@@ -39,9 +41,11 @@ describe("USB reel-engine delivery", () => {
     expect(board.commands.filter(c => c.startsWith("DOPEN"))).toEqual([`DOPEN ${slot - 1}`]);
     expect(receipt.phase).toBe("finished");
     expect(board.commands.filter(c => c.startsWith("DCLOSE"))).toEqual([`DCLOSE ${slot - 1}`]);
+    expect(board.commands.indexOf(`DTIME ${slot - 1} 3000 3000`)).toBeLessThan(board.commands.indexOf(`DCONF ${slot - 1} 1`));
+    expect(board.commands.indexOf(`DCONF ${slot - 1} 1`)).toBeLessThan(board.commands.indexOf(`DOPEN ${slot - 1}`));
     const openAt = board.commandTimes.find(c => c.command === `DOPEN ${slot - 1}`)!.at;
     const closeAt = board.commandTimes.find(c => c.command === `DCLOSE ${slot - 1}`)!.at;
-    expect(closeAt - openAt).toBeGreaterThanOrEqual(3000);
+    expect(closeAt - openAt).toBeGreaterThanOrEqual(5000);
     expect(roll(slot).wheels).toEqual(["jacqueminot", "jacqueminot", "jacqueminot"]);
   });
   it("never opens a drawer on a loss", async () => {

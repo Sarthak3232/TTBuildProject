@@ -34,8 +34,9 @@ changes or uploads are required for a board already running that ReelMotor build
 7. Per operator instruction, **assume the selected drawer is closed before every
    opening**: immediately before `DOPEN d`, send `DMARK d closed` and require its
    acknowledgement. `DMARK` only updates the board's phase; it does not drive the
-   servo. The selected drawer opens for its saved 3000 ms, holds fully open for
-   3000 ms, then receives `DCLOSE d` for its saved 3000 ms closing travel. Completion
+   servo. The website saves `DTIME d 3000 3000` and confirms it with `DCONF d 1`
+   before opening. The selected drawer opens for 3000 ms, holds fully open for
+   5000 ms, then receives `DCLOSE d` for 3000 ms closing travel. Completion
    requires a closed-phase heartbeat. Unknown/open phases do not block initial
    setup; calibration and motion checks still apply. These are operator assumptions,
    not sensor measurements. Keep fingers clear before automatic closing.
@@ -123,9 +124,10 @@ the older order, so use the confirmed physical order when testing those tools.
 
 ## Current automatic drawer cycle
 
-The operator changed the sequence to **3 seconds opening → 3 seconds fully open
-→ 3 seconds closing**. All four drawers have 3000 ms opening/closing times saved
-and confirmed on the board. The website holds for three seconds only after the
+The operator changed the sequence to **3 seconds opening → 5 seconds fully open
+→ 3 seconds closing**. Before each winning drawer opens, the website saves its
+3000 ms opening/closing travel and confirms the operator-requested timings.
+These configuration commands do not move the servo. The website holds for five seconds only after the
 open report and declares delivery finished only after the selected drawer reports
 closed. Its journal records holding and closing before proceeding. A stop, reset,
 or disconnect during the hold cancels automatic closing and requires inspection;

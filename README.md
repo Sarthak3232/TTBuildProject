@@ -135,13 +135,13 @@ Daily-goal progress can combine sessions: two 20-minute study sessions contribut
 2. Allocate whole tokens to those drawers and review the total cost and chances.
 3. Roll: the total allocation determines whether you win anything.
 4. If you win, the allocation weights determine which one funded drawer opens.
-5. Collect the item during the three-second open hold; the drawer then closes automatically.
+5. Collect the item during the five-second open hold; the drawer then closes automatically.
 
 Allocated tokens are spent on both wins and losses. The starting win chance is **20% with one token**. When every slot has fewer than ten tokens, the normal curve increases toward **60%** with total stake (ten tokens split across slots gives approximately **58%**). **Ten or more tokens on one slot guarantees a win for that slot.** If several slots have ten or more, select one of those qualifying slots by token weight. At most one drawer opens, and the full allocation is spent. If a USB acknowledgement is lost, inspect and resolve the same saved delivery; do not pay, reroll, or blindly repeat motion.
 
 Each saved roll includes three wheel symbols (`jacqueminot`, `garnet`, `tongs`, or `hammer`). Wins display three matches. Losses never display three matches; at a win probability of **50% or more**, the first two wheels match and the third differs. Symbols use cryptographic randomness and stay fixed with the saved result. See the [wheel-output contract](specs/001-task-reward-locker/contracts/api.md#three-wheel-output) and apply the `roll_wheel_outputs` migration before using this version.
 
-The rewards page can now deliver that saved result directly to the calibrated ReelMotor ESP32 over USB. Connect USB before **Spin now**; saved reel alignment is confirmed automatically and the selected drawer is marked closed before opening; wins open the saved slot's servo channel after the board reports the correct landing. Winning drawers open for three seconds, hold open for three seconds, then close for three seconds. See [USB reel-engine setup and recovery](integration/reels/USB-REEL-ENGINE.md). The browser keeps local delivery receipts; hosted entitlements remain `hardware_pending`, and real motion still needs an operator-approved hardware check.
+The rewards page can now deliver that saved result directly to the calibrated ReelMotor ESP32 over USB. Connect USB before **Spin now**; saved reel alignment is confirmed automatically and the selected drawer is marked closed before opening; wins open the saved slot's servo channel after the board reports the correct landing. Winning drawers open for three seconds, hold open for five seconds, then close for three seconds. See [USB reel-engine setup and recovery](integration/reels/USB-REEL-ENGINE.md). The browser keeps local delivery receipts; hosted entitlements remain `hardware_pending`, and real motion still needs an operator-approved hardware check.
 
 ### 5. Review your progress
 

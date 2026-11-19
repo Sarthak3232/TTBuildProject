@@ -19,6 +19,7 @@ export function fakeReelMotor(options: { wrongLanding?: boolean; dropSpinReply?:
       commandTimes.push({ command, at: Date.now() });
       const reply = (ok = true, text = "ok") => emit(`R ${seq} ${Number(ok)} ${text}`);
       if (verb === "PING") { reply(true, "pong"); heartbeat(); }
+      else if (verb === "DTIME" || verb === "DCONF") { reply(); heartbeat(); }
       else if (verb === "EN") { energised = args[0] === "1"; reply(); heartbeat(); }
       else if (verb === "ALIGNED") { aligned = true; reply(); heartbeat(); }
       else if (verb === "DMARK") { const drawer = Number(args[0]); phases = phases.map((p, i) => drawer === 4 || drawer === i ? 1 : p); reply(); heartbeat(); }

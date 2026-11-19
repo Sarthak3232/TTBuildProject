@@ -80,7 +80,7 @@ async function holdOpen(link: UsbReelLink, drawer: number) {
       timer = setTimeout(() => {
         if (!link.fresh || link.state?.drawers[drawer].phase !== 3) reject(new Error("Drawer state was lost during the hold."));
         else resolve();
-      }, 3000);
+      }, 5000);
     });
   } finally { unsubscribe(); clearTimeout(timer); }
 }
@@ -121,6 +121,12 @@ export async function deliverSavedRoll(link: UsbReelLink, roll: Roll, order: Whe
     if (command.winningSlot !== null) {
       const drawer = command.winningSlot - 1;
       if (!link.state.servoBoard || !link.state.drawers[drawer].calibrated || [2, 4, 5].includes(link.state.drawers[drawer].phase)) throw new Error("Winning drawer is uncalibrated or still moving.");
+      // Save the requested travel duration without moving the servo. DTIME clears
+      // confirmation, so confirm the new operator-requested timings before opening.
+      for (const setting of [`DTIME ${drawer} 3000 3000`, `DCONF ${drawer} 1`] as const) {
+        const reply = await link.send(setting);
+        if (!reply.ok) throw new Error(reply.text);
+      }
       update("opening", `Opening drawer ${command.winningSlot}…`);
       // Operator policy: each opening starts from an assumed manually closed drawer.
       // This changes only the board's phase; it never drives the servo closed.
@@ -131,7 +137,7 @@ export async function deliverSavedRoll(link: UsbReelLink, roll: Roll, order: Whe
         const reply = await link.send(`DOPEN ${drawer}`); if (!reply.ok) throw new Error(reply.text);
         await opened.promise;
       } finally { opened.cancel(); }
-      update("holding", `Board reported drawer ${command.winningSlot} open. Holding for 3 seconds…`);
+      update("holding", `Board reported drawer ${command.winningSlot} open. Holding for 5 seconds…`);
       await holdOpen(link, drawer);
       update("closing", `Closing drawer ${command.winningSlot}…`);
       const closed = link.waitFor(e => e.kind === "state" && e.state.drawers[drawer].phase === 1, 35_000);
