@@ -20,7 +20,9 @@ export async function studyCommand(userId: string, action: Command, options: {
     p_user_id: userId, p_action: action, p_session_id: options.sessionId,
     p_window_id: options.windowId, p_sequence: options.sequence,
     p_observation: options.observation, p_key: options.key,
-    p_test_mode: action === "start" && process.env.NODE_ENV !== "production" && process.env.STUDBOT_TEST_REWARDS === "true" ? true : undefined,
+    // liveDemo captures the 15-second reward policy for every new study session.
+    // Do not depend on local env flags: existing .env files can remain unchanged.
+    p_test_mode: action === "start" ? true : undefined,
   });
   if (error) {
     const status = error.code === "P0002" ? 404 : ["23505", "40001"].includes(error.code) ? 409 : error.code === "22023" ? 422 : 503;
@@ -29,5 +31,5 @@ export async function studyCommand(userId: string, action: Command, options: {
       : error.message);
   }
   return { ...data as unknown as StudyProgress,
-    testRewards: process.env.NODE_ENV !== "production" && process.env.STUDBOT_TEST_REWARDS === "true" };
+    testRewards: true };
 }

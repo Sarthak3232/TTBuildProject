@@ -22,6 +22,12 @@ Each roll has two stages: **do you win something?** If you do, **which drawer op
 
 ## Run the app
 
+This is the `liveDemo` branch, based on `esp32Connection`. New Studbot sessions
+earn one token per full **15 seconds** when finished and saved. Existing sessions
+keep their original rate, and other activities keep their normal reward rules.
+No environment-file changes are needed for the demo rate. Demo tokens are real
+wallet credits; the existing Studbot database migrations are required.
+
 Studbot now includes an authenticated camera/calibration page and a server-side
 connection to the Python classifier. See the [Studbot setup and deployment guide](web/src/features/studbot/README.md).
 Apply the Studbot rewards migration and configure its server-only Supabase key to enable saved study time and token credit. Deployment currently requires

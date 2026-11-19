@@ -8,7 +8,7 @@ The internal service token and calibration angles stay on the server. Frames are
 processed transiently and are never saved by the bridge.
 
 Study progress is saved to the signed-in account. **Finish & save** writes a
-completion to History and awards one token per full 30 minutes of credited time.
+completion to History and awards one token per full 15 seconds of credited time on `liveDemo`.
 Rounding applies per completed session; unused minutes do not carry over. Close,
 manual pause, navigation, and mobile backgrounding preserve the unfinished session
 for resumption after recalibration. Discarding awards nothing. Posture feedback
@@ -88,20 +88,21 @@ close requests from an older focus window cannot credit or pause its replacement
 
 ## Deployment
 
-### Temporary 15-second reward test
+### liveDemo: 15-second study rewards
 
 Apply `supabase/migrations/20261115000200_studbot_test_rewards.sql` after the
-original Studbot migration. Set `STUDBOT_TEST_REWARDS=true` in `web/.env.local`
-and restart the development server. New study sessions then earn one token per
-full 15 seconds when finished; other activities retain their 30-minute rate.
-Production mode ignores this local test switch. The page labels test rewards.
+original Studbot migration. This branch requests the 15-second reward policy
+directly in server code for new study sessions, in development and production
+builds. Your existing environment files can remain unchanged: the
+`STUDBOT_TEST_REWARDS` value is ignored on this branch. Other activities retain
+their existing rates. The page labels test rewards.
 
 The rate is captured when a session is created. Finish or discard any existing
-30-minute-rate study session before creating a test session. Restoring
-`STUDBOT_TEST_REWARDS=false` and restarting restores 30 minutes for new sessions;
-already-created test sessions retain their rate until completed or discarded.
+30-minute-rate study session before creating a demo session. To return to the
+normal reward policy, switch back to `main` or `esp32Connection` with test rewards
+disabled. Already-created demo sessions retain their rate until completed or discarded.
 History records the rate and a test note. Test rewards are actual wallet credits;
-turning off the flag does not remove tokens already earned.
+switching branches does not remove tokens already earned.
 
 Use a persistent Node.js server running `npm run build` then `npm run start`, with
 exactly one Next.js process. Calibration, per-user session ownership, and request

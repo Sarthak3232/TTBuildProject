@@ -11,20 +11,20 @@ beforeEach(() => {
   mocks.rpc.mockResolvedValue({ data: { activity: null, balance: 0 }, error: null });
 });
 afterEach(() => vi.unstubAllEnvs());
-it("does not request accelerated rewards by default", async () => {
+it("liveDemo requests 15-second rewards even with the existing false env setting", async () => {
   await studyCommand("owner", "start", { windowId: "window" });
-  expect(mocks.rpc.mock.calls[0][1].p_test_mode).toBeUndefined();
+  expect(mocks.rpc.mock.calls[0][1].p_test_mode).toBe(true);
 });
-it("requests the 15-second policy only for new development start requests", async () => {
-  vi.stubEnv("STUDBOT_TEST_REWARDS", "true");
+it("requests the demo policy only on start, leaving saved session rates intact", async () => {
+  vi.stubEnv("STUDBOT_TEST_REWARDS", undefined);
   expect((await studyCommand("owner", "start", { windowId: "window" })).testRewards).toBe(true);
   expect(mocks.rpc.mock.calls[0][1].p_test_mode).toBe(true);
   await studyCommand("owner", "load");
   expect(mocks.rpc.mock.calls[1][1].p_test_mode).toBeUndefined();
 });
-it("ignores the test switch in production", async () => {
+it("keeps the demo reward rate in production builds on this branch", async () => {
   vi.stubEnv("NODE_ENV", "production");
-  vi.stubEnv("STUDBOT_TEST_REWARDS", "true");
-  expect((await studyCommand("owner", "start", { windowId: "window" })).testRewards).toBe(false);
-  expect(mocks.rpc.mock.calls[0][1].p_test_mode).toBeUndefined();
+  vi.stubEnv("STUDBOT_TEST_REWARDS", "false");
+  expect((await studyCommand("owner", "start", { windowId: "window" })).testRewards).toBe(true);
+  expect(mocks.rpc.mock.calls[0][1].p_test_mode).toBe(true);
 });
